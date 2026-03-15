@@ -18,9 +18,11 @@ export function InkBadge({ color }: { color: InkColor }) {
 }
 
 export function DeckBadges({ colors }: { colors: InkColor[] }) {
+  const valid = (colors || []).filter(c => c && INK_COLORS_CONFIG[c]);
+  if (valid.length === 0) return <span className="text-xs text-ink-500">—</span>;
   return (
     <span className="inline-flex gap-1.5">
-      {colors.map(c => <InkBadge key={c} color={c} />)}
+      {valid.map(c => <InkBadge key={c} color={c} />)}
     </span>
   );
 }

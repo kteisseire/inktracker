@@ -110,6 +110,19 @@ export function LoginPage() {
         </form>
       </div>
 
+      {/* Free tools */}
+      <div className="max-w-md w-full text-center space-y-3">
+        <p className="text-xs text-ink-500 uppercase tracking-wide font-medium">Accessible sans compte</p>
+        <div className="flex gap-3">
+          <Link to="/lore-counter" className="flex-1 ink-card-hover p-3 flex items-center justify-center gap-2 text-sm font-medium text-ink-300 hover:text-gold-400 transition-colors">
+            <span className="text-gold-400">&#10022;</span> Compteur de Lore
+          </Link>
+          <Link to="/top-cut" className="flex-1 ink-card-hover p-3 flex items-center justify-center gap-2 text-sm font-medium text-ink-300 hover:text-gold-400 transition-colors">
+            <span className="text-gold-400">&#9986;</span> Top Cut Calculator
+          </Link>
+        </div>
+      </div>
+
       <p className="text-xs text-ink-600 text-center max-w-sm">
         Gratuit et open source. Vos données sont privées et accessibles uniquement par vous.
       </p>

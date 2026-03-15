@@ -45,8 +45,8 @@ function AppRoutes() {
       <Route path="/decks/:deckId/stats" element={<ProtectedRoute><Layout><DeckStatsPage /></Layout></ProtectedRoute>} />
       <Route path="/stats" element={<ProtectedRoute><Layout><StatsPage /></Layout></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Layout><ProfilePage /></Layout></ProtectedRoute>} />
-      <Route path="/top-cut" element={<ProtectedRoute><Layout><TopCutCalculatorPage /></Layout></ProtectedRoute>} />
-      <Route path="/lore-counter" element={<ProtectedRoute><LoreCounterPage /></ProtectedRoute>} />
+      <Route path="/top-cut" element={<Layout><TopCutCalculatorPage /></Layout>} />
+      <Route path="/lore-counter" element={<LoreCounterPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

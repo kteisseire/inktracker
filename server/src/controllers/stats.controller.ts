@@ -2,9 +2,19 @@ import { Response } from 'express';
 import prisma from '../lib/prisma.js';
 import { AuthRequest } from '../middleware/auth.js';
 
+function dateFilter(req: AuthRequest) {
+  const from = req.query.from as string | undefined;
+  const to = req.query.to as string | undefined;
+  const filter: any = {};
+  if (from) filter.gte = new Date(from);
+  if (to) filter.lte = new Date(to);
+  return Object.keys(filter).length > 0 ? { date: filter } : {};
+}
+
 export async function getOverview(req: AuthRequest, res: Response) {
+  const df = dateFilter(req);
   const rounds = await prisma.round.findMany({
-    where: { tournament: { userId: req.userId } },
+    where: { tournament: { userId: req.userId, ...df } },
     select: { result: true },
   });
 
@@ -12,7 +22,7 @@ export async function getOverview(req: AuthRequest, res: Response) {
   const wins = rounds.filter(r => r.result === 'WIN').length;
   const losses = rounds.filter(r => r.result === 'LOSS').length;
   const draws = rounds.filter(r => r.result === 'DRAW').length;
-  const totalTournaments = await prisma.tournament.count({ where: { userId: req.userId } });
+  const totalTournaments = await prisma.tournament.count({ where: { userId: req.userId, ...df } });
 
   res.json({
     totalTournaments,
@@ -25,8 +35,9 @@ export async function getOverview(req: AuthRequest, res: Response) {
 }
 
 export async function getMatchups(req: AuthRequest, res: Response) {
+  const df = dateFilter(req);
   const rounds = await prisma.round.findMany({
-    where: { tournament: { userId: req.userId } },
+    where: { tournament: { userId: req.userId, ...df } },
     select: { opponentDeckColors: true, result: true },
   });
 
@@ -55,8 +66,9 @@ export async function getMatchups(req: AuthRequest, res: Response) {
 }
 
 export async function getDeckPerformance(req: AuthRequest, res: Response) {
+  const df = dateFilter(req);
   const tournaments = await prisma.tournament.findMany({
-    where: { userId: req.userId },
+    where: { userId: req.userId, ...df },
     select: {
       myDeckColors: true,
       rounds: { select: { result: true } },
@@ -91,9 +103,10 @@ export async function getDeckPerformance(req: AuthRequest, res: Response) {
 }
 
 export async function getGoingFirstStats(req: AuthRequest, res: Response) {
+  const df = dateFilter(req);
   const games = await prisma.game.findMany({
     where: {
-      round: { tournament: { userId: req.userId } },
+      round: { tournament: { userId: req.userId, ...df } },
       wentFirst: { not: null },
     },
     select: { wentFirst: true, result: true },
@@ -125,9 +138,11 @@ export async function getDeckStats(req: AuthRequest, res: Response) {
   }
 
   // Find tournaments played with this deck (by deckId or matching colors+link)
+  const df = dateFilter(req);
   const tournaments = await prisma.tournament.findMany({
     where: {
       userId: req.userId,
+      ...df,
       OR: [
         { deckId },
         { myDeckColors: { equals: deck.colors }, ...(deck.link ? { myDeckLink: deck.link } : {}) },
@@ -208,8 +223,9 @@ export async function getDeckStats(req: AuthRequest, res: Response) {
 }
 
 export async function getTournamentHistory(req: AuthRequest, res: Response) {
+  const df = dateFilter(req);
   const tournaments = await prisma.tournament.findMany({
-    where: { userId: req.userId },
+    where: { userId: req.userId, ...df },
     orderBy: { date: 'asc' },
     select: {
       id: true,

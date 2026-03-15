@@ -8,6 +8,7 @@ const NAV_LINKS = [
   { to: '/decks', label: 'Decks', icon: '♠' },
   { to: '/stats', label: 'Stats', icon: '▤' },
   { to: '/lore-counter', label: 'Lore', icon: '✦' },
+  { to: '/top-cut', label: 'Top Cut', icon: '✂' },
 ];
 
 export function Header() {
@@ -52,7 +53,7 @@ export function Header() {
               <div className="flex items-center gap-3">
                 <span className="text-sm text-ink-400">{user.username}</span>
                 <button onClick={logout} className="text-sm text-ink-500 hover:text-ink-300 transition-colors">
-                  Quitter
+                  Déconnexion
                 </button>
               </div>
             </div>
@@ -102,7 +103,7 @@ export function Header() {
           <div className="px-4 py-3 border-t border-ink-800/50 flex items-center justify-between">
             <span className="text-sm text-ink-400">{user.username}</span>
             <button onClick={() => { logout(); setMenuOpen(false); }} className="text-sm text-ink-500 hover:text-ink-300 transition-colors">
-              Quitter
+              Déconnexion
             </button>
           </div>
         </div>

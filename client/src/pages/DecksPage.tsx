@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { listDecks, createDeck, updateDeck, deleteDeck, setDefaultDeck, extractDeckColors } from '../api/deck.api.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
 import { InkColorPicker } from '../components/ui/InkColorPicker.js';
@@ -119,6 +119,7 @@ export function DecksPage() {
   };
 
   const handleSetDefault = async (id: string) => { await setDefaultDeck(id); loadDecks(); };
+  const navigate = useNavigate();
 
   if (loading) {
     return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold-400"></div></div>;
@@ -156,7 +157,11 @@ export function DecksPage() {
       ) : (
         <div className="space-y-3">
           {decks.map(deck => (
-            <div key={deck.id} className={`ink-card-hover p-3 sm:p-4 ${deck.isDefault ? 'ring-1 ring-gold-500/30' : ''}`}>
+            <div
+              key={deck.id}
+              onClick={() => navigate(`/decks/${deck.id}/stats`)}
+              className={`ink-card-hover p-3 sm:p-4 cursor-pointer ${deck.isDefault ? 'ring-1 ring-gold-500/30' : ''}`}
+            >
               <div className="flex items-start gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1.5 flex-wrap">
@@ -168,15 +173,13 @@ export function DecksPage() {
                   <div className="flex items-center gap-2">
                     <DeckBadges colors={deck.colors as any} />
                     {deck.link && (
-                      <a href={deck.link} target="_blank" rel="noopener noreferrer" className="text-ink-500 hover:text-ink-300 transition-colors shrink-0">
+                      <a href={deck.link} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-ink-500 hover:text-ink-300 transition-colors shrink-0">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                       </a>
                     )}
                   </div>
                 </div>
-                {/* Actions: wrap on mobile */}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 shrink-0">
-                  <Link to={`/decks/${deck.id}/stats`} className="text-xs text-lorcana-sapphire hover:text-blue-300 transition-colors font-medium">Stats</Link>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 shrink-0" onClick={e => e.stopPropagation()}>
                   {!deck.isDefault && (
                     <button onClick={() => handleSetDefault(deck.id)} className="text-xs text-gold-500 hover:text-gold-300 transition-colors font-medium">Défaut</button>
                   )}

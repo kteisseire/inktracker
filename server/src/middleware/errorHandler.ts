@@ -5,11 +5,12 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
   console.error(err);
 
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    if (err.code === 'P2002') {
+    const prismaErr = err as Prisma.PrismaClientKnownRequestError;
+    if (prismaErr.code === 'P2002') {
       res.status(409).json({ error: 'Cet enregistrement existe déjà' });
       return;
     }
-    if (err.code === 'P2025') {
+    if (prismaErr.code === 'P2025') {
       res.status(404).json({ error: 'Enregistrement non trouvé' });
       return;
     }

@@ -95,11 +95,15 @@ export async function getEventRounds(req: Request, res: Response) {
   }
 
   try {
-    // Check cache
+    // Check cache (graceful — skip if table doesn't exist)
     if (!forceRefresh) {
-      const cached = await prisma.eventCache.findUnique({ where: { eventId } });
-      if (cached && Date.now() - cached.updatedAt.getTime() < CACHE_TTL_MS) {
-        return res.json(cached.data);
+      try {
+        const cached = await prisma.eventCache.findUnique({ where: { eventId } });
+        if (cached && Date.now() - cached.updatedAt.getTime() < CACHE_TTL_MS) {
+          return res.json(cached.data);
+        }
+      } catch (cacheErr) {
+        console.warn('Cache read failed (table may not exist):', (cacheErr as any).message);
       }
     }
 
@@ -166,12 +170,16 @@ export async function getEventRounds(req: Request, res: Response) {
 
     const payload = { eventId, rounds: roundsData };
 
-    // Save to cache
-    await prisma.eventCache.upsert({
-      where: { eventId },
-      update: { data: payload as any, updatedAt: new Date() },
-      create: { eventId, data: payload as any },
-    });
+    // Save to cache (graceful — skip if table doesn't exist)
+    try {
+      await prisma.eventCache.upsert({
+        where: { eventId },
+        update: { data: payload as any, updatedAt: new Date() },
+        create: { eventId, data: payload as any },
+      });
+    } catch (cacheErr) {
+      console.warn('Cache write failed (table may not exist):', (cacheErr as any).message);
+    }
 
     return res.json(payload);
   } catch (err: any) {

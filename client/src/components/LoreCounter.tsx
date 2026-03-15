@@ -87,26 +87,33 @@ export function LoreCounter({ onClose, initialState }: LoreCounterProps) {
   const [winner, setWinner] = useState<'me' | 'opponent' | null>(initialState?.winner ?? null);
   const winnerRef = useRef<'me' | 'opponent' | null>(initialState?.winner ?? null);
 
-  const changeLore = useCallback((player: 'me' | 'opponent', delta: number) => {
-    if (winnerRef.current) return; // game is over
+  const myLoreRef = useRef(initialState?.myLore ?? 0);
+  const opponentLoreRef = useRef(initialState?.opponentLore ?? 0);
 
+  const changeLore = useCallback((player: 'me' | 'opponent', delta: number) => {
+    if (winnerRef.current) return;
+
+    const ref = player === 'me' ? myLoreRef : opponentLoreRef;
     const setter = player === 'me' ? setMyLore : setOpponentLore;
-    setter(prev => {
-      const next = Math.max(0, Math.min(MAX_LORE, prev + delta));
-      if (next !== prev) {
-        setRawHistory(h => [...h, { player, delta: next - prev, newValue: next, timestamp: Date.now() }]);
-        if (next >= MAX_LORE) {
-          winnerRef.current = player;
-          setWinner(player);
-        }
-      }
-      return next;
-    });
+    const prev = ref.current;
+    const next = Math.max(0, Math.min(MAX_LORE, prev + delta));
+    if (next === prev) return;
+
+    ref.current = next;
+    setter(next);
+    setRawHistory(h => [...h, { player, delta: next - prev, newValue: next, timestamp: Date.now() }]);
+
+    if (next >= MAX_LORE) {
+      winnerRef.current = player;
+      setWinner(player);
+    }
   }, []);
 
   const resetAll = () => {
     setMyLore(0);
     setOpponentLore(0);
+    myLoreRef.current = 0;
+    opponentLoreRef.current = 0;
     setRawHistory([]);
     setWinner(null);
     winnerRef.current = null;
@@ -116,8 +123,11 @@ export function LoreCounter({ onClose, initialState }: LoreCounterProps) {
   const undoLast = () => {
     if (rawHistory.length === 0) return;
     const last = rawHistory[rawHistory.length - 1];
+    const ref = last.player === 'me' ? myLoreRef : opponentLoreRef;
     const setter = last.player === 'me' ? setMyLore : setOpponentLore;
-    setter(last.newValue - last.delta);
+    const restored = last.newValue - last.delta;
+    ref.current = restored;
+    setter(restored);
     setRawHistory(h => h.slice(0, -1));
     if (winner) {
       setWinner(null);

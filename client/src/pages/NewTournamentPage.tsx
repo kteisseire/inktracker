@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, FormEvent } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { createTournament, updateTournament, getTournament } from '../api/tournaments.api.js';
 import { listDecks, extractDeckColors } from '../api/deck.api.js';
+import { fetchEventInfo, extractEventId } from '../api/ravensburger.api.js';
 import { InkColorPicker } from '../components/ui/InkColorPicker.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
 import { getRecommendedSwissRounds, getRecommendedTopCut } from '@lorcana/shared';
@@ -52,6 +53,8 @@ export function NewTournamentPage() {
   const [deckLinkStatus, setDeckLinkStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [deckLinkError, setDeckLinkError] = useState('');
   const [eventLink, setEventLink] = useState('');
+  const [eventFetching, setEventFetching] = useState(false);
+  const [eventFetchStatus, setEventFetchStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [placement, setPlacement] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -115,6 +118,76 @@ export function NewTournamentPage() {
     if (count && count >= 2) {
       setSwissRounds(String(getRecommendedSwissRounds(count)));
       setTopCut(getRecommendedTopCut(count));
+    }
+  };
+
+  const eventFetchRef = useRef(0);
+
+  const fetchEventData = useCallback(async (url: string) => {
+    const eventId = extractEventId(url);
+    if (!eventId) return;
+
+    const fetchId = ++eventFetchRef.current;
+    setEventFetching(true);
+    setEventFetchStatus('idle');
+    try {
+      const info = await fetchEventInfo(eventId);
+      if (fetchId !== eventFetchRef.current) return;
+
+      if (info.name && !name) setName(info.name);
+      if (info.location && !location) setLocation(info.location);
+      if (info.date) {
+        const d = info.date.split('T')[0];
+        if (!date || date === new Date().toISOString().split('T')[0]) setDate(d);
+      }
+      if (info.playerCount) {
+        setPlayerCount(String(info.playerCount));
+        setSwissRounds(String(getRecommendedSwissRounds(info.playerCount)));
+        setTopCut(getRecommendedTopCut(info.playerCount));
+      }
+      if (info.swissRounds) {
+        setSwissRounds(String(info.swissRounds));
+      }
+      if (info.format && format === 'BO3') {
+        setFormat(info.format);
+      }
+      setEventFetchStatus('success');
+    } catch {
+      if (fetchId === eventFetchRef.current) setEventFetchStatus('error');
+    } finally {
+      if (fetchId === eventFetchRef.current) setEventFetching(false);
+    }
+  }, [name, location, date, format]);
+
+  /** Re-fetch only player count and rounds (for refreshing during tournament) */
+  const refreshEventData = useCallback(async () => {
+    const eventId = extractEventId(eventLink);
+    if (!eventId) return;
+
+    setEventFetching(true);
+    try {
+      const info = await fetchEventInfo(eventId);
+      if (info.playerCount) {
+        setPlayerCount(String(info.playerCount));
+        setSwissRounds(String(getRecommendedSwissRounds(info.playerCount)));
+        setTopCut(getRecommendedTopCut(info.playerCount));
+      }
+      if (info.swissRounds) {
+        setSwissRounds(String(info.swissRounds));
+      }
+      setEventFetchStatus('success');
+    } catch {
+      setEventFetchStatus('error');
+    } finally {
+      setEventFetching(false);
+    }
+  }, [eventLink]);
+
+  const handleEventLinkChange = (value: string) => {
+    setEventLink(value);
+    setEventFetchStatus('idle');
+    if (value && extractEventId(value)) {
+      fetchEventData(value);
     }
   };
 
@@ -215,12 +288,42 @@ export function NewTournamentPage() {
 
         <div>
           <label className="ink-label">Lien du tournoi</label>
-          <input
-            type="url" value={eventLink} onChange={e => setEventLink(e.target.value)}
-            placeholder="https://tcg.ravensburgerplay.com/events/..."
-            className="ink-input text-sm"
-          />
-          <p className="text-xs text-ink-500 mt-1">Lien Ravensburger Play Hub (optionnel)</p>
+          <div className="relative">
+            <input
+              type="url" value={eventLink}
+              onChange={e => handleEventLinkChange(e.target.value)}
+              onPaste={e => {
+                const pasted = e.clipboardData.getData('text');
+                if (pasted && extractEventId(pasted)) {
+                  e.preventDefault();
+                  setEventLink(pasted);
+                  fetchEventData(pasted);
+                }
+              }}
+              placeholder="https://tcg.ravensburgerplay.com/events/..."
+              className="ink-input text-sm pr-20"
+            />
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+              {eventFetching && <span className="text-gold-400 text-sm animate-spin">&#9696;</span>}
+              {eventFetchStatus === 'success' && <span className="text-green-400 text-lg">&#10003;</span>}
+              {eventFetchStatus === 'error' && <span className="text-red-400 text-lg">&#10007;</span>}
+              {extractEventId(eventLink) && !eventFetching && (
+                <button
+                  type="button"
+                  onClick={refreshEventData}
+                  className="text-xs text-ink-400 hover:text-gold-400 transition-colors p-1"
+                  title="Rafraîchir les infos"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+          <p className="text-xs text-ink-500 mt-1">
+            Colle le lien Ravensburger Play Hub pour remplir automatiquement les infos
+          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

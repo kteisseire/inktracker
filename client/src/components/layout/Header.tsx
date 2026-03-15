@@ -7,6 +7,7 @@ const AUTH_LINKS = [
   { to: '/tournaments', label: 'Tournois', icon: '⚔' },
   { to: '/decks', label: 'Decks', icon: '♠' },
   { to: '/stats', label: 'Stats', icon: '▤' },
+  { to: '/teams', label: 'Équipes', icon: '⚑' },
   { to: '/lore-counter', label: 'Lore', icon: '✦' },
   { to: '/top-cut', label: 'Top Cut', icon: '✂' },
 ];

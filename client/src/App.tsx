@@ -17,6 +17,8 @@ import { DeckStatsPage } from './pages/DeckStatsPage.js';
 import { LoreCounterPage } from './pages/LoreCounterPage.js';
 import { TopCutCalculatorPage } from './pages/TopCutCalculatorPage.js';
 import { ProfilePage } from './pages/ProfilePage.js';
+import { TeamsPage } from './pages/TeamsPage.js';
+import { TeamDetailPage } from './pages/TeamDetailPage.js';
 
 const queryClient = new QueryClient();
 
@@ -50,6 +52,8 @@ function AppRoutes() {
       <Route path="/decks" element={<ProtectedRoute><Layout><DecksPage /></Layout></ProtectedRoute>} />
       <Route path="/decks/:deckId/stats" element={<ProtectedRoute><Layout><DeckStatsPage /></Layout></ProtectedRoute>} />
       <Route path="/stats" element={<ProtectedRoute><Layout><StatsPage /></Layout></ProtectedRoute>} />
+      <Route path="/teams" element={<ProtectedRoute><Layout><TeamsPage /></Layout></ProtectedRoute>} />
+      <Route path="/teams/:id" element={<ProtectedRoute><Layout><TeamDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Layout><ProfilePage /></Layout></ProtectedRoute>} />
 
       {/* Public tools */}

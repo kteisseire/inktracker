@@ -1,6 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.js';
 import { updateProfile, changePassword } from '../api/auth.api.js';
+import { listMyTeams, listMyInvites, respondToInvite } from '../api/team.api.js';
+import type { Team, TeamInvite } from '@lorcana/shared';
+
+const ROLE_LABELS: Record<string, string> = { OWNER: 'Propriétaire', ADMIN: 'Admin', MEMBER: 'Membre' };
 
 export function ProfilePage() {
   const { user, updateUser, logout } = useAuth();
@@ -19,7 +24,92 @@ export function ProfilePage() {
       </div>
 
       <ProfileForm user={user} onUpdate={updateUser} />
+      <TeamSection />
       <PasswordForm hasPassword={user.hasPassword} onLogout={logout} />
+    </div>
+  );
+}
+
+function TeamSection() {
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [invites, setInvites] = useState<TeamInvite[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    try {
+      const [t, i] = await Promise.all([listMyTeams(), listMyInvites()]);
+      setTeams(t);
+      setInvites(i);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const handleRespond = async (inviteId: string, accept: boolean) => {
+    await respondToInvite(inviteId, accept);
+    load();
+  };
+
+  return (
+    <div className="ink-card p-4 sm:p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-ink-300 uppercase tracking-wide">Équipes</h2>
+        <Link to="/teams" className="text-xs text-gold-400 hover:text-gold-300 transition-colors">
+          Gérer
+        </Link>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-4">
+          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gold-400"></div>
+        </div>
+      ) : (
+        <>
+          {/* Pending invites */}
+          {invites.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-xs text-ink-500">Invitations en attente</p>
+              {invites.map(inv => (
+                <div key={inv.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-ink-900/50">
+                  <span className="text-sm text-ink-200">{inv.team?.name}</span>
+                  <div className="flex gap-1.5">
+                    <button onClick={() => handleRespond(inv.id, true)} className="text-xs text-green-400 hover:text-green-300 font-medium">Accepter</button>
+                    <button onClick={() => handleRespond(inv.id, false)} className="text-xs text-ink-500 hover:text-ink-300">Refuser</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* My teams */}
+          {teams.length === 0 && invites.length === 0 ? (
+            <div className="text-center py-3">
+              <p className="text-sm text-ink-500 mb-2">Aucune équipe</p>
+              <Link to="/teams" className="text-xs text-gold-400 hover:text-gold-300 transition-colors">
+                Créer ou rejoindre une équipe
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {teams.map(team => (
+                <Link
+                  key={team.id}
+                  to={`/teams/${team.id}`}
+                  className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-ink-900/50 hover:bg-ink-800/50 transition-colors group"
+                >
+                  <div className="min-w-0">
+                    <span className="text-sm font-medium text-ink-200 group-hover:text-gold-400 transition-colors truncate block">{team.name}</span>
+                    <span className="text-[11px] text-ink-500">{team.memberCount} membre{(team.memberCount || 0) > 1 ? 's' : ''}</span>
+                  </div>
+                  <span className="text-[11px] text-ink-500">{ROLE_LABELS[team.myRole || 'MEMBER']}</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

@@ -2,10 +2,14 @@ import { useState, useEffect, FormEvent } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { createRound, updateRound } from '../api/matches.api.js';
 import { getTournament } from '../api/tournaments.api.js';
+import { extractEventId } from '../api/ravensburger.api.js';
+import { getEventScoutReports, upsertScoutReport } from '../api/scouting.api.js';
+import { listMyTeams } from '../api/team.api.js';
 import { InkColorPicker } from '../components/ui/InkColorPicker.js';
+import { DeckBadges } from '../components/ui/InkBadge.js';
 import { LoreCounter } from '../components/LoreCounter.js';
 import type { LoreResult, LoreState } from '../components/LoreCounter.js';
-import type { InkColor, MatchResult, Format, Round } from '@lorcana/shared';
+import type { InkColor, MatchResult, Format, Round, ScoutReport, Team } from '@lorcana/shared';
 
 interface GameInput {
   gameNumber: number;
@@ -51,7 +55,9 @@ export function NewMatchPage() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState('');
+  const [tournamentFormat, setTournamentFormat] = useState<Format>('BO1');
   const [format, setFormat] = useState<Format>('BO1');
+  const [tournamentSwissRounds, setTournamentSwissRounds] = useState(0);
 
   const [roundNumber, setRoundNumber] = useState('1');
   const [isTopCut, setIsTopCut] = useState(false);
@@ -63,10 +69,41 @@ export function NewMatchPage() {
   const [loreCounterGameIndex, setLoreCounterGameIndex] = useState<number | null>(null);
   const [loreStates, setLoreStates] = useState<Record<number, LoreState>>({});
 
+  // Scouting
+  const [eventId, setEventId] = useState<string | null>(null);
+  const [myTeams, setMyTeams] = useState<Team[]>([]);
+  const [scoutReports, setScoutReports] = useState<ScoutReport[]>([]);
+  const [scoutMatch, setScoutMatch] = useState<ScoutReport | null>(null);
+
+  useEffect(() => {
+    listMyTeams().then(setMyTeams).catch(() => {});
+  }, []);
+
+  // Load scout reports when eventId is known
+  useEffect(() => {
+    if (!eventId || myTeams.length === 0) return;
+    getEventScoutReports(eventId).then(setScoutReports).catch(() => {});
+  }, [eventId, myTeams]);
+
+  // Match opponent name to scout report
+  useEffect(() => {
+    if (!opponentName.trim() || scoutReports.length === 0) { setScoutMatch(null); return; }
+    const match = scoutReports.find(r => r.playerName.toLowerCase() === opponentName.trim().toLowerCase());
+    setScoutMatch(match || null);
+  }, [opponentName, scoutReports]);
+
   useEffect(() => {
     getTournament(tournamentId!).then(t => {
       const fmt = t.format as Format;
+      setTournamentFormat(fmt);
       setFormat(fmt);
+      setTournamentSwissRounds(t.swissRounds || 0);
+
+      // Extract eventId for scouting
+      if (t.eventLink) {
+        const eid = extractEventId(t.eventLink);
+        if (eid) setEventId(eid);
+      }
 
       if (isEdit) {
         const round = (t.rounds || []).find(r => r.id === roundId);
@@ -76,23 +113,46 @@ export function NewMatchPage() {
           setOpponentName(round.opponentName || '');
           setOpponentDeckColors(round.opponentDeckColors as InkColor[]);
           setNotes(round.notes || '');
-          setGames(roundToGameInputs(round, fmt));
-          // Try to detect toss from first game
+          // Detect format override from game count
+          const gameCount = (round.games || []).length;
+          const editFmt = gameCount > 3 ? 'BO5' : gameCount > 1 ? 'BO3' : fmt;
+          setFormat(editFmt);
+          setGames(roundToGameInputs(round, editFmt));
           const firstGame = (round.games || []).find(g => g.gameNumber === 1);
           if (firstGame?.wentFirst !== null && firstGame?.wentFirst !== undefined) {
             setTossWinner(firstGame.wentFirst);
           }
         }
       } else {
-        const max = maxGames(fmt);
-        setGames(Array.from({ length: max }, (_, i) => ({ gameNumber: i + 1, result: null, loserScore: '', wentFirstOverride: null })));
         const existingRounds = t.rounds || [];
         const maxRound = existingRounds.reduce((m, r) => Math.max(m, r.roundNumber), 0);
-        setRoundNumber(String(maxRound + 1));
+        const nextRound = maxRound + 1;
+        setRoundNumber(String(nextRound));
+
+        // Auto-detect top cut: if next round exceeds swiss rounds
+        const swissPlayed = existingRounds.filter(r => !r.isTopCut).length;
+        if (t.swissRounds > 0 && swissPlayed >= t.swissRounds) {
+          setIsTopCut(true);
+        }
+
+        const max = maxGames(fmt);
+        setGames(Array.from({ length: max }, (_, i) => ({ gameNumber: i + 1, result: null, loserScore: '', wentFirstOverride: null })));
       }
       setInitialLoading(false);
     });
   }, [tournamentId, roundId, isEdit]);
+
+  const handleFormatChange = (newFormat: Format) => {
+    setFormat(newFormat);
+    const newMax = maxGames(newFormat);
+    setGames(prev => {
+      // Keep existing results, expand or shrink
+      return Array.from({ length: newMax }, (_, i) => {
+        if (i < prev.length) return prev[i];
+        return { gameNumber: i + 1, result: null, loserScore: '', wentFirstOverride: null };
+      });
+    });
+  };
 
   function getAutoWentFirst(gameIndex: number): boolean | null {
     if (tossWinner === null) return null;
@@ -202,6 +262,19 @@ export function NewMatchPage() {
       } else {
         await createRound(tournamentId!, buildPayload());
       }
+
+      // Auto-report scout data if we have eventId, teams, opponent name and colors
+      if (eventId && myTeams.length > 0 && opponentName.trim() && opponentDeckColors.length > 0) {
+        for (const team of myTeams) {
+          upsertScoutReport({
+            teamId: team.id,
+            eventId,
+            playerName: opponentName.trim(),
+            deckColors: opponentDeckColors,
+          }).catch(() => {}); // Fire & forget
+        }
+      }
+
       navigate(`/tournaments/${tournamentId}`);
     } catch (err: any) {
       setError(err.response?.data?.error || (isEdit ? 'Erreur lors de la modification' : 'Erreur lors de l\'ajout'));
@@ -236,13 +309,49 @@ export function NewMatchPage() {
             <input type="number" required min="1" value={roundNumber}
               onChange={e => setRoundNumber(e.target.value)} className="ink-input" />
           </div>
-          <div className="flex items-end pb-2">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={isTopCut} onChange={e => setIsTopCut(e.target.checked)}
-                className="w-4 h-4 rounded bg-ink-800 border-ink-700 text-gold-500 focus:ring-gold-500/40" />
-              <span className="text-sm text-ink-300">Top Cut</span>
-            </label>
+          <div>
+            <label className="ink-label mb-2">Type</label>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setIsTopCut(false)}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all border-2 ${
+                  !isTopCut
+                    ? 'border-gold-500 bg-gold-500/10 text-gold-400'
+                    : 'border-ink-700/50 text-ink-400 hover:border-ink-600/50'
+                }`}>
+                Suisse
+              </button>
+              <button type="button" onClick={() => setIsTopCut(true)}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all border-2 ${
+                  isTopCut
+                    ? 'border-gold-500 bg-gold-500/10 text-gold-400'
+                    : 'border-ink-700/50 text-ink-400 hover:border-ink-600/50'
+                }`}>
+                Top Cut
+              </button>
+            </div>
           </div>
+        </div>
+
+        {/* Format override */}
+        <div>
+          <label className="ink-label mb-2">Format</label>
+          <div className="flex gap-2">
+            {(['BO1', 'BO3', 'BO5'] as Format[]).map(fmt => (
+              <button key={fmt} type="button" onClick={() => handleFormatChange(fmt)}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all border-2 ${
+                  format === fmt
+                    ? 'border-gold-500 bg-gold-500/10 text-gold-400'
+                    : 'border-ink-700/50 text-ink-400 hover:border-ink-600/50'
+                }`}>
+                {fmt === 'BO1' ? 'Bo1' : fmt === 'BO3' ? 'Bo3' : 'Bo5'}
+              </button>
+            ))}
+          </div>
+          {format !== tournamentFormat && (
+            <p className="text-xs text-ink-500 mt-1">
+              Format du tournoi : {tournamentFormat === 'BO1' ? 'Bo1' : tournamentFormat === 'BO3' ? 'Bo3' : 'Bo5'}
+            </p>
+          )}
         </div>
 
         <div>
@@ -253,6 +362,31 @@ export function NewMatchPage() {
 
         <div>
           <label className="ink-label mb-2">Deck adverse</label>
+          {scoutMatch && opponentDeckColors.length === 0 && (
+            <button
+              type="button"
+              onClick={() => setOpponentDeckColors(scoutMatch.deckColors as InkColor[])}
+              className="mb-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-lorcana-sapphire/10 border border-lorcana-sapphire/20 text-sm text-ink-200 hover:bg-lorcana-sapphire/15 transition-colors w-full"
+            >
+              <svg className="w-4 h-4 text-lorcana-sapphire shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              <span className="flex-1 text-left">
+                Scout : <DeckBadges colors={scoutMatch.deckColors as InkColor[]} />
+              </span>
+              <span className="text-xs text-ink-500 shrink-0">par {scoutMatch.reportedBy.username}</span>
+            </button>
+          )}
+          {scoutMatch && opponentDeckColors.length > 0 && (
+            <div className="mb-2 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-ink-900/50 text-xs text-ink-500">
+              <svg className="w-3.5 h-3.5 text-lorcana-sapphire shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              Scout par {scoutMatch.reportedBy.username} — {new Date(scoutMatch.updatedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          )}
           <InkColorPicker selected={opponentDeckColors} onChange={setOpponentDeckColors} />
         </div>
 
@@ -294,13 +428,6 @@ export function NewMatchPage() {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-bold text-ink-400">Match {game.gameNumber}</span>
-                      <button
-                        type="button"
-                        onClick={() => setLoreCounterGameIndex(index)}
-                        className="text-xs text-gold-400/70 hover:text-gold-400 transition-colors flex items-center gap-1 px-2 py-1 rounded-lg border border-gold-500/15 hover:border-gold-500/30 bg-gold-500/5"
-                      >
-                        <span>✦</span> Lore
-                      </button>
                     </div>
                     <div className="flex items-center gap-1 text-right">
                       {wentFirst !== null && (
@@ -327,6 +454,15 @@ export function NewMatchPage() {
                       )}
                     </div>
                   </div>
+
+                  {/* Lore counter button */}
+                  <button
+                    type="button"
+                    onClick={() => setLoreCounterGameIndex(index)}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 border-gold-500/25 bg-gold-500/5 text-gold-400 hover:bg-gold-500/10 hover:border-gold-500/40 active:scale-[0.98]"
+                  >
+                    <span className="text-base">✦</span> Compteur de Lore
+                  </button>
 
                   <div className="flex gap-3">
                     <button type="button" onClick={() => setGameResult(index, 'WIN')}

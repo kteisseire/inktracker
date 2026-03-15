@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { getRecommendedSwissRounds, getRecommendedTopCut } from '@lorcana/shared';
+
+const TOPCUT_VALUES: Record<string, number> = { NONE: 0, TOP4: 4, TOP8: 8, TOP16: 16, TOP32: 32 };
 
 function binomial(n: number, k: number): number {
   if (k < 0 || k > n) return 0;
@@ -43,14 +46,12 @@ function calculate(players: number, rounds: number, topCut: number): RecordRow[]
   return rows;
 }
 
-const COMMON_PRESETS = [
-  { label: '8 joueurs', players: 8, rounds: 3, topCut: 4 },
-  { label: '16 joueurs', players: 16, rounds: 4, topCut: 4 },
-  { label: '32 joueurs', players: 32, rounds: 5, topCut: 8 },
-  { label: '64 joueurs', players: 64, rounds: 6, topCut: 8 },
-  { label: '128 joueurs', players: 128, rounds: 7, topCut: 8 },
-  { label: '256 joueurs', players: 256, rounds: 8, topCut: 8 },
-];
+const COMMON_PRESETS = [8, 16, 32, 64, 128, 226].map(p => ({
+  label: `${p} joueurs`,
+  players: p,
+  rounds: getRecommendedSwissRounds(p),
+  topCut: TOPCUT_VALUES[getRecommendedTopCut(p)] || 0,
+}));
 
 export function TopCutCalculatorPage() {
   const [players, setPlayers] = useState('');
@@ -58,13 +59,23 @@ export function TopCutCalculatorPage() {
   const [topCut, setTopCut] = useState('');
   const [results, setResults] = useState<RecordRow[] | null>(null);
 
+  const handlePlayersChange = (value: string) => {
+    setPlayers(value);
+    const p = parseInt(value);
+    if (p && p >= 8) {
+      setRounds(String(getRecommendedSwissRounds(p)));
+      setTopCut(String(TOPCUT_VALUES[getRecommendedTopCut(p)] || 0));
+    }
+  };
+
   const handleCalculate = (e?: React.FormEvent) => {
     e?.preventDefault();
     const p = parseInt(players);
     const r = parseInt(rounds);
     const t = parseInt(topCut);
-    if (!p || !r || !t || p < 2 || r < 1 || t < 1 || t >= p) return;
-    setResults(calculate(p, r, t));
+    if (!p || !r || p < 2 || r < 1) return;
+    // topCut 0 means no top cut (e.g. 8 players = single-elim only)
+    setResults(calculate(p, r, Math.max(t || 0, 0)));
   };
 
   const applyPreset = (preset: typeof COMMON_PRESETS[0]) => {
@@ -79,7 +90,7 @@ export function TopCutCalculatorPage() {
       <div>
         <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide">Top Cut Calculator</h1>
         <p className="text-sm text-ink-500 mt-1">
-          Estimez quels records passent le cut dans un tournoi en format Suisse.
+          Estimez quels records passent le cut en format Suisse, basé sur les règles officielles Lorcana.
         </p>
       </div>
 
@@ -105,7 +116,7 @@ export function TopCutCalculatorPage() {
               type="number"
               min="2"
               value={players}
-              onChange={e => setPlayers(e.target.value)}
+              onChange={e => handlePlayersChange(e.target.value)}
               placeholder="64"
               className="ink-input"
               required

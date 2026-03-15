@@ -36,6 +36,18 @@ enum MatchResult {
   DRAW
 }
 
+enum TeamRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
 model User {
   id           String       @id @default(uuid())
   email        String       @unique
@@ -45,10 +57,59 @@ model User {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
-  tournaments Tournament[]
-  decks       Deck[]
+  tournaments   Tournament[]
+  decks         Deck[]
+  teamMembers   TeamMember[]
+  teamInvites   TeamInvite[] @relation("InvitedUser")
+  scoutReports  ScoutReport[]
 
   @@map("users")
+}
+
+model Team {
+  id          String       @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  members      TeamMember[]
+  invites      TeamInvite[]
+  scoutReports ScoutReport[]
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+  teamId    String
+  userId    String
+  role      TeamRole @default(MEMBER)
+  joinedAt  DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+  @@map("team_members")
+}
+
+model TeamInvite {
+  id        String       @id @default(uuid())
+  teamId    String
+  userId    String
+  status    InviteStatus @default(PENDING)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, name: "InvitedUser")
+
+  @@unique([teamId, userId])
+  @@index([userId])
+  @@map("team_invites")
 }
 
 model Deck {
@@ -133,4 +194,31 @@ model Game {
   @@unique([roundId, gameNumber])
   @@index([roundId])
   @@map("games")
+}
+
+model ScoutReport {
+  id           String     @id @default(uuid())
+  teamId       String
+  eventId      String
+  playerName   String
+  deckColors   InkColor[]
+  reportedById String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  team       Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  reportedBy User @relation(fields: [reportedById], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, eventId, playerName])
+  @@index([teamId, eventId])
+  @@map("scout_reports")
+}
+
+model EventCache {
+  id        String   @id @default(uuid())
+  eventId   String   @unique
+  data      Json
+  updatedAt DateTime @updatedAt
+
+  @@map("event_caches")
 }

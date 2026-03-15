@@ -2,7 +2,18 @@ export interface User {
   id: string;
   email: string;
   username: string;
+  hasPassword: boolean;
   createdAt: string;
+}
+
+export interface UpdateProfileRequest {
+  username?: string;
+  email?: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword?: string;
+  newPassword: string;
 }
 
 export interface AuthResponse {

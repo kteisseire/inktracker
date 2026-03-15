@@ -15,6 +15,7 @@ import { DecksPage } from './pages/DecksPage.js';
 import { DeckStatsPage } from './pages/DeckStatsPage.js';
 import { LoreCounterPage } from './pages/LoreCounterPage.js';
 import { TopCutCalculatorPage } from './pages/TopCutCalculatorPage.js';
+import { ProfilePage } from './pages/ProfilePage.js';
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ function AppRoutes() {
       <Route path="/decks" element={<ProtectedRoute><Layout><DecksPage /></Layout></ProtectedRoute>} />
       <Route path="/decks/:deckId/stats" element={<ProtectedRoute><Layout><DeckStatsPage /></Layout></ProtectedRoute>} />
       <Route path="/stats" element={<ProtectedRoute><Layout><StatsPage /></Layout></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute><Layout><ProfilePage /></Layout></ProtectedRoute>} />
       <Route path="/top-cut" element={<ProtectedRoute><Layout><TopCutCalculatorPage /></Layout></ProtectedRoute>} />
       <Route path="/lore-counter" element={<ProtectedRoute><LoreCounterPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />

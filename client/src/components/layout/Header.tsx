@@ -51,7 +51,7 @@ export function Header() {
                 })}
               </nav>
               <div className="flex items-center gap-3">
-                <span className="text-sm text-ink-400">{user.username}</span>
+                <Link to="/profile" className="text-sm text-ink-400 hover:text-gold-400 transition-colors">{user.username}</Link>
                 <button onClick={logout} className="text-sm text-ink-500 hover:text-ink-300 transition-colors">
                   Déconnexion
                 </button>
@@ -101,7 +101,7 @@ export function Header() {
             })}
           </nav>
           <div className="px-4 py-3 border-t border-ink-800/50 flex items-center justify-between">
-            <span className="text-sm text-ink-400">{user.username}</span>
+            <Link to="/profile" onClick={() => setMenuOpen(false)} className="text-sm text-ink-400 hover:text-gold-400 transition-colors">{user.username}</Link>
             <button onClick={() => { logout(); setMenuOpen(false); }} className="text-sm text-ink-500 hover:text-ink-300 transition-colors">
               Déconnexion
             </button>

@@ -25,7 +25,7 @@ export async function register(req: Request, res: Response) {
   });
 
   const token = signToken(user.id);
-  res.status(201).json({ user, token });
+  res.status(201).json({ user: { ...user, hasPassword: true }, token });
 }
 
 export async function login(req: Request, res: Response) {
@@ -39,7 +39,7 @@ export async function login(req: Request, res: Response) {
 
   const token = signToken(user.id);
   res.json({
-    user: { id: user.id, email: user.email, username: user.username, createdAt: user.createdAt },
+    user: { id: user.id, email: user.email, username: user.username, hasPassword: true, createdAt: user.createdAt },
     token,
   });
 }
@@ -93,7 +93,7 @@ export async function googleLogin(req: Request, res: Response) {
 
   const token = signToken(user!.id);
   res.json({
-    user: { id: user!.id, email: user!.email, username: user!.username, createdAt: user!.createdAt },
+    user: { id: user!.id, email: user!.email, username: user!.username, hasPassword: !!user!.passwordHash, createdAt: user!.createdAt },
     token,
   });
 }
@@ -101,11 +101,79 @@ export async function googleLogin(req: Request, res: Response) {
 export async function getMe(req: AuthRequest, res: Response) {
   const user = await prisma.user.findUnique({
     where: { id: req.userId },
-    select: { id: true, email: true, username: true, createdAt: true },
+    select: { id: true, email: true, username: true, passwordHash: true, createdAt: true },
   });
   if (!user) {
     res.status(404).json({ error: 'Utilisateur non trouvé' });
     return;
   }
-  res.json({ user });
+  res.json({ user: { id: user.id, email: user.email, username: user.username, hasPassword: !!user.passwordHash, createdAt: user.createdAt } });
+}
+
+export async function updateProfile(req: AuthRequest, res: Response) {
+  const { username, email } = req.body;
+  const data: any = {};
+  if (username) data.username = username;
+  if (email) data.email = email;
+
+  if (Object.keys(data).length === 0) {
+    res.status(400).json({ error: 'Aucune modification' });
+    return;
+  }
+
+  // Check uniqueness
+  if (username || email) {
+    const existing = await prisma.user.findFirst({
+      where: {
+        id: { not: req.userId },
+        OR: [
+          ...(username ? [{ username }] : []),
+          ...(email ? [{ email }] : []),
+        ],
+      },
+    });
+    if (existing) {
+      res.status(409).json({ error: 'Email ou nom d\'utilisateur déjà utilisé' });
+      return;
+    }
+  }
+
+  const user = await prisma.user.update({
+    where: { id: req.userId },
+    data,
+    select: { id: true, email: true, username: true, passwordHash: true, createdAt: true },
+  });
+
+  res.json({ user: { id: user.id, email: user.email, username: user.username, hasPassword: !!user.passwordHash, createdAt: user.createdAt } });
+}
+
+export async function changePassword(req: AuthRequest, res: Response) {
+  const { currentPassword, newPassword } = req.body;
+
+  const user = await prisma.user.findUnique({ where: { id: req.userId } });
+  if (!user) {
+    res.status(404).json({ error: 'Utilisateur non trouvé' });
+    return;
+  }
+
+  // If user has a password, verify current password
+  if (user.passwordHash) {
+    if (!currentPassword) {
+      res.status(400).json({ error: 'Mot de passe actuel requis' });
+      return;
+    }
+    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!valid) {
+      res.status(401).json({ error: 'Mot de passe actuel incorrect' });
+      return;
+    }
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+  await prisma.user.update({
+    where: { id: req.userId },
+    data: { passwordHash },
+  });
+
+  res.json({ message: 'Mot de passe mis à jour' });
 }

@@ -7,11 +7,33 @@ import type { Tournament, Round, Game } from '@lorcana/shared';
 
 const FORMAT_LABELS: Record<string, string> = { BO1: 'Bo1', BO3: 'Bo3', BO5: 'Bo5' };
 const TOPCUT_LABELS: Record<string, string> = { NONE: 'Aucun', TOP4: 'Top 4', TOP8: 'Top 8', TOP16: 'Top 16', TOP32: 'Top 32' };
+const TOPCUT_VALUES: Record<string, number> = { TOP4: 4, TOP8: 8, TOP16: 16, TOP32: 32 };
 const RESULT_STYLES: Record<string, { label: string; cls: string }> = {
   WIN: { label: 'V', cls: 'bg-green-500/15 text-green-400' },
   LOSS: { label: 'D', cls: 'bg-red-500/15 text-red-400' },
   DRAW: { label: 'N', cls: 'bg-ink-700/50 text-ink-400' },
 };
+
+function binomial(n: number, k: number): number {
+  if (k < 0 || k > n) return 0;
+  if (k === 0 || k === n) return 1;
+  let result = 1;
+  for (let i = 1; i <= k; i++) {
+    result *= (n + 1 - i);
+    result /= i;
+  }
+  return result;
+}
+
+function getTopCutThreshold(players: number, rounds: number, topCutSize: number): number {
+  let cumulative = 0;
+  for (let wins = rounds; wins >= 0; wins--) {
+    const count = players * binomial(rounds, wins) / Math.pow(2, rounds);
+    cumulative += count;
+    if (cumulative >= topCutSize) return wins;
+  }
+  return 0;
+}
 
 export function TournamentDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -119,6 +141,17 @@ export function TournamentDetailPage() {
         <InfoCard label="Joueurs" value={tournament.playerCount ?? '—'} className="hidden sm:block" />
       </div>
 
+      {/* Top Cut Progress */}
+      {tournament.topCut !== 'NONE' && tournament.playerCount && tournament.swissRounds > 0 && (
+        <TopCutProgress
+          playerCount={tournament.playerCount}
+          swissRounds={tournament.swissRounds}
+          topCutSize={TOPCUT_VALUES[tournament.topCut] || 8}
+          swissWins={swissRounds.filter(r => r.result === 'WIN').length}
+          swissPlayed={swissRounds.filter(r => r.result).length}
+        />
+      )}
+
       {tournament.placement && (
         <div className="ink-card p-3 sm:p-4 text-center text-sm border-gold-500/20">
           <span className="text-gold-400 font-medium">Classement final : #{tournament.placement}</span>
@@ -156,6 +189,65 @@ export function TournamentDetailPage() {
             <RoundsList title="Top Cut" rounds={topCutRounds} tournamentId={id!} format={tournament.format} onDelete={handleDeleteRound} />
           )}
         </>
+      )}
+    </div>
+  );
+}
+
+function TopCutProgress({ playerCount, swissRounds, topCutSize, swissWins, swissPlayed }: {
+  playerCount: number; swissRounds: number; topCutSize: number; swissWins: number; swissPlayed: number;
+}) {
+  const minWins = getTopCutThreshold(playerCount, swissRounds, topCutSize);
+  const requiredPoints = minWins * 3;
+  const currentPoints = swissWins * 3;
+  const maxPossiblePoints = currentPoints + (swissRounds - swissPlayed) * 3;
+  const progress = requiredPoints > 0 ? Math.min(currentPoints / requiredPoints, 1) : 1;
+  const roundsLeft = swissRounds - swissPlayed;
+
+  const isQualified = currentPoints >= requiredPoints;
+  const canStillMakeIt = maxPossiblePoints >= requiredPoints;
+  const isEliminated = !canStillMakeIt && roundsLeft > 0;
+  const tournamentDone = roundsLeft === 0;
+
+  let statusLabel: string;
+  let statusColor: string;
+  if (isQualified) {
+    statusLabel = 'Qualifié';
+    statusColor = 'text-green-400';
+  } else if (isEliminated) {
+    statusLabel = 'Éliminé';
+    statusColor = 'text-red-400';
+  } else if (tournamentDone && !isQualified) {
+    statusLabel = 'Bubble';
+    statusColor = 'text-gold-400';
+  } else {
+    statusLabel = `${requiredPoints - currentPoints} pts restants`;
+    statusColor = 'text-gold-400';
+  }
+
+  const barColor = isQualified ? 'bg-green-500' : isEliminated ? 'bg-red-400' : 'bg-gold-400';
+
+  return (
+    <div className="ink-card p-3 sm:p-4">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-medium text-ink-300">Top Cut — Top {topCutSize}</span>
+        <span className={`text-sm font-semibold ${statusColor}`}>{statusLabel}</span>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-3 bg-ink-800 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+            style={{ width: `${progress * 100}%` }}
+          />
+        </div>
+        <span className="text-sm font-bold text-ink-100 shrink-0 tabular-nums">
+          {currentPoints}<span className="text-ink-500 font-normal"> / {requiredPoints} pts</span>
+        </span>
+      </div>
+      {roundsLeft > 0 && !isQualified && !isEliminated && (
+        <p className="text-xs text-ink-500 mt-1.5">
+          {roundsLeft} ronde{roundsLeft > 1 ? 's' : ''} restante{roundsLeft > 1 ? 's' : ''} — max atteignable : {maxPossiblePoints} pts
+        </p>
       )}
     </div>
   );

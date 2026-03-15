@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext.js';
 import { Header } from './components/layout/Header.js';
 import { ProtectedRoute } from './components/layout/ProtectedRoute.js';
+import { LandingPage } from './pages/LandingPage.js';
 import { LoginPage } from './pages/LoginPage.js';
 import { RegisterPage } from './pages/RegisterPage.js';
 import { DashboardPage } from './pages/DashboardPage.js';
@@ -32,9 +33,14 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
-      <Route path="/register" element={user ? <Navigate to="/" replace /> : <RegisterPage />} />
-      <Route path="/" element={<ProtectedRoute><Layout><DashboardPage /></Layout></ProtectedRoute>} />
+      {/* Home: landing or dashboard */}
+      <Route path="/" element={user ? <Layout><DashboardPage /></Layout> : <Layout><LandingPage /></Layout>} />
+
+      {/* Auth pages (with header) */}
+      <Route path="/login" element={user ? <Navigate to="/" replace /> : <Layout><LoginPage /></Layout>} />
+      <Route path="/register" element={user ? <Navigate to="/" replace /> : <Layout><RegisterPage /></Layout>} />
+
+      {/* Protected pages */}
       <Route path="/tournaments" element={<ProtectedRoute><Layout><TournamentsPage /></Layout></ProtectedRoute>} />
       <Route path="/tournaments/new" element={<ProtectedRoute><Layout><NewTournamentPage /></Layout></ProtectedRoute>} />
       <Route path="/tournaments/:id" element={<ProtectedRoute><Layout><TournamentDetailPage /></Layout></ProtectedRoute>} />
@@ -45,8 +51,11 @@ function AppRoutes() {
       <Route path="/decks/:deckId/stats" element={<ProtectedRoute><Layout><DeckStatsPage /></Layout></ProtectedRoute>} />
       <Route path="/stats" element={<ProtectedRoute><Layout><StatsPage /></Layout></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Layout><ProfilePage /></Layout></ProtectedRoute>} />
+
+      {/* Public tools */}
       <Route path="/top-cut" element={<Layout><TopCutCalculatorPage /></Layout>} />
       <Route path="/lore-counter" element={<LoreCounterPage />} />
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

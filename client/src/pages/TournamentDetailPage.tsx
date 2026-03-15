@@ -25,14 +25,23 @@ function binomial(n: number, k: number): number {
   return result;
 }
 
-function getTopCutThreshold(players: number, rounds: number, topCutSize: number): number {
+function getTopCutThresholds(players: number, rounds: number, topCutSize: number): { safe: number; bubble: number } {
   let cumulative = 0;
+  let safe = rounds; // wins where everyone at that record passes
+  let bubble = rounds; // wins where at least some at that record pass
   for (let wins = rounds; wins >= 0; wins--) {
     const count = players * binomial(rounds, wins) / Math.pow(2, rounds);
+    const prevCumulative = cumulative;
     cumulative += count;
-    if (cumulative >= topCutSize) return wins;
+    if (prevCumulative < topCutSize && cumulative <= topCutSize) {
+      safe = wins; // all players at this record still fit
+    }
+    if (prevCumulative < topCutSize && cumulative > topCutSize) {
+      bubble = wins; // this is the bubble record
+      break;
+    }
   }
-  return 0;
+  return { safe, bubble };
 }
 
 export function TournamentDetailPage() {
@@ -197,55 +206,88 @@ export function TournamentDetailPage() {
 function TopCutProgress({ playerCount, swissRounds, topCutSize, swissWins, swissPlayed }: {
   playerCount: number; swissRounds: number; topCutSize: number; swissWins: number; swissPlayed: number;
 }) {
-  const minWins = getTopCutThreshold(playerCount, swissRounds, topCutSize);
-  const requiredPoints = minWins * 3;
+  const { safe, bubble } = getTopCutThresholds(playerCount, swissRounds, topCutSize);
+  const safePoints = safe * 3;
+  const bubblePoints = bubble * 3;
   const currentPoints = swissWins * 3;
-  const maxPossiblePoints = currentPoints + (swissRounds - swissPlayed) * 3;
-  const progress = requiredPoints > 0 ? Math.min(currentPoints / requiredPoints, 1) : 1;
   const roundsLeft = swissRounds - swissPlayed;
+  const maxPossiblePoints = currentPoints + roundsLeft * 3;
 
-  const isQualified = currentPoints >= requiredPoints;
-  const canStillMakeIt = maxPossiblePoints >= requiredPoints;
-  const isEliminated = !canStillMakeIt && roundsLeft > 0;
+  const isSafe = currentPoints >= safePoints;
+  const isBubble = !isSafe && currentPoints >= bubblePoints;
+  const canReachSafe = maxPossiblePoints >= safePoints;
+  const canReachBubble = maxPossiblePoints >= bubblePoints;
+  const isEliminated = !canReachBubble && roundsLeft > 0;
   const tournamentDone = roundsLeft === 0;
 
   let statusLabel: string;
   let statusColor: string;
-  if (isQualified) {
+  if (isSafe) {
     statusLabel = 'Qualifié';
     statusColor = 'text-green-400';
+  } else if (isBubble) {
+    statusLabel = 'Bubble';
+    statusColor = 'text-gold-400';
   } else if (isEliminated) {
     statusLabel = 'Éliminé';
     statusColor = 'text-red-400';
-  } else if (tournamentDone && !isQualified) {
-    statusLabel = 'Bubble';
-    statusColor = 'text-gold-400';
+  } else if (tournamentDone) {
+    statusLabel = 'Éliminé';
+    statusColor = 'text-red-400';
   } else {
-    statusLabel = `${requiredPoints - currentPoints} pts restants`;
-    statusColor = 'text-gold-400';
+    statusLabel = canReachSafe
+      ? `${safePoints - currentPoints} pts pour qualif. sûre`
+      : `${bubblePoints - currentPoints} pts pour bubble`;
+    statusColor = 'text-ink-400';
   }
 
-  const barColor = isQualified ? 'bg-green-500' : isEliminated ? 'bg-red-400' : 'bg-gold-400';
+  // Progress bar relative to safe threshold
+  const progress = safePoints > 0 ? Math.min(currentPoints / safePoints, 1) : 1;
+  const bubbleProgress = safePoints > 0 ? Math.min(bubblePoints / safePoints, 1) : 0;
+  const barColor = isSafe ? 'bg-green-500' : isBubble ? 'bg-gold-400' : isEliminated ? 'bg-red-400' : 'bg-lorcana-sapphire';
 
   return (
-    <div className="ink-card p-3 sm:p-4">
-      <div className="flex items-center justify-between mb-2">
+    <div className="ink-card p-3 sm:p-4 space-y-2">
+      <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-ink-300">Top Cut — Top {topCutSize}</span>
         <span className={`text-sm font-semibold ${statusColor}`}>{statusLabel}</span>
       </div>
-      <div className="flex items-center gap-3">
-        <div className="flex-1 h-3 bg-ink-800 rounded-full overflow-hidden">
+
+      {/* Progress bar with bubble marker */}
+      <div className="relative">
+        <div className="h-3 bg-ink-800 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-500 ${barColor}`}
             style={{ width: `${progress * 100}%` }}
           />
         </div>
-        <span className="text-sm font-bold text-ink-100 shrink-0 tabular-nums">
-          {currentPoints}<span className="text-ink-500 font-normal"> / {requiredPoints} pts</span>
-        </span>
+        {/* Bubble threshold marker */}
+        {bubblePoints < safePoints && (
+          <div
+            className="absolute top-0 w-0.5 h-3 bg-gold-400/60"
+            style={{ left: `${bubbleProgress * 100}%` }}
+            title={`Bubble: ${bubblePoints} pts`}
+          />
+        )}
       </div>
-      {roundsLeft > 0 && !isQualified && !isEliminated && (
-        <p className="text-xs text-ink-500 mt-1.5">
+
+      {/* Points labels */}
+      <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center gap-3">
+          <span className="text-ink-500">
+            <span className="font-bold text-ink-200 text-sm tabular-nums">{currentPoints}</span> pts
+          </span>
+        </div>
+        <div className="flex items-center gap-3 text-ink-500">
+          {bubblePoints < safePoints && (
+            <span>Bubble <span className="font-semibold text-gold-400">{bubblePoints}</span></span>
+          )}
+          <span>Qualif. <span className="font-semibold text-green-400">{safePoints}</span></span>
+        </div>
+      </div>
+
+      {roundsLeft > 0 && !isSafe && !isEliminated && (
+        <p className="text-xs text-ink-500">
           {roundsLeft} ronde{roundsLeft > 1 ? 's' : ''} restante{roundsLeft > 1 ? 's' : ''} — max atteignable : {maxPossiblePoints} pts
         </p>
       )}

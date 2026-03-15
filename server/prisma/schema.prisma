@@ -1,0 +1,136 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum InkColor {
+  AMBER
+  AMETHYST
+  EMERALD
+  RUBY
+  SAPPHIRE
+  STEEL
+}
+
+enum Format {
+  BO1
+  BO3
+  BO5
+}
+
+enum TopCut {
+  TOP32
+  TOP16
+  TOP8
+  TOP4
+  NONE
+}
+
+enum MatchResult {
+  WIN
+  LOSS
+  DRAW
+}
+
+model User {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  username     String       @unique
+  passwordHash String?
+  googleId     String?      @unique
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  tournaments Tournament[]
+  decks       Deck[]
+
+  @@map("users")
+}
+
+model Deck {
+  id          String     @id @default(uuid())
+  userId      String
+  name        String
+  colors      InkColor[]
+  link        String?
+  isDefault   Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tournaments Tournament[]
+
+  @@index([userId])
+  @@map("decks")
+}
+
+model Tournament {
+  id           String     @id @default(uuid())
+  userId       String
+  name         String
+  location     String?
+  date         DateTime
+  playerCount  Int?
+  swissRounds  Int
+  topCut       TopCut     @default(NONE)
+  format       Format     @default(BO1)
+  myDeckColors InkColor[]
+  myDeckLink   String?
+  deckId       String?
+  eventLink    String?
+  placement    Int?
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deck   Deck?   @relation(fields: [deckId], references: [id], onDelete: SetNull)
+  rounds Round[]
+
+  @@index([userId])
+  @@index([deckId])
+  @@map("tournaments")
+}
+
+model Round {
+  id                 String      @id @default(uuid())
+  tournamentId       String
+  roundNumber        Int
+  isTopCut           Boolean     @default(false)
+  opponentName       String?
+  opponentDeckColors InkColor[]
+  result             MatchResult
+  notes              String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  games      Game[]
+
+  @@unique([tournamentId, roundNumber, isTopCut])
+  @@index([tournamentId])
+  @@map("rounds")
+}
+
+model Game {
+  id            String      @id @default(uuid())
+  roundId       String
+  gameNumber    Int
+  result        MatchResult
+  wentFirst     Boolean?
+  myScore       Int         @default(0)
+  opponentScore Int         @default(0)
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  round Round @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  @@unique([roundId, gameNumber])
+  @@index([roundId])
+  @@map("games")
+}

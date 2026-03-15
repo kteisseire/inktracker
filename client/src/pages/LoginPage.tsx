@@ -28,25 +28,52 @@ export function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8 gap-8">
       {/* Hero */}
-      <div className="max-w-lg w-full text-center">
+      <div className="max-w-2xl w-full text-center">
         <div className="text-5xl mb-4 text-gold-400">&#9670;</div>
         <h1 className="font-display text-4xl tracking-wide">
           <span className="text-gold-400">Ink</span>
           <span className="text-ink-200">Tracker</span>
         </h1>
-        <p className="mt-3 text-ink-400 text-lg">
-          Suivez vos performances en tournois Disney Lorcana
+        <p className="mt-3 text-ink-300 text-lg">
+          L'outil complet pour suivre et analyser vos performances en tournois Disney Lorcana
+        </p>
+        <p className="mt-2 text-ink-500 text-sm max-w-lg mx-auto">
+          Enregistrez vos tournois ronde par ronde, analysez vos matchups, identifiez vos forces et améliorez votre jeu grâce à des statistiques détaillées.
         </p>
       </div>
 
-      {/* Features */}
-      <div className="max-w-lg w-full grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-        <FeaturePill icon="&#9876;" label="Tournois & rondes" />
-        <FeaturePill icon="&#9824;" label="Gestion de decks" />
-        <FeaturePill icon="&#9636;" label="Stats & matchups" />
-        <FeaturePill icon="&#10022;" label="Compteur de Lore" />
-        <FeaturePill icon="&#9986;" label="Top Cut Calculator" />
-        <FeaturePill icon="&#9670;" label="Filtrage par set" />
+      {/* Feature cards */}
+      <div className="max-w-2xl w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <FeatureCard
+          icon="&#9876;"
+          title="Suivi de tournois"
+          description="Enregistrez chaque tournoi avec vos rondes, résultats, scores de lore et notes. Compatible Bo1, Bo3, Bo5."
+        />
+        <FeatureCard
+          icon="&#9824;"
+          title="Gestion de decks"
+          description="Créez et organisez vos decks. Import automatique des couleurs depuis Dreamborn, Lorcanito, Inkdecks et plus."
+        />
+        <FeatureCard
+          icon="&#9636;"
+          title="Statistiques avancées"
+          description="Win rate global et par deck, analyse des matchups, impact du premier joueur. Filtrage par set Lorcana ou dates personnalisées."
+        />
+        <FeatureCard
+          icon="&#10022;"
+          title="Compteur de Lore"
+          description="Compteur plein écran optimisé mobile pour 2 joueurs avec historique des actions et détection automatique du gagnant à 20 lore."
+        />
+        <FeatureCard
+          icon="&#9986;"
+          title="Top Cut Calculator"
+          description="Calculez les records nécessaires pour passer le cut en format Suisse selon le nombre de joueurs et de rondes."
+        />
+        <FeatureCard
+          icon="&#9670;"
+          title="Progression Top Cut"
+          description="Suivez en direct vos points par rapport au seuil de qualification pendant vos tournois."
+        />
       </div>
 
       {/* Login form */}
@@ -84,17 +111,20 @@ export function LoginPage() {
       </div>
 
       <p className="text-xs text-ink-600 text-center max-w-sm">
-        Gratuit et open source. Vos donnees sont privees et accessibles uniquement par vous.
+        Gratuit et open source. Vos données sont privées et accessibles uniquement par vous.
       </p>
     </div>
   );
 }
 
-function FeaturePill({ icon, label }: { icon: string; label: string }) {
+function FeatureCard({ icon, title, description }: { icon: string; title: string; description: string }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-ink-800/40 border border-ink-700/30">
-      <span className="text-gold-400 text-sm">{icon}</span>
-      <span className="text-xs text-ink-300 font-medium">{label}</span>
+    <div className="flex gap-3 p-4 rounded-xl bg-ink-800/30 border border-ink-700/20">
+      <span className="text-xl text-gold-400 shrink-0 mt-0.5">{icon}</span>
+      <div>
+        <h3 className="text-sm font-semibold text-ink-100">{title}</h3>
+        <p className="text-xs text-ink-500 mt-1 leading-relaxed">{description}</p>
+      </div>
     </div>
   );
 }

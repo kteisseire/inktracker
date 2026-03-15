@@ -47,6 +47,32 @@ export function DashboardPage() {
         </div>
       )}
 
+      {/* Features */}
+      {stats && stats.totalTournaments === 0 && (
+        <div className="ink-card p-5 sm:p-6 space-y-4">
+          <div className="text-center">
+            <span className="text-3xl">&#9670;</span>
+            <h2 className="font-display text-lg sm:text-xl font-bold text-ink-100 mt-2">Bienvenue sur InkTracker</h2>
+            <p className="text-sm text-ink-400 mt-1">
+              L'outil complet pour suivre vos performances en tournois Disney Lorcana.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <FeatureCard icon="&#9876;" title="Suivi de tournois" description="Enregistrez vos tournois, rondes et parties avec le score de lore." />
+            <FeatureCard icon="&#9824;" title="Gestion de decks" description="Organisez vos decks, liez-les depuis Dreamborn, Lorcanito et plus." />
+            <FeatureCard icon="&#9636;" title="Statistiques" description="Win rate global, par deck, matchups, impact du premier joueur, filtrage par set." />
+            <FeatureCard icon="&#10022;" title="Compteur de Lore" description="Compteur plein écran pour 2 joueurs avec historique et détection auto du gagnant." />
+            <FeatureCard icon="&#9986;" title="Top Cut Calculator" description="Estimez les records nécessaires pour passer le cut en format Suisse." />
+            <FeatureCard icon="&#9670;" title="Suivi du Top Cut" description="Barre de progression en direct de vos points vers le seuil de qualification." />
+          </div>
+          <div className="text-center pt-2">
+            <Link to="/tournaments/new" className="ink-btn-primary px-6 py-2.5">
+              Créer mon premier tournoi
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Recent tournaments */}
       <div>
         <div className="flex items-center justify-between mb-4">
@@ -54,7 +80,11 @@ export function DashboardPage() {
           <Link to="/tournaments" className="text-gold-400 text-sm hover:text-gold-300 transition-colors">Voir tout</Link>
         </div>
 
-        {recentTournaments.length === 0 ? (
+        {recentTournaments.length === 0 && stats && stats.totalTournaments === 0 ? (
+          <div className="ink-card p-8 text-center text-ink-400">
+            <p>Aucun tournoi enregistré</p>
+          </div>
+        ) : recentTournaments.length === 0 ? (
           <div className="ink-card p-8 text-center text-ink-400">
             <p>Aucun tournoi enregistré</p>
             <Link to="/tournaments/new" className="text-gold-400 hover:text-gold-300 mt-2 inline-block transition-colors">
@@ -88,6 +118,18 @@ export function DashboardPage() {
             ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function FeatureCard({ icon, title, description }: { icon: string; title: string; description: string }) {
+  return (
+    <div className="flex gap-3 p-3 rounded-xl bg-ink-800/30">
+      <span className="text-xl text-gold-400 shrink-0 mt-0.5">{icon}</span>
+      <div>
+        <h3 className="text-sm font-semibold text-ink-100">{title}</h3>
+        <p className="text-xs text-ink-500 mt-0.5">{description}</p>
       </div>
     </div>
   );

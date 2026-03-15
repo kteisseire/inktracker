@@ -1,0 +1,16 @@
+[phases.setup]
+nixPkgs = ["nodejs_20", "npm-9_x"]
+
+[phases.install]
+cmds = ["npm install --workspace=packages/shared --workspace=server"]
+cacheDirectories = []
+
+[phases.build]
+cmds = [
+  "npm run build --workspace=packages/shared",
+  "npm run build --workspace=server",
+  "cd server && npx prisma generate"
+]
+
+[start]
+cmd = "cd server && node dist/index.js"

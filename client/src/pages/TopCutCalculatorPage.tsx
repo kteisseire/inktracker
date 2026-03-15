@@ -150,6 +150,7 @@ export function TopCutCalculatorPage() {
               <thead className="bg-ink-800/50 text-ink-400 uppercase text-xs">
                 <tr>
                   <th className="text-left px-4 py-3">Record</th>
+                  <th className="text-center px-4 py-3">Points</th>
                   <th className="text-center px-4 py-3">Joueurs</th>
                   <th className="text-center px-4 py-3">Cumulé</th>
                   <th className="text-center px-4 py-3">Statut</th>
@@ -160,6 +161,9 @@ export function TopCutCalculatorPage() {
                   <tr key={`${r.wins}-${r.losses}`} className={rowBg(r.status)}>
                     <td className="px-4 py-3 font-semibold text-ink-100">
                       {r.wins}-{r.losses}
+                    </td>
+                    <td className="text-center px-4 py-3 text-gold-400 font-medium">
+                      {r.wins * 3}
                     </td>
                     <td className="text-center px-4 py-3 text-ink-300">
                       {formatCount(r.count)}
@@ -181,7 +185,10 @@ export function TopCutCalculatorPage() {
             {results.map(r => (
               <div key={`${r.wins}-${r.losses}`} className={`ink-card p-3 ${rowBg(r.status)}`}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold text-ink-100 text-lg">{r.wins}-{r.losses}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold text-ink-100 text-lg">{r.wins}-{r.losses}</span>
+                    <span className="text-sm font-medium text-gold-400">{r.wins * 3} pts</span>
+                  </div>
                   <StatusBadge status={r.status} />
                 </div>
                 <div className="flex items-center justify-between text-xs text-ink-400">

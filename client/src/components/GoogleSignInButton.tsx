@@ -34,7 +34,7 @@ export function GoogleSignInButton() {
 
   const handleClick = () => {
     if (!window.google) return;
-    window.google.accounts.id.prompt();
+    (window.google.accounts.id as any).prompt();
   };
 
   return (

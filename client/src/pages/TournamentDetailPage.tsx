@@ -1,13 +1,17 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getTournament, deleteTournament, updateTournament } from '../api/tournaments.api.js';
 import { createRound, updateRound, deleteRound } from '../api/matches.api.js';
 import { fetchEventInfo, fetchEventRounds, extractEventId } from '../api/ravensburger.api.js';
 import type { RavensburgerEventInfo, EventRoundsData, EventRound, EventStanding, EventMatch } from '../api/ravensburger.api.js';
 import { useAuth } from '../context/AuthContext.js';
-import { DeckBadges, ScoutDeckBadges } from '../components/ui/InkBadge.js';
-import { getEventScoutReports } from '../api/scouting.api.js';
-import type { Tournament, Round, Game, MatchResult, ScoutReport, InkColor } from '@lorcana/shared';
+import { DeckBadges, ScoutDeckBadges, ScoutPicker } from '../components/ui/InkBadge.js';
+import { INK_COLORS_CONFIG } from '../lib/colors.js';
+import { getEventScoutReports, upsertScoutReport, createPotentialDecks as createPotentialDecksApi } from '../api/scouting.api.js';
+import { listMyTeams } from '../api/team.api.js';
+import { INK_COLORS } from '@lorcana/shared';
+import type { Tournament, Round, Game, MatchResult, ScoutReport, InkColor, Team, PotentialDeck } from '@lorcana/shared';
 
 const FORMAT_LABELS: Record<string, string> = { BO1: 'Bo1', BO3: 'Bo3', BO5: 'Bo5' };
 const TOPCUT_LABELS: Record<string, string> = { NONE: 'Aucun', TOP4: 'Top 4', TOP8: 'Top 8', TOP16: 'Top 16', TOP32: 'Top 32' };
@@ -58,14 +62,14 @@ export function TournamentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>('rounds');
   const [roundsScoutMap, setRoundsScoutMap] = useState<Map<string, ScoutReport>>(new Map());
+  const [roundsPotentialDecks, setRoundsPotentialDecks] = useState<PotentialDeck[]>([]);
 
   const load = () => {
     getTournament(id!).then(t => {
       setTournament(t);
 
-      // Build scout map from local round data + remote scout reports
+      // Build scout map from local round data
       const map = new Map<string, ScoutReport>();
-      // Local rounds as fallback
       for (const r of (t.rounds || [])) {
         if (r.opponentName && r.opponentDeckColors && r.opponentDeckColors.length > 0) {
           const key = r.opponentName.toLowerCase();
@@ -81,14 +85,15 @@ export function TournamentDetailPage() {
       }
       setRoundsScoutMap(map);
 
-      // Load remote scout reports (override local)
+      // Load remote scout reports + potential decks
       if (t.eventLink) {
         const eid = extractEventId(t.eventLink);
         if (eid) {
-          getEventScoutReports(eid).then(reports => {
+          getEventScoutReports(eid).then(({ reports, potentialDecks: pd }) => {
             const merged = new Map(map);
             for (const r of reports) merged.set(r.playerName.toLowerCase(), r);
             setRoundsScoutMap(merged);
+            setRoundsPotentialDecks(pd);
           }).catch(() => {});
         }
       }
@@ -96,6 +101,26 @@ export function TournamentDetailPage() {
   };
 
   useEffect(() => { load(); }, [id]);
+
+  // Build possibleDecks for "Mes rondes" from potentialDecks
+  // For a player: if they have a certain ScoutReport, show that. Otherwise show all PotentialDecks where they appear.
+  const roundsPossibleDecks = useMemo(() => {
+    const pd = new Map<string, PotentialDeck[]>();
+    for (const deck of roundsPotentialDecks) {
+      const p1 = deck.player1Name.toLowerCase();
+      const p2 = deck.player2Name.toLowerCase();
+      // Only show potential decks if the player doesn't have a certain scout report
+      if (!roundsScoutMap.has(p1) || roundsScoutMap.get(p1)!.id === '') {
+        if (!pd.has(p1)) pd.set(p1, []);
+        pd.get(p1)!.push(deck);
+      }
+      if (!roundsScoutMap.has(p2) || roundsScoutMap.get(p2)!.id === '') {
+        if (!pd.has(p2)) pd.set(p2, []);
+        pd.get(p2)!.push(deck);
+      }
+    }
+    return pd;
+  }, [roundsScoutMap, roundsPotentialDecks]);
 
   const handleDeleteTournament = async () => {
     if (!confirm('Supprimer ce tournoi et toutes ses rondes ?')) return;
@@ -167,42 +192,44 @@ export function TournamentDetailPage() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <Link to="/tournaments" className="text-sm text-ink-500 hover:text-gold-400 transition-colors">&larr; Retour</Link>
-          <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide mt-1 truncate">{tournament.name}</h1>
-          <p className="text-ink-400 text-sm mt-1">
-            {new Date(tournament.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-            {tournament.location && ` — ${tournament.location}`}
-          </p>
-          <div className="flex items-center gap-3 mt-1">
-            <a
-              href={tournament.eventLink || 'https://tcg.ravensburgerplay.com/my-events'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs text-lorcana-sapphire hover:text-blue-300 transition-colors"
-            >
-              {tournament.eventLink ? 'Voir sur Ravensburger Play Hub' : 'Mes événements Ravensburger'}
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-            </a>
-            {hasEventLink && (
-              <button
-                onClick={handleRefreshEvent}
-                disabled={refreshing}
-                className="inline-flex items-center gap-1 text-xs text-ink-500 hover:text-gold-400 transition-colors disabled:opacity-50"
-                title="Rafraîchir les infos du tournoi"
-              >
-                <svg className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                {refreshing ? 'Mise à jour...' : 'Actualiser'}
-              </button>
-            )}
-          </div>
+      <div>
+        <Link to="/tournaments" className="text-sm text-ink-500 hover:text-gold-400 transition-colors">&larr; Retour</Link>
+        <div className="flex items-center justify-between gap-3 mt-1">
+          <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide truncate min-w-0">{tournament.name}</h1>
+          <DropdownMenu
+            items={[
+              { label: 'Modifier', onClick: () => navigate(`/tournaments/${id}/edit`) },
+              { label: 'Supprimer', onClick: handleDeleteTournament, danger: true },
+            ]}
+          />
         </div>
-        <div className="flex items-center gap-2 shrink-0 mt-6">
-          <Link to={`/tournaments/${id}/edit`} className="text-sm text-ink-400 hover:text-gold-400 transition-colors">Modifier</Link>
-          <button onClick={handleDeleteTournament} className="text-sm text-lorcana-ruby/70 hover:text-lorcana-ruby transition-colors">Supprimer</button>
+        <p className="text-ink-400 text-sm mt-1">
+          {new Date(tournament.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          {tournament.location && ` — ${tournament.location}`}
+        </p>
+        <div className="flex items-center gap-3 mt-1">
+          <a
+            href={tournament.eventLink || 'https://tcg.ravensburgerplay.com/my-events'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-lorcana-sapphire hover:text-blue-300 transition-colors"
+          >
+            {tournament.eventLink ? 'Voir sur Ravensburger Play Hub' : 'Mes événements Ravensburger'}
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+          </a>
+          {hasEventLink && (
+            <button
+              onClick={handleRefreshEvent}
+              disabled={refreshing}
+              className="inline-flex items-center gap-1 text-xs text-ink-500 hover:text-gold-400 transition-colors disabled:opacity-50"
+              title="Rafraîchir les infos du tournoi"
+            >
+              <svg className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              {refreshing ? 'Mise à jour...' : 'Actualiser'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -286,7 +313,7 @@ export function TournamentDetailPage() {
         <div className="space-y-5">
           <div className="flex items-center justify-between">
             <h2 className="ink-section-title">Rondes</h2>
-            <Link to={`/tournaments/${id}/rounds/new`} className="ink-btn-primary text-sm px-4 py-2">+ Ronde</Link>
+            <Link to={`/tournaments/${id}/rounds/new`} className="shrink-0 whitespace-nowrap text-sm font-semibold px-4 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 text-ink-950 hover:from-gold-400 hover:to-gold-300 transition-all">+ Ronde</Link>
           </div>
 
           {rounds.length === 0 ? (
@@ -294,10 +321,10 @@ export function TournamentDetailPage() {
           ) : (
             <>
               {swissRounds.length > 0 && (
-                <RoundsList title="Rondes suisses" rounds={swissRounds} tournamentId={id!} format={tournament.format} onDelete={handleDeleteRound} scoutMap={roundsScoutMap} />
+                <RoundsList title="Rondes suisses" rounds={swissRounds} tournamentId={id!} format={tournament.format} onDelete={handleDeleteRound} scoutMap={roundsScoutMap} possibleDecks={roundsPossibleDecks} />
               )}
               {topCutRounds.length > 0 && (
-                <RoundsList title="Top Cut" rounds={topCutRounds} tournamentId={id!} format={tournament.format} onDelete={handleDeleteRound} scoutMap={roundsScoutMap} />
+                <RoundsList title="Top Cut" rounds={topCutRounds} tournamentId={id!} format={tournament.format} onDelete={handleDeleteRound} scoutMap={roundsScoutMap} possibleDecks={roundsPossibleDecks} />
               )}
             </>
           )}
@@ -405,17 +432,18 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
 }) {
   const eventId = extractEventId(eventLink)!;
   const [data, setData] = useState<EventRoundsData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingPlayHub, setLoadingPlayHub] = useState(true);
+  const [loadingDb, setLoadingDb] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'standings' | 'matches'>('standings');
   const [scoutReports, setScoutReports] = useState<ScoutReport[]>([]);
+  const [potentialDecks, setPotentialDecks] = useState<PotentialDeck[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
 
-  // Build a lookup map: playerName (lowercase) -> ScoutReport
-  // Merge scout reports + local round opponentDeckColors as fallback
+  // Build a lookup map: playerName (lowercase) -> ScoutReport (certain decks only)
   const scoutMap = new Map<string, ScoutReport>();
-  // First, add local round data as pseudo-reports
   for (const r of existingRounds) {
     if (r.opponentName && r.opponentDeckColors && r.opponentDeckColors.length > 0) {
       const key = r.opponentName.toLowerCase();
@@ -434,13 +462,31 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
       }
     }
   }
-  // Then, scout reports override local data (more authoritative, from team)
   for (const r of scoutReports) {
     scoutMap.set(r.playerName.toLowerCase(), r);
   }
 
+  // Build possibleDecks from PotentialDeck records
+  // For each player: show potential decks only if no certain ScoutReport exists
+  const possibleDecks = useMemo(() => {
+    const pd = new Map<string, PotentialDeck[]>();
+    for (const deck of potentialDecks) {
+      const p1 = deck.player1Name.toLowerCase();
+      const p2 = deck.player2Name.toLowerCase();
+      if (!scoutMap.has(p1) || scoutMap.get(p1)!.id === '') {
+        if (!pd.has(p1)) pd.set(p1, []);
+        pd.get(p1)!.push(deck);
+      }
+      if (!scoutMap.has(p2) || scoutMap.get(p2)!.id === '') {
+        if (!pd.has(p2)) pd.set(p2, []);
+        pd.get(p2)!.push(deck);
+      }
+    }
+    return pd;
+  }, [potentialDecks, scoutReports, existingRounds]);
+
   const loadRounds = useCallback(async (refresh = false) => {
-    if (refresh) setRefreshing(true); else setLoading(true);
+    if (refresh) setRefreshing(true); else setLoadingPlayHub(true);
     try {
       const result = await fetchEventRounds(eventId, refresh);
       setData(result);
@@ -454,17 +500,42 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
     } catch {
       // silently fail
     } finally {
-      setLoading(false);
+      setLoadingPlayHub(false);
       setRefreshing(false);
     }
   }, [eventId]);
 
   useEffect(() => { loadRounds(); }, [loadRounds]);
 
-  // Load scout reports
+  // Load scout reports + potential decks + teams in parallel
   useEffect(() => {
-    getEventScoutReports(eventId).then(setScoutReports).catch(() => {});
+    setLoadingDb(true);
+    Promise.all([
+      getEventScoutReports(eventId).catch(() => ({ reports: [] as ScoutReport[], potentialDecks: [] as PotentialDeck[] })),
+      listMyTeams().catch(() => [] as Team[]),
+    ]).then(([scoutData, myTeams]) => {
+      setScoutReports(scoutData.reports);
+      setPotentialDecks(scoutData.potentialDecks);
+      setTeams(myTeams);
+    }).finally(() => setLoadingDb(false));
   }, [eventId]);
+
+  const handleScout: ScoutHandler = async (playerName, colors, teamId) => {
+    const report = await upsertScoutReport({ teamId, eventId, playerName, deckColors: colors });
+    setScoutReports(prev => {
+      const next = prev.filter(r => r.playerName.toLowerCase() !== playerName.toLowerCase() || r.teamId !== teamId);
+      return [...next, report];
+    });
+  };
+
+  const handlePotentialDecks = async (teamId: string, roundNumber: number, tableNumber: number, player1Name: string, player2Name: string, decks: InkColor[][]) => {
+    const results = await createPotentialDecksApi({ teamId, eventId, roundNumber, tableNumber, player1Name, player2Name, decks });
+    setPotentialDecks(prev => {
+      // Remove old entries for this table/round, add new ones
+      const filtered = prev.filter(d => !(d.teamId === teamId && d.roundNumber === roundNumber && d.tableNumber === tableNumber));
+      return [...filtered, ...results];
+    });
+  };
 
   // Compute sync diff
   const syncDiff = data && username ? data.rounds
@@ -539,10 +610,11 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
     }
   };
 
-  if (loading) {
+  if (loadingPlayHub || loadingDb) {
     return (
-      <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold-400"></div>
+      <div className="space-y-3 py-6">
+        <LoadingStep label="Chargement des données du tournoi" done={!loadingPlayHub} />
+        <LoadingStep label="Chargement des rapports de scouting" done={!loadingDb} />
       </div>
     );
   }
@@ -654,15 +726,73 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
       </div>
 
       {viewMode === 'standings' ? (
-        <StandingsView standings={currentRound.standings} roundNumber={currentRound.roundNumber} username={username} scoutMap={scoutMap} />
+        <StandingsView standings={currentRound.standings} roundNumber={currentRound.roundNumber} username={username} scoutMap={scoutMap} possibleDecks={possibleDecks} teams={teams} eventId={eventId} onScout={handleScout} />
       ) : (
-        <MatchesView matches={currentRound.matches} roundNumber={currentRound.roundNumber} username={username} scoutMap={scoutMap} />
+        <MatchesView matches={currentRound.matches} roundNumber={currentRound.roundNumber} username={username} scoutMap={scoutMap} possibleDecks={possibleDecks} teams={teams} eventId={eventId} onScout={handleScout} onPotentialDecks={handlePotentialDecks} />
       )}
     </div>
   );
 }
 
-function StandingsView({ standings, roundNumber, username, scoutMap }: { standings: EventStanding[]; roundNumber: number; username: string; scoutMap: Map<string, ScoutReport> }) {
+const PAGE_SIZE = 50;
+
+function SearchBar({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
+  return (
+    <div className="relative">
+      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <input
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full pl-9 pr-3 py-2 bg-ink-900/50 border border-ink-700/50 rounded-lg text-sm text-ink-100 placeholder-ink-600 focus:outline-none focus:border-gold-500/40 transition-colors"
+      />
+      {value && (
+        <button onClick={() => onChange('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-500 hover:text-ink-300 text-xs">
+          &times;
+        </button>
+      )}
+    </div>
+  );
+}
+
+function Pagination({ page, totalPages, onPageChange }: { page: number; totalPages: number; onPageChange: (p: number) => void }) {
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex items-center justify-center gap-2">
+      <button
+        onClick={() => onPageChange(page - 1)}
+        disabled={page === 1}
+        className="px-3 py-1.5 rounded-lg text-xs font-medium text-ink-400 hover:text-ink-200 bg-ink-800/50 hover:bg-ink-700/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+      >
+        &larr;
+      </button>
+      <span className="text-xs text-ink-500">
+        {page} / {totalPages}
+      </span>
+      <button
+        onClick={() => onPageChange(page + 1)}
+        disabled={page === totalPages}
+        className="px-3 py-1.5 rounded-lg text-xs font-medium text-ink-400 hover:text-ink-200 bg-ink-800/50 hover:bg-ink-700/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+      >
+        &rarr;
+      </button>
+    </div>
+  );
+}
+
+type ScoutHandler = (playerName: string, colors: InkColor[], teamId: string) => Promise<void>;
+type PotentialDecksHandler = (teamId: string, roundNumber: number, tableNumber: number, player1Name: string, player2Name: string, decks: InkColor[][]) => Promise<void>;
+
+function StandingsView({ standings, roundNumber, username, scoutMap, possibleDecks, teams, eventId, onScout }: { standings: EventStanding[]; roundNumber: number; username: string; scoutMap: Map<string, ScoutReport>; possibleDecks: Map<string, PotentialDeck[]>; teams: Team[]; eventId: string; onScout: ScoutHandler }) {
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+
+  // Reset page when search changes
+  useEffect(() => { setPage(1); }, [search]);
+
   if (standings.length === 0) {
     return <div className="ink-card p-6 text-center text-ink-400">Aucun classement pour cette ronde</div>;
   }
@@ -670,8 +800,22 @@ function StandingsView({ standings, roundNumber, username, scoutMap }: { standin
   const isMe = (name: string) => username && name.toLowerCase() === username.toLowerCase();
   const getScout = (name: string) => scoutMap.get(name.toLowerCase());
 
+  const query = search.toLowerCase().trim();
+  const filtered = query
+    ? standings.filter(s => s.playerName.toLowerCase().includes(query))
+    : standings;
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
     <div className="space-y-3">
+      <SearchBar value={search} onChange={setSearch} placeholder="Rechercher un joueur..." />
+
+      {query && (
+        <p className="text-xs text-ink-500">{filtered.length} résultat{filtered.length !== 1 ? 's' : ''}</p>
+      )}
+
       {/* Desktop table */}
       <div className="ink-card overflow-hidden hidden sm:block">
         <table className="w-full text-sm">
@@ -688,19 +832,20 @@ function StandingsView({ standings, roundNumber, username, scoutMap }: { standin
             </tr>
           </thead>
           <tbody className="divide-y divide-ink-800/50">
-            {standings.map((s, i) => {
+            {paginated.map((s, i) => {
               const me = isMe(s.playerName);
               const scout = getScout(s.playerName);
               return (
-                <tr key={i} className={me ? 'bg-gold-400/10 border-l-2 border-l-gold-400' : i < 3 ? 'bg-gold-400/5' : ''}>
+                <tr key={s.rank} className={me ? 'bg-gold-400/10 border-l-2 border-l-gold-400' : s.rank <= 3 ? 'bg-gold-400/5' : ''}>
                   <td className="text-center px-3 py-2.5 font-bold text-ink-500">{s.rank}</td>
                   <td className={`px-3 py-2.5 font-medium max-w-[250px] ${me ? 'text-gold-400' : 'text-ink-100'}`}>
-                    <div className="truncate">{s.playerName}</div>
-                    {scout && (
-                      <div className="mt-0.5">
-                        <ScoutDeckBadges scout={scout} />
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="truncate">{s.playerName}</span>
+                      <ScoutDeckBadges scout={scout} possibleDecks={possibleDecks.get(s.playerName.toLowerCase())} />
+                      {teams.length > 0 && (
+                        <ScoutPicker playerName={s.playerName} teams={teams} eventId={eventId} existingColors={scout?.deckColors} onSaved={onScout} />
+                      )}
+                    </div>
                   </td>
                   <td className="text-center px-3 py-2.5 text-ink-300 font-medium">{s.record}</td>
                   <td className="text-center px-3 py-2.5 text-gold-400 font-semibold">{s.totalPoints}</td>
@@ -717,19 +862,20 @@ function StandingsView({ standings, roundNumber, username, scoutMap }: { standin
 
       {/* Mobile cards */}
       <div className="sm:hidden space-y-1.5">
-        {standings.map((s, i) => {
+        {paginated.map((s, i) => {
           const me = isMe(s.playerName);
           const scout = getScout(s.playerName);
           return (
-            <div key={i} className={`ink-card px-3 py-2.5 flex items-center gap-3 ${me ? 'border-gold-500/30 bg-gold-400/5' : i < 3 ? 'border-gold-500/20' : ''}`}>
+            <div key={s.rank} className={`ink-card px-3 py-2.5 flex items-center gap-3 ${me ? 'border-gold-500/30 bg-gold-400/5' : s.rank <= 3 ? 'border-gold-500/20' : ''}`}>
               <span className="text-sm font-bold text-ink-500 w-6 text-center shrink-0">{s.rank}</span>
               <div className="flex-1 min-w-0">
-                <div className={`font-medium text-sm truncate ${me ? 'text-gold-400' : 'text-ink-100'}`}>{s.playerName}</div>
-                {scout && (
-                  <div className="mt-0.5">
-                    <ScoutDeckBadges scout={scout} />
-                  </div>
-                )}
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className={`font-medium text-sm truncate ${me ? 'text-gold-400' : 'text-ink-100'}`}>{s.playerName}</span>
+                  <ScoutDeckBadges scout={scout} possibleDecks={possibleDecks.get(s.playerName.toLowerCase())} />
+                  {teams.length > 0 && (
+                    <ScoutPicker playerName={s.playerName} teams={teams} eventId={eventId} existingColors={scout?.deckColors} onSaved={onScout} />
+                  )}
+                </div>
                 <div className="text-xs text-ink-500 mt-0.5">
                   R{roundNumber}: {s.matchRecord}
                   <span className="mx-1.5">·</span>
@@ -744,11 +890,19 @@ function StandingsView({ standings, roundNumber, username, scoutMap }: { standin
           );
         })}
       </div>
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }
 
-function MatchesView({ matches, roundNumber, username, scoutMap }: { matches: EventMatch[]; roundNumber: number; username: string; scoutMap: Map<string, ScoutReport> }) {
+function MatchesView({ matches, roundNumber, username, scoutMap, possibleDecks, teams, eventId, onScout, onPotentialDecks }: { matches: EventMatch[]; roundNumber: number; username: string; scoutMap: Map<string, ScoutReport>; possibleDecks: Map<string, PotentialDeck[]>; teams: Team[]; eventId: string; onScout: ScoutHandler; onPotentialDecks: PotentialDecksHandler }) {
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [selectedMatch, setSelectedMatch] = useState<EventMatch | null>(null);
+
+  useEffect(() => { setPage(1); }, [search]);
+
   if (matches.length === 0) {
     return <div className="ink-card p-6 text-center text-ink-400">Aucun match pour cette ronde</div>;
   }
@@ -765,9 +919,28 @@ function MatchesView({ matches, roundNumber, username, scoutMap }: { matches: Ev
       })
     : matches;
 
+  const query = search.toLowerCase().trim();
+  const filtered = query
+    ? sorted.filter(m => {
+        if (m.players.some(p => p.playerName.toLowerCase().includes(query))) return true;
+        if (m.table > 0 && `t${m.table}` === query) return true;
+        if (m.table > 0 && String(m.table) === query) return true;
+        return false;
+      })
+    : sorted;
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
     <div className="space-y-2">
-      {sorted.map(m => {
+      <SearchBar value={search} onChange={setSearch} placeholder="Rechercher un joueur ou une table (ex: T12)..." />
+
+      {query && (
+        <p className="text-xs text-ink-500">{filtered.length} résultat{filtered.length !== 1 ? 's' : ''}</p>
+      )}
+
+      {paginated.map(m => {
         const p1 = m.players[0];
         const p2 = m.players[1];
         const p1Wins = m.winnerId === p1?.playerId;
@@ -790,15 +963,21 @@ function MatchesView({ matches, roundNumber, username, scoutMap }: { matches: Ev
         }
 
         return (
-          <div key={m.matchId} className={`ink-card px-3 sm:px-4 py-3 ${myMatch ? 'border-gold-500/30 bg-gold-400/5' : ''}`}>
+          <div
+            key={m.matchId}
+            onClick={() => setSelectedMatch(m)}
+            className={`ink-card px-3 sm:px-4 py-3 cursor-pointer transition-all hover:border-gold-500/25 ${myMatch ? 'border-gold-500/30 bg-gold-400/5' : ''}`}
+          >
             <div className="flex items-center gap-2">
               {m.table > 0 && <span className="text-xs text-ink-600 shrink-0 w-7">T{m.table}</span>}
               <div className="flex-1 flex items-center gap-2 min-w-0">
                 <div className="flex-1 min-w-0">
-                  <span className={`text-sm truncate block ${isMe(p1?.playerName || '') ? 'font-bold text-gold-400' : p1Wins ? 'font-bold text-green-400' : 'text-ink-300'}`}>
-                    {p1?.playerName || 'Inconnu'}
-                  </span>
-                  {scout1 && <div className="mt-0.5"><ScoutDeckBadges scout={scout1} /></div>}
+                  <div className="flex items-center gap-1 min-w-0">
+                    <span className={`text-sm truncate ${isMe(p1?.playerName || '') ? 'font-bold text-gold-400' : p1Wins ? 'font-bold text-green-400' : 'text-ink-300'}`}>
+                      {p1?.playerName || 'Inconnu'}
+                    </span>
+                    {p1 && <ScoutDeckBadges scout={scout1} possibleDecks={possibleDecks.get(p1.playerName.toLowerCase())} />}
+                  </div>
                 </div>
                 <span className="text-sm font-bold text-ink-500 shrink-0">
                   {m.isDraw ? 'Nul' : (
@@ -814,16 +993,474 @@ function MatchesView({ matches, roundNumber, username, scoutMap }: { matches: Ev
                   )}
                 </span>
                 <div className="flex-1 min-w-0 text-right">
-                  <span className={`text-sm truncate block ${isMe(p2?.playerName || '') ? 'font-bold text-gold-400' : p2Wins ? 'font-bold text-green-400' : 'text-ink-300'}`}>
-                    {p2?.playerName || 'Inconnu'}
-                  </span>
-                  {scout2 && <div className="mt-0.5"><ScoutDeckBadges scout={scout2} /></div>}
+                  <div className="flex items-center gap-1 min-w-0 justify-end">
+                    {p2 && <ScoutDeckBadges scout={scout2} possibleDecks={possibleDecks.get(p2.playerName.toLowerCase())} />}
+                    <span className={`text-sm truncate ${isMe(p2?.playerName || '') ? 'font-bold text-gold-400' : p2Wins ? 'font-bold text-green-400' : 'text-ink-300'}`}>
+                      {p2?.playerName || 'Inconnu'}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         );
       })}
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+
+      {/* Match detail modal */}
+      {selectedMatch && (
+        <MatchDetailModal
+          match={selectedMatch}
+          roundNumber={roundNumber}
+          isMe={isMe}
+          getScout={getScout}
+          possibleDecks={possibleDecks}
+          teams={teams}
+          eventId={eventId}
+          onScout={onScout}
+          onPotentialDecks={onPotentialDecks}
+          onClose={() => setSelectedMatch(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function MatchDetailModal({ match: m, roundNumber, isMe, getScout, possibleDecks, teams, eventId, onScout, onPotentialDecks, onClose }: {
+  match: EventMatch;
+  roundNumber: number;
+  isMe: (name: string) => boolean | '';
+  getScout: (name: string) => ScoutReport | undefined;
+  possibleDecks: Map<string, PotentialDeck[]>;
+  teams: Team[];
+  eventId: string;
+  onScout: ScoutHandler;
+  onPotentialDecks: PotentialDecksHandler;
+  onClose: () => void;
+}) {
+  const p1 = m.players[0];
+  const p2 = m.players[1];
+  const p1Name = p1?.playerName || 'Inconnu';
+  const p2Name = p2?.playerName || 'Inconnu';
+  const p1Wins = m.winnerId === p1?.playerId;
+  const p2Wins = m.winnerId === p2?.playerId;
+  const scout1 = p1 ? getScout(p1Name) : undefined;
+  const scout2 = p2 ? getScout(p2Name) : undefined;
+  const p1Potentials = possibleDecks.get(p1Name.toLowerCase()) || [];
+  const p2Potentials = possibleDecks.get(p2Name.toLowerCase()) || [];
+
+  // Rules for default checkbox state:
+  // - No data at all → checked (uncertain)
+  // - At least one certain deck → unchecked
+  // - Only potential decks → checked
+  const hasCertainScout = (scout1?.deckColors?.length ?? 0) > 0 || (scout2?.deckColors?.length ?? 0) > 0;
+  const hasPotentials = p1Potentials.length > 0 || p2Potentials.length > 0;
+  const [uncertainMode, setUncertainMode] = useState(hasCertainScout ? false : hasPotentials ? true : true);
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div
+        className="relative w-full sm:max-w-md bg-ink-900 border border-ink-700/50 rounded-t-2xl sm:rounded-2xl shadow-2xl p-5 sm:p-6 space-y-5 max-h-[90vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-3 right-3 p-2 rounded-lg text-ink-500 hover:text-ink-300 hover:bg-ink-800/50 transition-colors z-10"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        {/* Score header */}
+        <div className="text-center">
+          {m.table > 0 && <p className="text-xs text-ink-500 mb-2">Table {m.table}</p>}
+          <div className="flex items-center justify-center">
+            {m.isDraw ? (
+              <span className="text-xl font-bold text-ink-400">Nul</span>
+            ) : (
+              <>
+                <span className={`text-2xl font-bold ${p1Wins ? 'text-green-400' : 'text-ink-400'}`}>
+                  {p1Wins ? m.gamesWonByWinner : m.gamesWonByLoser ?? 0}
+                </span>
+                <span className="text-xl text-ink-600 mx-2">–</span>
+                <span className={`text-2xl font-bold ${p2Wins ? 'text-green-400' : 'text-ink-400'}`}>
+                  {p2Wins ? m.gamesWonByWinner : m.gamesWonByLoser ?? 0}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Mode toggle (only if user has teams) */}
+        {teams.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setUncertainMode(!uncertainMode)}
+            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors ${
+              uncertainMode
+                ? 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
+                : 'bg-ink-800/30 border border-ink-700/30 text-ink-500 hover:text-ink-300'
+            }`}
+          >
+            <span className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+              uncertainMode ? 'border-amber-400 bg-amber-400' : 'border-ink-600'
+            }`}>
+              {uncertainMode && (
+                <svg className="w-3 h-3 text-ink-950" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </span>
+            Je ne sais pas qui joue quel deck
+          </button>
+        )}
+
+        {uncertainMode ? (
+          <UncertainDeckPicker
+            p1Name={p1Name}
+            p2Name={p2Name}
+            existingPotentials={p1Potentials}
+            teams={teams}
+            roundNumber={roundNumber}
+            tableNumber={m.table}
+            onPotentialDecks={onPotentialDecks}
+          />
+        ) : (
+          <>
+            <InlineScoutSection
+              name={p1Name}
+              isWinner={p1Wins}
+              isCurrentUser={!!isMe(p1Name)}
+              scout={scout1}
+              potentialDecks={p1Potentials}
+              teams={teams}
+              eventId={eventId}
+              onScout={onScout}
+            />
+            <InlineScoutSection
+              name={p2Name}
+              isWinner={p2Wins}
+              isCurrentUser={!!isMe(p2Name)}
+              scout={scout2}
+              potentialDecks={p2Potentials}
+              teams={teams}
+              eventId={eventId}
+              onScout={onScout}
+            />
+          </>
+        )}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+/* ── Color grid shared by InlineScoutSection and UncertainDeckPicker ── */
+function ColorGrid({ colors, onToggle }: { colors: InkColor[]; onToggle: (c: InkColor) => void }) {
+  return (
+    <div className="grid grid-cols-3 gap-1.5">
+      {INK_COLORS.map(color => {
+        const config = INK_COLORS_CONFIG[color];
+        const isSelected = colors.includes(color);
+        const isDisabled = !isSelected && colors.length >= 2;
+        return (
+          <button
+            key={color}
+            type="button"
+            onClick={() => onToggle(color)}
+            disabled={isDisabled}
+            className={`flex items-center justify-center px-2 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              isSelected
+                ? 'ring-2 ring-gold-400 scale-[1.02]'
+                : isDisabled
+                ? 'opacity-20 cursor-not-allowed'
+                : 'opacity-40 hover:opacity-70'
+            }`}
+            style={{
+              backgroundColor: config.hex,
+              color: color === 'AMBER' ? '#78350f' : '#fff',
+              textShadow: color === 'AMBER' ? 'none' : '0 1px 2px rgba(0,0,0,0.3)',
+            }}
+          >
+            {config.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── Possible decks reference block ── */
+function PossibleDecksRef({ decks }: { decks: PotentialDeck[] }) {
+  if (decks.length === 0) return null;
+  return (
+    <div className="rounded-lg bg-amber-500/5 border border-amber-500/15 px-3 py-2 space-y-1.5">
+      <p className="text-[11px] text-amber-400/80 font-medium">Decks potentiels</p>
+      {decks.map((deck, i) => (
+        <div key={deck.id || i} className="space-y-0.5">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-ink-500 w-12 shrink-0">Deck {String.fromCharCode(65 + i)}</span>
+            <div className="flex items-center gap-1">
+              {(deck.deckColors as InkColor[]).filter(c => INK_COLORS_CONFIG[c]).map(c => {
+                const config = INK_COLORS_CONFIG[c];
+                return (
+                  <span
+                    key={c}
+                    className="inline-flex items-center px-1.5 py-px rounded-full text-[9px] font-semibold opacity-70"
+                    style={{ backgroundColor: config.hex, color: c === 'AMBER' ? '#78350f' : '#fff', textShadow: c === 'AMBER' ? 'none' : '0 1px 2px rgba(0,0,0,0.3)' }}
+                  >
+                    {config.label}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+          <p className="text-[9px] text-ink-600 ml-14">
+            R{deck.roundNumber} T{deck.tableNumber} · {deck.player1Name} vs {deck.player2Name} · par {deck.reportedBy.username}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Uncertain mode: two deck slots for the table ── */
+function UncertainDeckPicker({ p1Name, p2Name, existingPotentials, teams, roundNumber, tableNumber, onPotentialDecks }: {
+  p1Name: string;
+  p2Name: string;
+  existingPotentials: PotentialDeck[];
+  teams: Team[];
+  roundNumber: number;
+  tableNumber: number;
+  onPotentialDecks: PotentialDecksHandler;
+}) {
+  // Don't pre-fill color grids — user must select from scratch each time
+  const [deckA, setDeckA] = useState<InkColor[]>([]);
+  const [deckB, setDeckB] = useState<InkColor[]>([]);
+  const [teamId, setTeamId] = useState(teams[0]?.id || '');
+  const [saving, setSaving] = useState(false);
+
+  const toggleA = (color: InkColor) => {
+    if (deckA.includes(color)) setDeckA(deckA.filter(c => c !== color));
+    else if (deckA.length < 2) setDeckA([...deckA, color]);
+  };
+  const toggleB = (color: InkColor) => {
+    if (deckB.includes(color)) setDeckB(deckB.filter(c => c !== color));
+    else if (deckB.length < 2) setDeckB([...deckB, color]);
+  };
+
+  const canSave = deckA.length > 0 && deckB.length > 0;
+
+  const handleSave = async () => {
+    if (!canSave || !teamId) return;
+    setSaving(true);
+    try {
+      await onPotentialDecks(teamId, roundNumber, tableNumber, p1Name, p2Name, [deckA, deckB]);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-amber-400/80 italic">
+        Qualifiez les deux decks de la table — ils seront marqués comme potentiels pour les deux joueurs.
+      </p>
+
+      {/* Existing potential decks reference */}
+      {existingPotentials.length > 0 && <PossibleDecksRef decks={existingPotentials} />}
+
+      {/* Deck A */}
+      <div className="rounded-xl p-3.5 space-y-2.5 bg-ink-800/50 border border-ink-700/30">
+        <p className="text-xs font-semibold text-ink-300">Deck A</p>
+        <ColorGrid colors={deckA} onToggle={toggleA} />
+      </div>
+
+      {/* Deck B */}
+      <div className="rounded-xl p-3.5 space-y-2.5 bg-ink-800/50 border border-ink-700/30">
+        <p className="text-xs font-semibold text-ink-300">Deck B</p>
+        <ColorGrid colors={deckB} onToggle={toggleB} />
+      </div>
+
+      {teams.length > 1 && (
+        <select
+          value={teamId}
+          onChange={e => setTeamId(e.target.value)}
+          className="w-full bg-ink-800/50 border border-ink-700/50 rounded-lg text-xs text-ink-200 px-2.5 py-2 focus:outline-none focus:border-gold-500/40"
+        >
+          {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+        </select>
+      )}
+
+      {canSave && (
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="w-full text-xs font-medium px-3 py-2 rounded-lg bg-gold-500/20 text-gold-400 hover:bg-gold-500/30 disabled:opacity-30 transition-colors"
+        >
+          {saving ? 'Envoi...' : 'Enregistrer les deux decks'}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function InlineScoutSection({ name, isWinner, isCurrentUser, scout, potentialDecks, teams, eventId, onScout }: {
+  name: string;
+  isWinner: boolean;
+  isCurrentUser: boolean;
+  scout?: ScoutReport;
+  potentialDecks: PotentialDeck[];
+  teams: Team[];
+  eventId: string;
+  onScout: ScoutHandler;
+}) {
+  const existingColors = (scout?.deckColors || []) as InkColor[];
+  const [colors, setColors] = useState<InkColor[]>(existingColors);
+  const [teamId, setTeamId] = useState(teams[0]?.id || '');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { setColors((scout?.deckColors || []) as InkColor[]); }, [scout]);
+
+  const toggle = (color: InkColor) => {
+    if (colors.includes(color)) setColors(colors.filter(c => c !== color));
+    else if (colors.length < 2) setColors([...colors, color]);
+  };
+
+  const colorsChanged = colors.length > 0 && JSON.stringify(colors.slice().sort()) !== JSON.stringify(existingColors.slice().sort());
+
+  const handleSave = async () => {
+    if (colors.length === 0 || !teamId) return;
+    setSaving(true);
+    try {
+      await onScout(name, colors, teamId);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className={`rounded-xl p-3.5 space-y-3 ${isCurrentUser ? 'bg-gold-500/10 border border-gold-500/20' : 'bg-ink-800/50 border border-ink-700/30'}`}>
+      {/* Player name */}
+      <div className="flex items-center gap-2">
+        <span className={`text-sm font-medium truncate ${isCurrentUser ? 'text-gold-400' : isWinner ? 'text-green-400 font-bold' : 'text-ink-200'}`}>
+          {name}
+        </span>
+        {isWinner && (
+          <span className="text-[10px] font-semibold text-green-400 bg-green-500/15 px-1.5 py-0.5 rounded-full shrink-0">V</span>
+        )}
+        {scout && existingColors.length > 0 && (
+          <span className="text-[10px] text-ink-500 ml-auto shrink-0">par {scout.reportedBy.username}</span>
+        )}
+      </div>
+
+      {/* Potential decks reference */}
+      {potentialDecks.length > 0 && <PossibleDecksRef decks={potentialDecks} />}
+
+      {/* Color picker (only if user has teams) */}
+      {teams.length > 0 ? (
+        <>
+          <ColorGrid colors={colors} onToggle={toggle} />
+
+          {teams.length > 1 && (
+            <select
+              value={teamId}
+              onChange={e => setTeamId(e.target.value)}
+              className="w-full bg-ink-800/50 border border-ink-700/50 rounded-lg text-xs text-ink-200 px-2.5 py-2 focus:outline-none focus:border-gold-500/40"
+            >
+              {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          )}
+
+          {colorsChanged && colors.length > 0 && (
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full text-xs font-medium px-3 py-2 rounded-lg bg-gold-500/20 text-gold-400 hover:bg-gold-500/30 disabled:opacity-30 transition-colors"
+            >
+              {saving ? 'Envoi...' : 'Enregistrer'}
+            </button>
+          )}
+        </>
+      ) : existingColors.length > 0 ? (
+        <div className="flex items-center gap-1.5">
+          {existingColors.filter(c => INK_COLORS_CONFIG[c]).map(c => {
+            const config = INK_COLORS_CONFIG[c];
+            return (
+              <span
+                key={c}
+                className="inline-flex items-center px-2 py-px rounded-full text-[10px] font-semibold"
+                style={{
+                  backgroundColor: config.hex,
+                  color: c === 'AMBER' ? '#78350f' : '#fff',
+                  textShadow: c === 'AMBER' ? 'none' : '0 1px 2px rgba(0,0,0,0.3)',
+                }}
+              >
+                {config.label}
+              </span>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function DropdownMenu({ items }: { items: { label: string; onClick: () => void; danger?: boolean }[] }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handle = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, [open]);
+
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      <button
+        type="button"
+        onClick={e => { e.stopPropagation(); setOpen(!open); }}
+        className="flex items-center justify-center w-8 h-8 rounded-lg bg-gold-500/15 text-gold-400 hover:bg-gold-500/25 transition-colors"
+      >
+        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="5" r="2" />
+          <circle cx="12" cy="12" r="2" />
+          <circle cx="12" cy="19" r="2" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-1 z-50 min-w-[140px] bg-ink-900 border border-ink-700/50 rounded-xl shadow-xl shadow-ink-950/50 py-1 overflow-hidden">
+          {items.map(item => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={e => { e.stopPropagation(); setOpen(false); item.onClick(); }}
+              className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                item.danger
+                  ? 'text-lorcana-ruby/80 hover:bg-lorcana-ruby/10 hover:text-lorcana-ruby'
+                  : 'text-ink-200 hover:bg-ink-800/50'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -831,6 +1468,21 @@ function MatchesView({ matches, roundNumber, username, scoutMap }: { matches: Ev
 function pct(value: number | null | undefined): string {
   if (value == null) return '—';
   return `${Math.round(value * 100)}%`;
+}
+
+function LoadingStep({ label, done }: { label: string; done: boolean }) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 ink-card">
+      {done ? (
+        <svg className="w-5 h-5 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+      ) : (
+        <div className="w-5 h-5 shrink-0 animate-spin rounded-full border-2 border-ink-700 border-t-gold-400" />
+      )}
+      <span className={`text-sm ${done ? 'text-ink-400' : 'text-ink-200'}`}>{label}</span>
+    </div>
+  );
 }
 
 /* ─── Shared components ─── */
@@ -918,27 +1570,33 @@ function InfoCard({ label, value, className }: { label: string; value: React.Rea
   );
 }
 
-function RoundsList({ title, rounds, tournamentId, format, onDelete, scoutMap }: { title: string; rounds: Round[]; tournamentId: string; format: string; onDelete: (id: string) => void; scoutMap: Map<string, ScoutReport> }) {
+function RoundsList({ title, rounds, tournamentId, format, onDelete, scoutMap, possibleDecks }: { title: string; rounds: Round[]; tournamentId: string; format: string; onDelete: (id: string) => void; scoutMap: Map<string, ScoutReport>; possibleDecks: Map<string, PotentialDeck[]> }) {
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-medium text-ink-400">{title}</h3>
       {rounds.map(round => (
-        <RoundCard key={round.id} round={round} tournamentId={tournamentId} format={format} onDelete={onDelete} scoutMap={scoutMap} />
+        <RoundCard key={round.id} round={round} tournamentId={tournamentId} format={format} onDelete={onDelete} scoutMap={scoutMap} possibleDecks={possibleDecks} />
       ))}
     </div>
   );
 }
 
-function RoundCard({ round, tournamentId, format, onDelete, scoutMap }: { round: Round; tournamentId: string; format: string; onDelete: (id: string) => void; scoutMap: Map<string, ScoutReport> }) {
+function RoundCard({ round, tournamentId, format, onDelete, scoutMap, possibleDecks }: { round: Round; tournamentId: string; format: string; onDelete: (id: string) => void; scoutMap: Map<string, ScoutReport>; possibleDecks: Map<string, PotentialDeck[]> }) {
   const navigate = useNavigate();
   const result = RESULT_STYLES[round.result];
   const games = round.games || [];
   const gamesWon = games.filter(g => g.result === 'WIN').length;
   const gamesLost = games.filter(g => g.result === 'LOSS').length;
 
-  const hasLocalColors = round.opponentDeckColors && round.opponentDeckColors.length > 0;
   const scout = round.opponentName ? scoutMap.get(round.opponentName.toLowerCase()) : undefined;
-  const showScoutColors = !hasLocalColors && scout;
+  // Fallback: build a pseudo-scout from local round colors if no scout report exists
+  const hasLocalColors = !scout && round.opponentDeckColors && round.opponentDeckColors.length > 0;
+  const displayScout: ScoutReport | undefined = scout ?? (hasLocalColors ? {
+    id: '', teamId: '', eventId: '', playerName: round.opponentName || '',
+    deckColors: round.opponentDeckColors as InkColor[],
+    reportedById: '', reportedBy: { id: '', username: 'moi' },
+    createdAt: round.createdAt, updatedAt: round.updatedAt,
+  } : undefined);
 
   return (
     <div className="ink-card overflow-hidden cursor-pointer transition-all duration-200 hover:border-gold-500/25" onClick={() => navigate(`/tournaments/${tournamentId}/rounds/${round.id}/edit`)}>
@@ -947,6 +1605,7 @@ function RoundCard({ round, tournamentId, format, onDelete, scoutMap }: { round:
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <span className="text-sm font-bold text-ink-500 shrink-0">R{round.roundNumber}</span>
             <span className="font-medium text-ink-100 truncate">{round.opponentName || 'Inconnu'}</span>
+            <ScoutDeckBadges scout={displayScout} possibleDecks={round.opponentName ? possibleDecks.get(round.opponentName.toLowerCase()) : undefined} />
           </div>
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {games.length > 0 && (
@@ -957,17 +1616,12 @@ function RoundCard({ round, tournamentId, format, onDelete, scoutMap }: { round:
               </span>
             )}
             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${result.cls}`}>{result.label}</span>
-            <button onClick={(e) => { e.stopPropagation(); onDelete(round.id); }} className="text-ink-600 hover:text-lorcana-ruby text-sm transition-colors p-1">&times;</button>
+            <DropdownMenu items={[
+              { label: 'Modifier', onClick: () => navigate(`/tournaments/${tournamentId}/rounds/${round.id}/edit`) },
+              { label: 'Supprimer', onClick: () => onDelete(round.id), danger: true },
+            ]} />
           </div>
         </div>
-        {hasLocalColors && (
-          <div className="mt-1.5 ml-8 sm:ml-10"><DeckBadges colors={round.opponentDeckColors as any} /></div>
-        )}
-        {showScoutColors && (
-          <div className="mt-1.5 ml-8 sm:ml-10">
-            <ScoutDeckBadges scout={scout} />
-          </div>
-        )}
       </div>
       {games.length > 0 && (
         <div className="px-3 sm:px-4 py-2 bg-ink-900/50">

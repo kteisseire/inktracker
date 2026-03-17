@@ -9,6 +9,7 @@
       radial-gradient(ellipse at 20% 0%, rgba(212,163,36,0.03) 0%, transparent 50%),
       radial-gradient(ellipse at 80% 100%, rgba(155,89,182,0.02) 0%, transparent 50%);
     min-height: 100vh;
+    min-height: 100dvh;
   }
 
   ::selection {
@@ -16,19 +17,35 @@
     color: #fcd879;
   }
 
+  /* Minimum touch target on mobile */
+  @media (pointer: coarse) {
+    button, [role="button"] {
+      min-height: 36px;
+    }
+    /* Exceptions for inline/icon-only elements */
+    .touch-compact {
+      min-height: unset;
+    }
+  }
+
   /* Scrollbar */
   ::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #16120e;
+    background: transparent;
   }
   ::-webkit-scrollbar-thumb {
     background: #4a3c2f;
-    border-radius: 4px;
+    border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
     background: #6b5743;
+  }
+
+  /* Smooth scroll */
+  html {
+    scroll-behavior: smooth;
   }
 }
 
@@ -42,8 +59,8 @@
   }
 
   .ink-input {
-    @apply w-full px-4 py-2.5 bg-ink-850 border border-ink-700/50 rounded-xl text-ink-100 placeholder-ink-500
-      focus:ring-2 focus:ring-gold-500/40 focus:border-gold-500/40 outline-none transition-colors;
+    @apply w-full px-4 py-3 bg-ink-850 border border-ink-700/50 rounded-xl text-ink-100 placeholder-ink-500
+      focus:ring-2 focus:ring-gold-500/40 focus:border-gold-500/40 outline-none transition-colors text-base;
   }
 
   .ink-select {
@@ -55,18 +72,20 @@
   }
 
   .ink-btn-primary {
-    @apply bg-gradient-to-r from-gold-500 to-gold-400 text-ink-950 font-semibold py-2.5 px-6 rounded-xl
-      hover:from-gold-400 hover:to-gold-300 transition-all duration-200 shadow-glow-gold-sm hover:shadow-glow-gold
-      disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-gradient-to-r from-gold-500 to-gold-400 text-ink-950 font-semibold py-3 px-6 rounded-xl
+      hover:from-gold-400 hover:to-gold-300 active:from-gold-600 active:to-gold-500
+      transition-all duration-200 shadow-glow-gold-sm hover:shadow-glow-gold
+      disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base;
   }
 
   .ink-btn-secondary {
-    @apply px-6 py-2.5 border border-ink-700/50 rounded-xl text-ink-300 font-medium
-      hover:bg-ink-800/50 hover:border-ink-600/50 hover:text-ink-100 transition-all duration-200;
+    @apply px-6 py-3 border border-ink-700/50 rounded-xl text-ink-300 font-medium
+      hover:bg-ink-800/50 hover:border-ink-600/50 hover:text-ink-100 active:bg-ink-700/50
+      transition-all duration-200 text-sm sm:text-base;
   }
 
   .ink-error {
-    @apply bg-lorcana-ruby/10 border border-lorcana-ruby/20 text-red-300 px-4 py-2.5 rounded-xl text-sm;
+    @apply bg-lorcana-ruby/10 border border-lorcana-ruby/20 text-red-300 px-4 py-3 rounded-xl text-sm;
   }
 
   .ink-divider {

@@ -3,7 +3,6 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 const RPH_API = 'https://api.ravensburgerplay.com/api/v2';
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 const rphFetch = (path: string) =>
   fetch(`${RPH_API}${path}`, {
@@ -95,11 +94,11 @@ export async function getEventRounds(req: Request, res: Response) {
   }
 
   try {
-    // Check cache (graceful — skip if table doesn't exist)
+    // Serve from cache unless user explicitly refreshes
     if (!forceRefresh) {
       try {
         const cached = await prisma.eventCache.findUnique({ where: { eventId } });
-        if (cached && Date.now() - cached.updatedAt.getTime() < CACHE_TTL_MS) {
+        if (cached) {
           return res.json(cached.data);
         }
       } catch (cacheErr) {

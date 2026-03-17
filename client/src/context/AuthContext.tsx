@@ -8,6 +8,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, username: string, password: string) => Promise<void>;
   loginWithGoogle: (credential: string) => Promise<void>;
+  loginWithDiscord: (code: string) => Promise<void>;
   logout: () => void;
   updateUser: (user: User) => void;
 }
@@ -48,6 +49,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.user);
   };
 
+  const loginWithDiscord = async (code: string) => {
+    const res = await authApi.discordLogin(code);
+    localStorage.setItem('token', res.token);
+    setUser(res.user);
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
@@ -58,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, loginWithGoogle, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, loginWithGoogle, loginWithDiscord, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -16,6 +16,11 @@ export async function googleLogin(credential: string): Promise<AuthResponse> {
   return res.data;
 }
 
+export async function discordLogin(code: string): Promise<AuthResponse> {
+  const res = await api.post('/auth/discord', { code });
+  return res.data;
+}
+
 export async function getMe(): Promise<User> {
   const res = await api.get('/auth/me');
   return res.data.user;

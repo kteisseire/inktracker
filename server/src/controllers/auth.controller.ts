@@ -7,6 +7,10 @@ import { AuthRequest } from '../middleware/auth.js';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+function userResponse(u: { id: string; email: string; username: string; passwordHash?: string | null; googleId?: string | null; discordId?: string | null; createdAt: Date }) {
+  return { id: u.id, email: u.email, username: u.username, hasPassword: !!u.passwordHash, hasGoogle: !!u.googleId, hasDiscord: !!u.discordId, createdAt: u.createdAt };
+}
+
 export async function register(req: Request, res: Response) {
   const { email, username, password } = req.body;
 
@@ -21,11 +25,10 @@ export async function register(req: Request, res: Response) {
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await prisma.user.create({
     data: { email, username, passwordHash },
-    select: { id: true, email: true, username: true, createdAt: true },
   });
 
   const token = signToken(user.id);
-  res.status(201).json({ user: { ...user, hasPassword: true }, token });
+  res.status(201).json({ user: userResponse(user), token });
 }
 
 export async function login(req: Request, res: Response) {
@@ -38,10 +41,7 @@ export async function login(req: Request, res: Response) {
   }
 
   const token = signToken(user.id);
-  res.json({
-    user: { id: user.id, email: user.email, username: user.username, hasPassword: true, createdAt: user.createdAt },
-    token,
-  });
+  res.json({ user: userResponse(user), token });
 }
 
 export async function googleLogin(req: Request, res: Response) {
@@ -92,22 +92,107 @@ export async function googleLogin(req: Request, res: Response) {
   }
 
   const token = signToken(user!.id);
-  res.json({
-    user: { id: user!.id, email: user!.email, username: user!.username, hasPassword: !!user!.passwordHash, createdAt: user!.createdAt },
-    token,
+  res.json({ user: userResponse(user!), token });
+}
+
+export async function discordLogin(req: Request, res: Response) {
+  const { code } = req.body;
+  const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
+  const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
+  const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI;
+
+  if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET || !DISCORD_REDIRECT_URI) {
+    res.status(500).json({ error: 'Configuration Discord manquante' });
+    return;
+  }
+
+  // Exchange code for access token
+  let tokenData: any;
+  try {
+    const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: DISCORD_CLIENT_ID,
+        client_secret: DISCORD_CLIENT_SECRET,
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: DISCORD_REDIRECT_URI,
+      }),
+    });
+    tokenData = await tokenRes.json();
+    if (!tokenData.access_token) {
+      console.error('Discord token exchange failed:', tokenData);
+      res.status(401).json({ error: 'Code Discord invalide' });
+      return;
+    }
+  } catch (err) {
+    console.error('Discord token exchange error:', err);
+    res.status(502).json({ error: 'Erreur de communication avec Discord' });
+    return;
+  }
+
+  // Fetch Discord user info
+  let discordUser: any;
+  try {
+    const userRes = await fetch('https://discord.com/api/users/@me', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
+    discordUser = await userRes.json();
+    if (!discordUser.id) {
+      res.status(401).json({ error: 'Impossible de récupérer le profil Discord' });
+      return;
+    }
+  } catch (err) {
+    console.error('Discord user fetch error:', err);
+    res.status(502).json({ error: 'Erreur de communication avec Discord' });
+    return;
+  }
+
+  const discordId = discordUser.id;
+  const email = discordUser.email;
+  const displayName = discordUser.global_name || discordUser.username;
+
+  // Find existing user by discordId or email
+  let user = await prisma.user.findFirst({
+    where: { OR: [{ discordId }, ...(email ? [{ email }] : [])] },
   });
+
+  if (user && !user.discordId) {
+    // Email exists — link Discord account
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: { discordId },
+    });
+  } else if (!user) {
+    // New user — generate unique username
+    if (!email) {
+      res.status(400).json({ error: 'Votre compte Discord n\'a pas d\'email vérifié. Veuillez utiliser un autre mode de connexion.' });
+      return;
+    }
+    const baseUsername = (displayName || email.split('@')[0]).replace(/[^a-zA-Z0-9_]/g, '').slice(0, 30) || 'user';
+    let username = baseUsername;
+    let suffix = 1;
+    while (await prisma.user.findUnique({ where: { username } })) {
+      username = `${baseUsername.slice(0, 26)}${suffix++}`;
+    }
+
+    user = await prisma.user.create({
+      data: { email, username, discordId },
+    });
+  }
+
+  const token = signToken(user!.id);
+  res.json({ user: userResponse(user!), token });
 }
 
 export async function getMe(req: AuthRequest, res: Response) {
-  const user = await prisma.user.findUnique({
-    where: { id: req.userId },
-    select: { id: true, email: true, username: true, passwordHash: true, createdAt: true },
-  });
+  const user = await prisma.user.findUnique({ where: { id: req.userId } });
   if (!user) {
     res.status(404).json({ error: 'Utilisateur non trouvé' });
     return;
   }
-  res.json({ user: { id: user.id, email: user.email, username: user.username, hasPassword: !!user.passwordHash, createdAt: user.createdAt } });
+  res.json({ user: userResponse(user) });
 }
 
 export async function updateProfile(req: AuthRequest, res: Response) {
@@ -141,10 +226,9 @@ export async function updateProfile(req: AuthRequest, res: Response) {
   const user = await prisma.user.update({
     where: { id: req.userId },
     data,
-    select: { id: true, email: true, username: true, passwordHash: true, createdAt: true },
   });
 
-  res.json({ user: { id: user.id, email: user.email, username: user.username, hasPassword: !!user.passwordHash, createdAt: user.createdAt } });
+  res.json({ user: userResponse(user) });
 }
 
 export async function changePassword(req: AuthRequest, res: Response) {

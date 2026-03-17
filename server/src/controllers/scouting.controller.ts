@@ -14,7 +14,6 @@ export async function getEventScoutReports(req: AuthRequest, res: Response) {
   const { eventId } = req.params;
   const teamId = req.query.teamId as string | undefined;
 
-  // Find all teams the user belongs to
   const memberships = await prisma.teamMember.findMany({
     where: { userId: req.userId },
     select: { teamId: true },
@@ -22,26 +21,33 @@ export async function getEventScoutReports(req: AuthRequest, res: Response) {
   const myTeamIds = memberships.map(m => m.teamId);
 
   if (myTeamIds.length === 0) {
-    res.json({ reports: [] });
+    res.json({ reports: [], potentialDecks: [] });
     return;
   }
 
-  const reports = await prisma.scoutReport.findMany({
-    where: {
-      eventId,
-      teamId: teamId && myTeamIds.includes(teamId) ? teamId : { in: myTeamIds },
-    },
-    include: {
-      reportedBy: { select: { id: true, username: true } },
-      team: { select: { id: true, name: true } },
-    },
-    orderBy: { updatedAt: 'desc' },
-  });
+  const teamFilter = teamId && myTeamIds.includes(teamId) ? teamId : { in: myTeamIds };
 
-  res.json({ reports });
+  const [reports, potentialDecks] = await Promise.all([
+    prisma.scoutReport.findMany({
+      where: { eventId, teamId: teamFilter },
+      include: {
+        reportedBy: { select: { id: true, username: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+    }),
+    prisma.potentialDeck.findMany({
+      where: { eventId, teamId: teamFilter },
+      include: {
+        reportedBy: { select: { id: true, username: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+    }),
+  ]);
+
+  res.json({ reports, potentialDecks });
 }
 
-/** Create or update a single scout report */
+/** Create or update a single scout report (certain deck) */
 export async function upsertScoutReport(req: AuthRequest, res: Response) {
   const { teamId, eventId, playerName, deckColors } = req.body;
 
@@ -73,7 +79,7 @@ export async function upsertScoutReport(req: AuthRequest, res: Response) {
   res.json({ report });
 }
 
-/** Bulk upsert scout reports (when saving a round with colors) */
+/** Bulk upsert scout reports */
 export async function bulkUpsertScoutReports(req: AuthRequest, res: Response) {
   const { teamId, eventId, reports } = req.body;
 
@@ -107,6 +113,48 @@ export async function bulkUpsertScoutReports(req: AuthRequest, res: Response) {
   );
 
   res.json({ reports: results });
+}
+
+/** Create potential decks for a table (uncertain mode) */
+export async function createPotentialDecks(req: AuthRequest, res: Response) {
+  const { teamId, eventId, roundNumber, tableNumber, player1Name, player2Name, decks } = req.body;
+
+  const membership = await verifyTeamMembership(teamId, req.userId!);
+  if (!membership) {
+    res.status(403).json({ error: 'Vous n\'êtes pas membre de cette équipe' });
+    return;
+  }
+
+  const p1 = player1Name.trim();
+  const p2 = player2Name.trim();
+
+  // Delete existing potential decks for this table/round (replace them)
+  await prisma.potentialDeck.deleteMany({
+    where: { teamId, eventId, roundNumber, tableNumber },
+  });
+
+  // Create one PotentialDeck per deck seen at the table
+  const results = await Promise.all(
+    (decks as string[][]).map((deckColors: string[]) =>
+      prisma.potentialDeck.create({
+        data: {
+          teamId,
+          eventId,
+          roundNumber,
+          tableNumber,
+          deckColors: deckColors as any,
+          player1Name: p1,
+          player2Name: p2,
+          reportedById: req.userId!,
+        },
+        include: {
+          reportedBy: { select: { id: true, username: true } },
+        },
+      }),
+    ),
+  );
+
+  res.json({ potentialDecks: results });
 }
 
 /** Delete a scout report */

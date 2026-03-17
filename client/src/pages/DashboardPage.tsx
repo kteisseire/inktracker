@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { getOverview } from '../api/stats.api.js';
 import { listTournaments } from '../api/tournaments.api.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
+import { LogoIcon } from '../components/ui/Logo.js';
 import type { OverviewStats, Tournament } from '@lorcana/shared';
 
 export function DashboardPage() {
@@ -51,7 +52,7 @@ export function DashboardPage() {
       {stats && stats.totalTournaments === 0 && (
         <div className="ink-card p-5 sm:p-6 space-y-4">
           <div className="text-center">
-            <span className="text-3xl">&#9670;</span>
+            <div className="flex justify-center mb-2"><LogoIcon className="w-10 h-10" /></div>
             <h2 className="font-display text-lg sm:text-xl font-bold text-ink-100 mt-2">Bienvenue sur InkTracker</h2>
             <p className="text-sm text-ink-400 mt-1">
               L'outil complet pour suivre vos performances en tournois Disney Lorcana.

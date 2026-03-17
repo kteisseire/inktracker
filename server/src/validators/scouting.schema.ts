@@ -17,3 +17,13 @@ export const bulkScoutReportSchema = z.object({
     deckColors: z.array(inkColorEnum).min(1).max(3),
   })).min(1),
 });
+
+export const createPotentialDecksSchema = z.object({
+  teamId: z.string().uuid(),
+  eventId: z.string().min(1),
+  roundNumber: z.number().int().positive(),
+  tableNumber: z.number().int(),
+  player1Name: z.string().min(1),
+  player2Name: z.string().min(1),
+  decks: z.array(z.array(inkColorEnum).min(1).max(3)).min(1).max(2),
+});

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Ink drop / diamond shape -->
+  <defs>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f5c542"/>
+      <stop offset="50%" stop-color="#d4a324"/>
+      <stop offset="100%" stop-color="#b8891a"/>
+    </linearGradient>
+    <linearGradient id="goldLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fcd879"/>
+      <stop offset="100%" stop-color="#f5c542"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#16120e" stroke="url(#gold)" stroke-width="4"/>
+
+  <!-- Inner glow ring -->
+  <circle cx="256" cy="256" r="220" fill="none" stroke="#d4a324" stroke-width="1" opacity="0.2"/>
+
+  <!-- Ink drop shape (main icon) -->
+  <path d="M256 80 C256 80 160 200 160 296 C160 349 204 400 256 400 C308 400 352 349 352 296 C352 200 256 80 256 80Z"
+        fill="url(#gold)" filter="url(#glow)"/>
+
+  <!-- Inner highlight on ink drop -->
+  <path d="M256 120 C256 120 190 216 190 290 C190 330 220 370 256 370 C292 370 322 330 322 290 C322 216 256 120 256 120Z"
+        fill="url(#goldLight)" opacity="0.3"/>
+
+  <!-- Quill/pen nib detail inside the drop -->
+  <path d="M256 180 L240 300 L256 320 L272 300 Z" fill="#16120e" opacity="0.6"/>
+  <path d="M256 180 L248 290 L256 305 L264 290 Z" fill="#16120e" opacity="0.3"/>
+
+  <!-- Small sparkle dots -->
+  <circle cx="220" cy="280" r="3" fill="#fcd879" opacity="0.8"/>
+  <circle cx="290" cy="260" r="2" fill="#fcd879" opacity="0.6"/>
+  <circle cx="240" cy="340" r="2.5" fill="#fcd879" opacity="0.5"/>
+</svg>

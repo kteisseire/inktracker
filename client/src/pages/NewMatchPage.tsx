@@ -82,7 +82,7 @@ export function NewMatchPage() {
   // Load scout reports when eventId is known
   useEffect(() => {
     if (!eventId || myTeams.length === 0) return;
-    getEventScoutReports(eventId).then(setScoutReports).catch(() => {});
+    getEventScoutReports(eventId).then(({ reports }) => setScoutReports(reports)).catch(() => {});
   }, [eventId, myTeams]);
 
   // Match opponent name to scout report

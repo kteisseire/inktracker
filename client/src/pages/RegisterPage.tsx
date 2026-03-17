@@ -2,6 +2,8 @@ import { useState, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.js';
 import { GoogleSignInButton } from '../components/GoogleSignInButton.js';
+import { DiscordSignInButton } from '../components/DiscordSignInButton.js';
+import { LogoIcon } from '../components/ui/Logo.js';
 
 export function RegisterPage() {
   const { register } = useAuth();
@@ -27,8 +29,11 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto py-8 sm:py-16">
+    <div className="max-w-md mx-auto py-8 sm:py-16 px-1">
       <div className="text-center mb-8">
+        <div className="flex justify-center mb-4">
+          <LogoIcon className="w-12 h-12" />
+        </div>
         <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Inscription</h1>
         <p className="mt-2 text-sm text-ink-500">Créez votre compte pour suivre vos tournois</p>
       </div>
@@ -43,21 +48,21 @@ export function RegisterPage() {
 
         <div>
           <label className="ink-label">Nom d'utilisateur</label>
-          <input type="text" required minLength={3} value={username} onChange={e => setUsername(e.target.value)} className="ink-input" />
+          <input type="text" required minLength={3} value={username} onChange={e => setUsername(e.target.value)} className="ink-input" placeholder="3 caractères minimum" />
         </div>
 
         <div>
           <label className="ink-label">Mot de passe</label>
-          <input type="password" required minLength={6} value={password} onChange={e => setPassword(e.target.value)} className="ink-input" />
+          <input type="password" required minLength={6} value={password} onChange={e => setPassword(e.target.value)} className="ink-input" placeholder="6 caractères minimum" />
         </div>
 
-        <button type="submit" disabled={loading} className="w-full ink-btn-primary">
+        <button type="submit" disabled={loading} className="w-full ink-btn-primary py-3">
           {loading ? 'Inscription...' : 'S\'inscrire'}
         </button>
 
         <p className="text-center text-sm text-ink-400">
           Déjà un compte ?{' '}
-          <Link to="/login" className="text-gold-400 hover:text-gold-300 transition-colors">Se connecter</Link>
+          <Link to="/login" className="text-gold-400 hover:text-gold-300 transition-colors font-medium">Se connecter</Link>
         </p>
 
         <div className="flex items-center gap-3">
@@ -66,7 +71,10 @@ export function RegisterPage() {
           <div className="flex-1 ink-divider" />
         </div>
 
-        <GoogleSignInButton />
+        <div className="space-y-2.5">
+          <GoogleSignInButton />
+          <DiscordSignInButton />
+        </div>
       </form>
     </div>
   );

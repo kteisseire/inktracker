@@ -7,6 +7,13 @@ import type { Deck, InkColor } from '@lorcana/shared';
 
 const SUPPORTED_SITES = ['dreamborn.ink', 'lorcanito.com', 'db.lorcanito.com', 'duels.ink', 'inkdecks.com'];
 
+const DECKBUILDER_LINKS = [
+  { name: 'Dreamborn', url: 'https://dreamborn.ink', description: 'Deckbuilder populaire avec import/export' },
+  { name: 'Lorcanito', url: 'https://lorcanito.com', description: 'Simulateur et deckbuilder en ligne' },
+  { name: 'Inkdecks', url: 'https://inkdecks.com', description: 'Base de decks communautaire' },
+  { name: 'Duels.ink', url: 'https://duels.ink', description: 'Deckbuilder avec statistiques' },
+];
+
 function isDeckUrl(value: string): boolean {
   try {
     const hostname = new URL(value).hostname;
@@ -191,6 +198,29 @@ export function DecksPage() {
           ))}
         </div>
       )}
+
+      {/* Deckbuilders compatibles */}
+      <div className="mt-10">
+        <h2 className="text-sm font-medium text-ink-500 mb-3">Sites compatibles — collez un lien pour importer les couleurs automatiquement</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+          {DECKBUILDER_LINKS.map(site => (
+            <a
+              key={site.url}
+              href={site.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ink-card p-3 sm:p-4 hover:border-gold-500/25 transition-colors group text-center"
+            >
+              <p className="text-sm font-semibold text-ink-100 group-hover:text-gold-400 transition-colors">{site.name}</p>
+              <p className="text-[11px] text-ink-500 mt-1 leading-snug">{site.description}</p>
+              <span className="inline-flex items-center gap-1 text-[11px] text-gold-500/60 group-hover:text-gold-400 mt-2 transition-colors">
+                Ouvrir
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+              </span>
+            </a>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

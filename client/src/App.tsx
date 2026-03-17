@@ -19,6 +19,7 @@ import { TopCutCalculatorPage } from './pages/TopCutCalculatorPage.js';
 import { ProfilePage } from './pages/ProfilePage.js';
 import { TeamsPage } from './pages/TeamsPage.js';
 import { TeamDetailPage } from './pages/TeamDetailPage.js';
+import { DiscordCallbackPage } from './pages/DiscordCallbackPage.js';
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ function AppRoutes() {
       {/* Auth pages (with header) */}
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Layout><LoginPage /></Layout>} />
       <Route path="/register" element={user ? <Navigate to="/" replace /> : <Layout><RegisterPage /></Layout>} />
+      <Route path="/auth/discord/callback" element={<Layout><DiscordCallbackPage /></Layout>} />
 
       {/* Protected pages */}
       <Route path="/tournaments" element={<ProtectedRoute><Layout><TournamentsPage /></Layout></ProtectedRoute>} />

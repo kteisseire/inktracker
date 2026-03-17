@@ -14,3 +14,7 @@ export const loginSchema = z.object({
 export const googleLoginSchema = z.object({
   credential: z.string().min(1, 'Token requis'),
 });
+
+export const discordLoginSchema = z.object({
+  code: z.string().min(1, 'Code requis'),
+});

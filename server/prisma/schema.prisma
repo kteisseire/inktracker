@@ -54,14 +54,16 @@ model User {
   username     String       @unique
   passwordHash String?
   googleId     String?      @unique
+  discordId    String?      @unique
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
   tournaments   Tournament[]
   decks         Deck[]
-  teamMembers   TeamMember[]
-  teamInvites   TeamInvite[] @relation("InvitedUser")
-  scoutReports  ScoutReport[]
+  teamMembers    TeamMember[]
+  teamInvites    TeamInvite[] @relation("InvitedUser")
+  scoutReports   ScoutReport[]
+  potentialDecks PotentialDeck[]
 
   @@map("users")
 }
@@ -73,9 +75,10 @@ model Team {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  members      TeamMember[]
-  invites      TeamInvite[]
-  scoutReports ScoutReport[]
+  members        TeamMember[]
+  invites        TeamInvite[]
+  scoutReports   ScoutReport[]
+  potentialDecks PotentialDeck[]
 
   @@map("teams")
 }
@@ -212,6 +215,27 @@ model ScoutReport {
   @@unique([teamId, eventId, playerName])
   @@index([teamId, eventId])
   @@map("scout_reports")
+}
+
+model PotentialDeck {
+  id           String     @id @default(uuid())
+  teamId       String
+  eventId      String
+  roundNumber  Int
+  tableNumber  Int
+  deckColors   InkColor[]
+  player1Name  String
+  player2Name  String
+  reportedById String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  team       Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  reportedBy User @relation(fields: [reportedById], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, eventId, roundNumber, tableNumber, deckColors])
+  @@index([teamId, eventId])
+  @@map("potential_decks")
 }
 
 model EventCache {

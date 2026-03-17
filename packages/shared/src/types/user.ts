@@ -3,6 +3,8 @@ export interface User {
   email: string;
   username: string;
   hasPassword: boolean;
+  hasGoogle: boolean;
+  hasDiscord: boolean;
   createdAt: string;
 }
 

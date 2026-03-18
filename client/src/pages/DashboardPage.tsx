@@ -4,6 +4,7 @@ import { getOverview } from '../api/stats.api.js';
 import { listTournaments } from '../api/tournaments.api.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
 import { LogoIcon } from '../components/ui/Logo.js';
+import { HelpButton } from '../components/ui/HelpButton.js';
 import type { OverviewStats, Tournament } from '@lorcana/shared';
 
 export function DashboardPage() {
@@ -32,7 +33,10 @@ export function DashboardPage() {
   return (
     <div className="space-y-6 sm:space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide">Tableau de bord</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide">Tableau de bord</h1>
+          <HelpButton sections={['Tournois', 'Statistiques']} />
+        </div>
         <Link to="/tournaments/new" className="ink-btn-primary text-sm px-4 py-2">
           + Nouveau
         </Link>

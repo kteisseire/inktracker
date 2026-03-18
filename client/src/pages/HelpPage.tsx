@@ -233,18 +233,18 @@ function MockLinkPrompt() {
 
 /* ── FAQ data with rich content ── */
 
-interface FaqItem {
+export interface FaqItem {
   question: string;
   answer: ReactNode;
 }
 
-interface FaqSection {
+export interface FaqSection {
   title: string;
   icon: string;
   items: FaqItem[];
 }
 
-const FAQ_SECTIONS: FaqSection[] = [
+export const FAQ_SECTIONS: FaqSection[] = [
   {
     title: 'Tournois',
     icon: 'M5 3h14l-1.4 8.4A5 5 0 0112.6 16h-.8a5 5 0 01-5-4.6L5 3zM8 16h8m-4 0v4m-3 0h6',

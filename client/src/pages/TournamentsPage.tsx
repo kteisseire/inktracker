@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { listTournaments } from '../api/tournaments.api.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
+import { HelpButton } from '../components/ui/HelpButton.js';
 import type { Tournament } from '@lorcana/shared';
 
 const FORMAT_LABELS: Record<string, string> = { BO1: 'Bo1', BO3: 'Bo3', BO5: 'Bo5' };
@@ -22,7 +23,10 @@ export function TournamentsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide">Mes tournois</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide">Mes tournois</h1>
+          <HelpButton sections={['Tournois']} />
+        </div>
         <Link to="/tournaments/new" className="ink-btn-primary text-sm px-4 py-2">+ Nouveau</Link>
       </div>
 

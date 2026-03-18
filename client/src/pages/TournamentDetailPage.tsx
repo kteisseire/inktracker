@@ -12,6 +12,7 @@ import { getEventScoutReports, upsertScoutReport, createPotentialDecks as create
 import { listMyTeams } from '../api/team.api.js';
 import { INK_COLORS, getRecommendedSwissRounds, getRecommendedTopCut } from '@lorcana/shared';
 import type { Tournament, Round, Game, MatchResult, ScoutReport, InkColor, Team, PotentialDeck } from '@lorcana/shared';
+import { HelpButton } from '../components/ui/HelpButton.js';
 
 const FORMAT_LABELS: Record<string, string> = { BO1: 'Bo1', BO3: 'Bo3', BO5: 'Bo5' };
 const TOPCUT_LABELS: Record<string, string> = { NONE: 'Aucun', TOP4: 'Top 4', TOP8: 'Top 8', TOP16: 'Top 16', TOP32: 'Top 32' };
@@ -200,7 +201,10 @@ export function TournamentDetailPage() {
       <div>
         <Link to="/tournaments" className="text-sm text-ink-500 hover:text-gold-400 transition-colors">&larr; Retour</Link>
         <div className="flex items-center justify-between gap-3 mt-1">
-          <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide truncate min-w-0">{tournament.name}</h1>
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide truncate min-w-0">{tournament.name}</h1>
+            <HelpButton sections={['Tournois', 'Arbre du tournoi et scouting']} />
+          </div>
           <DropdownMenu
             items={[
               { label: 'Modifier', onClick: () => navigate(`/tournaments/${id}/edit`) },

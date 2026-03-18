@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { listDecks, createDeck, updateDeck, deleteDeck, setDefaultDeck, extractDeckColors } from '../api/deck.api.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
 import { InkColorPicker } from '../components/ui/InkColorPicker.js';
+import { HelpButton } from '../components/ui/HelpButton.js';
 import type { Deck, InkColor } from '@lorcana/shared';
 
 const SUPPORTED_SITES = ['dreamborn.ink', 'lorcanito.com', 'db.lorcanito.com', 'duels.ink', 'inkdecks.com'];
@@ -135,7 +136,10 @@ export function DecksPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide">Mes decks</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide">Mes decks</h1>
+          <HelpButton sections={['Decks']} />
+        </div>
         {!showForm && !editingDeck && (
           <button onClick={() => setShowForm(true)} className="ink-btn-primary text-sm px-4 py-2">+ Nouveau</button>
         )}

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.js';
 import { updateProfile, changePassword } from '../api/auth.api.js';
 import { listMyTeams, listMyInvites, respondToInvite } from '../api/team.api.js';
+import { HelpButton } from '../components/ui/HelpButton.js';
 import type { Team, TeamInvite } from '@lorcana/shared';
 
 const ROLE_LABELS: Record<string, string> = { OWNER: 'Propriétaire', ADMIN: 'Admin', MEMBER: 'Membre' };
@@ -14,7 +15,10 @@ export function ProfilePage() {
 
   return (
     <div className="max-w-lg mx-auto space-y-6">
-      <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide">Mon profil</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide">Mon profil</h1>
+        <HelpButton sections={['Compte et sécurité']} />
+      </div>
 
       <div className="ink-card p-4 sm:p-5">
         <p className="text-xs text-ink-500 mb-1">Membre depuis</p>

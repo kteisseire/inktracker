@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { getOverview, getMatchups, getDeckPerformance, getGoingFirstStats, getTournamentHistory } from '../api/stats.api.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
 import { DateFilterBar, useDateFilter } from '../components/ui/DateFilterBar.js';
+import { HelpButton } from '../components/ui/HelpButton.js';
 import type { OverviewStats, MatchupStat, DeckPerformance, GoingFirstStats } from '@lorcana/shared';
 
 export function StatsPage() {
@@ -38,7 +39,10 @@ export function StatsPage() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide">Statistiques</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide">Statistiques</h1>
+        <HelpButton sections={['Statistiques']} />
+      </div>
 
       <DateFilterBar state={dateFilter} />
 

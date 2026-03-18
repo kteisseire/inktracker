@@ -1,10 +1,201 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
+model User {
+  id             String          @id @default(uuid())
+  email          String          @unique
+  username       String          @unique
+  passwordHash   String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  googleId       String?         @unique
+  discordId      String?         @unique
+  decks          Deck[]
+  potentialDecks PotentialDeck[]
+  scoutReports   ScoutReport[]
+  teamInvites    TeamInvite[]    @relation("InvitedUser")
+  teamMembers    TeamMember[]
+  tournaments    Tournament[]
+
+  @@map("users")
+}
+
+model Team {
+  id             String          @id @default(uuid())
+  name           String
+  description    String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  potentialDecks PotentialDeck[]
+  scoutReports   ScoutReport[]
+  invites        TeamInvite[]
+  members        TeamMember[]
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id       String   @id @default(uuid())
+  teamId   String
+  userId   String
+  role     TeamRole @default(MEMBER)
+  joinedAt DateTime @default(now())
+  team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+  @@map("team_members")
+}
+
+model TeamInvite {
+  id        String       @id @default(uuid())
+  teamId    String
+  userId    String
+  status    InviteStatus @default(PENDING)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  team      Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User         @relation("InvitedUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([userId])
+  @@map("team_invites")
+}
+
+model Deck {
+  id          String       @id @default(uuid())
+  userId      String
+  name        String
+  colors      InkColor[]
+  link        String?
+  isDefault   Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tournaments Tournament[]
+
+  @@index([userId])
+  @@map("decks")
+}
+
+model Tournament {
+  id           String     @id @default(uuid())
+  userId       String
+  name         String
+  location     String?
+  date         DateTime
+  playerCount  Int?
+  swissRounds  Int
+  topCut       TopCut     @default(NONE)
+  format       Format     @default(BO1)
+  myDeckColors InkColor[]
+  placement    Int?
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deckId       String?
+  eventLink    String?
+  myDeckLink   String?
+  rounds       Round[]
+  deck         Deck?      @relation(fields: [deckId], references: [id])
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([deckId])
+  @@map("tournaments")
+}
+
+model Round {
+  id                 String      @id @default(uuid())
+  tournamentId       String
+  roundNumber        Int
+  isTopCut           Boolean     @default(false)
+  opponentName       String?
+  opponentDeckColors InkColor[]
+  result             MatchResult
+  notes              String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  games              Game[]
+  tournament         Tournament  @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, roundNumber, isTopCut])
+  @@index([tournamentId])
+  @@map("rounds")
+}
+
+model Game {
+  id            String      @id @default(uuid())
+  roundId       String
+  gameNumber    Int
+  result        MatchResult
+  wentFirst     Boolean?
+  myScore       Int         @default(0)
+  opponentScore Int         @default(0)
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  round         Round       @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  @@unique([roundId, gameNumber])
+  @@index([roundId])
+  @@map("games")
+}
+
+model ScoutReport {
+  id           String     @id @default(uuid())
+  teamId       String?
+  eventId      String
+  playerName   String
+  deckColors   InkColor[]
+  reportedById String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  reportedBy   User       @relation(fields: [reportedById], references: [id], onDelete: Cascade)
+  team         Team?      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([reportedById, eventId, playerName])
+  @@index([teamId, eventId])
+  @@index([reportedById, eventId])
+  @@map("scout_reports")
+}
+
+model PotentialDeck {
+  id           String     @id @default(uuid())
+  teamId       String?
+  eventId      String
+  roundNumber  Int
+  tableNumber  Int
+  deckColors   InkColor[]
+  player1Name  String
+  player2Name  String
+  reportedById String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  reportedBy   User       @relation(fields: [reportedById], references: [id], onDelete: Cascade)
+  team         Team?      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([reportedById, eventId, roundNumber, tableNumber, deckColors])
+  @@index([teamId, eventId])
+  @@index([reportedById, eventId])
+  @@map("potential_decks")
+}
+
+model EventCache {
+  id        String   @id @default(uuid())
+  eventId   String   @unique
+  data      Json
+  updatedAt DateTime @updatedAt
+
+  @@map("event_caches")
 }
 
 enum InkColor {
@@ -26,8 +217,8 @@ enum TopCut {
   TOP32
   TOP16
   TOP8
-  TOP4
   NONE
+  TOP4
 }
 
 enum MatchResult {
@@ -46,203 +237,4 @@ enum InviteStatus {
   PENDING
   ACCEPTED
   DECLINED
-}
-
-model User {
-  id           String       @id @default(uuid())
-  email        String       @unique
-  username     String       @unique
-  passwordHash String?
-  googleId     String?      @unique
-  discordId    String?      @unique
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-
-  tournaments   Tournament[]
-  decks         Deck[]
-  teamMembers    TeamMember[]
-  teamInvites    TeamInvite[] @relation("InvitedUser")
-  scoutReports   ScoutReport[]
-  potentialDecks PotentialDeck[]
-
-  @@map("users")
-}
-
-model Team {
-  id          String       @id @default(uuid())
-  name        String
-  description String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-  members        TeamMember[]
-  invites        TeamInvite[]
-  scoutReports   ScoutReport[]
-  potentialDecks PotentialDeck[]
-
-  @@map("teams")
-}
-
-model TeamMember {
-  id        String   @id @default(uuid())
-  teamId    String
-  userId    String
-  role      TeamRole @default(MEMBER)
-  joinedAt  DateTime @default(now())
-
-  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([teamId, userId])
-  @@index([teamId])
-  @@index([userId])
-  @@map("team_members")
-}
-
-model TeamInvite {
-  id        String       @id @default(uuid())
-  teamId    String
-  userId    String
-  status    InviteStatus @default(PENDING)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-
-  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade, name: "InvitedUser")
-
-  @@unique([teamId, userId])
-  @@index([userId])
-  @@map("team_invites")
-}
-
-model Deck {
-  id          String     @id @default(uuid())
-  userId      String
-  name        String
-  colors      InkColor[]
-  link        String?
-  isDefault   Boolean    @default(false)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tournaments Tournament[]
-
-  @@index([userId])
-  @@map("decks")
-}
-
-model Tournament {
-  id           String     @id @default(uuid())
-  userId       String
-  name         String
-  location     String?
-  date         DateTime
-  playerCount  Int?
-  swissRounds  Int
-  topCut       TopCut     @default(NONE)
-  format       Format     @default(BO1)
-  myDeckColors InkColor[]
-  myDeckLink   String?
-  deckId       String?
-  eventLink    String?
-  placement    Int?
-  notes        String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  deck   Deck?   @relation(fields: [deckId], references: [id], onDelete: SetNull)
-  rounds Round[]
-
-  @@index([userId])
-  @@index([deckId])
-  @@map("tournaments")
-}
-
-model Round {
-  id                 String      @id @default(uuid())
-  tournamentId       String
-  roundNumber        Int
-  isTopCut           Boolean     @default(false)
-  opponentName       String?
-  opponentDeckColors InkColor[]
-  result             MatchResult
-  notes              String?
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
-
-  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  games      Game[]
-
-  @@unique([tournamentId, roundNumber, isTopCut])
-  @@index([tournamentId])
-  @@map("rounds")
-}
-
-model Game {
-  id            String      @id @default(uuid())
-  roundId       String
-  gameNumber    Int
-  result        MatchResult
-  wentFirst     Boolean?
-  myScore       Int         @default(0)
-  opponentScore Int         @default(0)
-  notes         String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-
-  round Round @relation(fields: [roundId], references: [id], onDelete: Cascade)
-
-  @@unique([roundId, gameNumber])
-  @@index([roundId])
-  @@map("games")
-}
-
-model ScoutReport {
-  id           String     @id @default(uuid())
-  teamId       String
-  eventId      String
-  playerName   String
-  deckColors   InkColor[]
-  reportedById String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-
-  team       Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  reportedBy User @relation(fields: [reportedById], references: [id], onDelete: Cascade)
-
-  @@unique([teamId, eventId, playerName])
-  @@index([teamId, eventId])
-  @@map("scout_reports")
-}
-
-model PotentialDeck {
-  id           String     @id @default(uuid())
-  teamId       String
-  eventId      String
-  roundNumber  Int
-  tableNumber  Int
-  deckColors   InkColor[]
-  player1Name  String
-  player2Name  String
-  reportedById String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-
-  team       Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  reportedBy User @relation(fields: [reportedById], references: [id], onDelete: Cascade)
-
-  @@unique([teamId, eventId, roundNumber, tableNumber, deckColors])
-  @@index([teamId, eventId])
-  @@map("potential_decks")
-}
-
-model EventCache {
-  id        String   @id @default(uuid())
-  eventId   String   @unique
-  data      Json
-  updatedAt DateTime @updatedAt
-
-  @@map("event_caches")
 }

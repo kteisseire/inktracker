@@ -9,10 +9,9 @@ async function verifyTeamMembership(teamId: string, userId: string) {
   });
 }
 
-/** Get all scout reports for a given event, scoped to the user's teams */
+/** Get all scout reports for a given event, scoped to user's personal reports + team reports */
 export async function getEventScoutReports(req: AuthRequest, res: Response) {
   const { eventId } = req.params;
-  const teamId = req.query.teamId as string | undefined;
 
   const memberships = await prisma.teamMember.findMany({
     where: { userId: req.userId },
@@ -20,23 +19,24 @@ export async function getEventScoutReports(req: AuthRequest, res: Response) {
   });
   const myTeamIds = memberships.map(m => m.teamId);
 
-  if (myTeamIds.length === 0) {
-    res.json({ reports: [], potentialDecks: [] });
-    return;
+  // Personal reports (teamId is null, reportedById is me) OR team reports
+  const orConditions: any[] = [
+    { eventId, teamId: null, reportedById: req.userId },
+  ];
+  if (myTeamIds.length > 0) {
+    orConditions.push({ eventId, teamId: { in: myTeamIds } });
   }
-
-  const teamFilter = teamId && myTeamIds.includes(teamId) ? teamId : { in: myTeamIds };
 
   const [reports, potentialDecks] = await Promise.all([
     prisma.scoutReport.findMany({
-      where: { eventId, teamId: teamFilter },
+      where: { OR: orConditions },
       include: {
         reportedBy: { select: { id: true, username: true } },
       },
       orderBy: { updatedAt: 'desc' },
     }),
     prisma.potentialDeck.findMany({
-      where: { eventId, teamId: teamFilter },
+      where: { OR: orConditions },
       include: {
         reportedBy: { select: { id: true, username: true } },
       },
@@ -51,21 +51,24 @@ export async function getEventScoutReports(req: AuthRequest, res: Response) {
 export async function upsertScoutReport(req: AuthRequest, res: Response) {
   const { teamId, eventId, playerName, deckColors } = req.body;
 
-  const membership = await verifyTeamMembership(teamId, req.userId!);
-  if (!membership) {
-    res.status(403).json({ error: 'Vous n\'êtes pas membre de cette équipe' });
-    return;
+  // If teamId is provided, verify membership
+  if (teamId) {
+    const membership = await verifyTeamMembership(teamId, req.userId!);
+    if (!membership) {
+      res.status(403).json({ error: 'Vous n\'êtes pas membre de cette équipe' });
+      return;
+    }
   }
 
   const report = await prisma.scoutReport.upsert({
-    where: { teamId_eventId_playerName: { teamId, eventId, playerName: playerName.trim() } },
+    where: { reportedById_eventId_playerName: { reportedById: req.userId!, eventId, playerName: playerName.trim() } },
     update: {
       deckColors,
-      reportedById: req.userId!,
+      teamId: teamId || null,
       updatedAt: new Date(),
     },
     create: {
-      teamId,
+      teamId: teamId || null,
       eventId,
       playerName: playerName.trim(),
       deckColors,
@@ -83,23 +86,25 @@ export async function upsertScoutReport(req: AuthRequest, res: Response) {
 export async function bulkUpsertScoutReports(req: AuthRequest, res: Response) {
   const { teamId, eventId, reports } = req.body;
 
-  const membership = await verifyTeamMembership(teamId, req.userId!);
-  if (!membership) {
-    res.status(403).json({ error: 'Vous n\'êtes pas membre de cette équipe' });
-    return;
+  if (teamId) {
+    const membership = await verifyTeamMembership(teamId, req.userId!);
+    if (!membership) {
+      res.status(403).json({ error: 'Vous n\'êtes pas membre de cette équipe' });
+      return;
+    }
   }
 
   const results = await Promise.all(
     reports.map((r: { playerName: string; deckColors: string[] }) =>
       prisma.scoutReport.upsert({
-        where: { teamId_eventId_playerName: { teamId, eventId, playerName: r.playerName.trim() } },
+        where: { reportedById_eventId_playerName: { reportedById: req.userId!, eventId, playerName: r.playerName.trim() } },
         update: {
           deckColors: r.deckColors as any,
-          reportedById: req.userId!,
+          teamId: teamId || null,
           updatedAt: new Date(),
         },
         create: {
-          teamId,
+          teamId: teamId || null,
           eventId,
           playerName: r.playerName.trim(),
           deckColors: r.deckColors as any,
@@ -119,18 +124,21 @@ export async function bulkUpsertScoutReports(req: AuthRequest, res: Response) {
 export async function createPotentialDecks(req: AuthRequest, res: Response) {
   const { teamId, eventId, roundNumber, tableNumber, player1Name, player2Name, decks } = req.body;
 
-  const membership = await verifyTeamMembership(teamId, req.userId!);
-  if (!membership) {
-    res.status(403).json({ error: 'Vous n\'êtes pas membre de cette équipe' });
-    return;
+  // If teamId is provided, verify membership
+  if (teamId) {
+    const membership = await verifyTeamMembership(teamId, req.userId!);
+    if (!membership) {
+      res.status(403).json({ error: 'Vous n\'êtes pas membre de cette équipe' });
+      return;
+    }
   }
 
   const p1 = player1Name.trim();
   const p2 = player2Name.trim();
 
-  // Delete existing potential decks for this table/round (replace them)
+  // Delete existing potential decks for this table/round by this user (replace them)
   await prisma.potentialDeck.deleteMany({
-    where: { teamId, eventId, roundNumber, tableNumber },
+    where: { reportedById: req.userId!, eventId, roundNumber, tableNumber },
   });
 
   // Create one PotentialDeck per deck seen at the table
@@ -138,7 +146,7 @@ export async function createPotentialDecks(req: AuthRequest, res: Response) {
     (decks as string[][]).map((deckColors: string[]) =>
       prisma.potentialDeck.create({
         data: {
-          teamId,
+          teamId: teamId || null,
           eventId,
           roundNumber,
           tableNumber,
@@ -167,8 +175,15 @@ export async function deleteScoutReport(req: AuthRequest, res: Response) {
     return;
   }
 
-  const membership = await verifyTeamMembership(report.teamId, req.userId!);
-  if (!membership) {
+  // Personal report (no team) — only the reporter can delete
+  // Team report — only team members can delete
+  if (report.teamId) {
+    const membership = await verifyTeamMembership(report.teamId, req.userId!);
+    if (!membership) {
+      res.status(403).json({ error: 'Permission insuffisante' });
+      return;
+    }
+  } else if (report.reportedById !== req.userId) {
     res.status(403).json({ error: 'Permission insuffisante' });
     return;
   }

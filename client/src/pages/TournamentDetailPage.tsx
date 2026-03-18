@@ -528,11 +528,11 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
     });
   };
 
-  const handlePotentialDecks = async (teamId: string, roundNumber: number, tableNumber: number, player1Name: string, player2Name: string, decks: InkColor[][]) => {
+  const handlePotentialDecks: PotentialDecksHandler = async (teamId, roundNumber, tableNumber, player1Name, player2Name, decks) => {
     const results = await createPotentialDecksApi({ teamId, eventId, roundNumber, tableNumber, player1Name, player2Name, decks });
     setPotentialDecks(prev => {
       // Remove old entries for this table/round, add new ones
-      const filtered = prev.filter(d => !(d.teamId === teamId && d.roundNumber === roundNumber && d.tableNumber === tableNumber));
+      const filtered = prev.filter(d => !(d.roundNumber === roundNumber && d.tableNumber === tableNumber));
       return [...filtered, ...results];
     });
   };
@@ -783,8 +783,8 @@ function Pagination({ page, totalPages, onPageChange }: { page: number; totalPag
   );
 }
 
-type ScoutHandler = (playerName: string, colors: InkColor[], teamId: string) => Promise<void>;
-type PotentialDecksHandler = (teamId: string, roundNumber: number, tableNumber: number, player1Name: string, player2Name: string, decks: InkColor[][]) => Promise<void>;
+type ScoutHandler = (playerName: string, colors: InkColor[], teamId: string | null) => Promise<void>;
+type PotentialDecksHandler = (teamId: string | null, roundNumber: number, tableNumber: number, player1Name: string, player2Name: string, decks: InkColor[][]) => Promise<void>;
 
 function StandingsView({ standings, roundNumber, username, scoutMap, possibleDecks, teams, eventId, onScout }: { standings: EventStanding[]; roundNumber: number; username: string; scoutMap: Map<string, ScoutReport>; possibleDecks: Map<string, PotentialDeck[]>; teams: Team[]; eventId: string; onScout: ScoutHandler }) {
   const [search, setSearch] = useState('');
@@ -842,9 +842,7 @@ function StandingsView({ standings, roundNumber, username, scoutMap, possibleDec
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="truncate">{s.playerName}</span>
                       <ScoutDeckBadges scout={scout} possibleDecks={possibleDecks.get(s.playerName.toLowerCase())} />
-                      {teams.length > 0 && (
-                        <ScoutPicker playerName={s.playerName} teams={teams} eventId={eventId} existingColors={scout?.deckColors} onSaved={onScout} />
-                      )}
+                      <ScoutPicker playerName={s.playerName} teams={teams} eventId={eventId} existingColors={scout?.deckColors} onSaved={onScout} />
                     </div>
                   </td>
                   <td className="text-center px-3 py-2.5 text-ink-300 font-medium">{s.record}</td>
@@ -1100,29 +1098,27 @@ function MatchDetailModal({ match: m, roundNumber, isMe, getScout, possibleDecks
           </div>
         </div>
 
-        {/* Mode toggle (only if user has teams) */}
-        {teams.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setUncertainMode(!uncertainMode)}
-            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors ${
-              uncertainMode
-                ? 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
-                : 'bg-ink-800/30 border border-ink-700/30 text-ink-500 hover:text-ink-300'
-            }`}
-          >
-            <span className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-              uncertainMode ? 'border-amber-400 bg-amber-400' : 'border-ink-600'
-            }`}>
-              {uncertainMode && (
-                <svg className="w-3 h-3 text-ink-950" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-            </span>
-            Je ne sais pas qui joue quel deck
-          </button>
-        )}
+        {/* Mode toggle */}
+        <button
+          type="button"
+          onClick={() => setUncertainMode(!uncertainMode)}
+          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors ${
+            uncertainMode
+              ? 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
+              : 'bg-ink-800/30 border border-ink-700/30 text-ink-500 hover:text-ink-300'
+          }`}
+        >
+          <span className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+            uncertainMode ? 'border-amber-400 bg-amber-400' : 'border-ink-600'
+          }`}>
+            {uncertainMode && (
+              <svg className="w-3 h-3 text-ink-950" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </span>
+          Je ne sais pas qui joue quel deck
+        </button>
 
         {uncertainMode ? (
           <UncertainDeckPicker
@@ -1246,7 +1242,7 @@ function UncertainDeckPicker({ p1Name, p2Name, existingPotentials, teams, roundN
   // Don't pre-fill color grids — user must select from scratch each time
   const [deckA, setDeckA] = useState<InkColor[]>([]);
   const [deckB, setDeckB] = useState<InkColor[]>([]);
-  const [teamId, setTeamId] = useState(teams[0]?.id || '');
+  const [teamId, setTeamId] = useState(teams[0]?.id || null);
   const [saving, setSaving] = useState(false);
 
   const toggleA = (color: InkColor) => {
@@ -1261,7 +1257,7 @@ function UncertainDeckPicker({ p1Name, p2Name, existingPotentials, teams, roundN
   const canSave = deckA.length > 0 && deckB.length > 0;
 
   const handleSave = async () => {
-    if (!canSave || !teamId) return;
+    if (!canSave) return;
     setSaving(true);
     try {
       await onPotentialDecks(teamId, roundNumber, tableNumber, p1Name, p2Name, [deckA, deckB]);
@@ -1293,8 +1289,8 @@ function UncertainDeckPicker({ p1Name, p2Name, existingPotentials, teams, roundN
 
       {teams.length > 1 && (
         <select
-          value={teamId}
-          onChange={e => setTeamId(e.target.value)}
+          value={teamId || ''}
+          onChange={e => setTeamId(e.target.value || null)}
           className="w-full bg-ink-800/50 border border-ink-700/50 rounded-lg text-xs text-ink-200 px-2.5 py-2 focus:outline-none focus:border-gold-500/40"
         >
           {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -1327,7 +1323,7 @@ function InlineScoutSection({ name, isWinner, isCurrentUser, scout, potentialDec
 }) {
   const existingColors = (scout?.deckColors || []) as InkColor[];
   const [colors, setColors] = useState<InkColor[]>(existingColors);
-  const [teamId, setTeamId] = useState(teams[0]?.id || '');
+  const [teamId, setTeamId] = useState(teams[0]?.id || null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => { setColors((scout?.deckColors || []) as InkColor[]); }, [scout]);
@@ -1340,7 +1336,7 @@ function InlineScoutSection({ name, isWinner, isCurrentUser, scout, potentialDec
   const colorsChanged = colors.length > 0 && JSON.stringify(colors.slice().sort()) !== JSON.stringify(existingColors.slice().sort());
 
   const handleSave = async () => {
-    if (colors.length === 0 || !teamId) return;
+    if (colors.length === 0) return;
     setSaving(true);
     try {
       await onScout(name, colors, teamId);
@@ -1367,52 +1363,30 @@ function InlineScoutSection({ name, isWinner, isCurrentUser, scout, potentialDec
       {/* Potential decks reference */}
       {potentialDecks.length > 0 && <PossibleDecksRef decks={potentialDecks} />}
 
-      {/* Color picker (only if user has teams) */}
-      {teams.length > 0 ? (
-        <>
-          <ColorGrid colors={colors} onToggle={toggle} />
+      {/* Color picker */}
+      <ColorGrid colors={colors} onToggle={toggle} />
 
-          {teams.length > 1 && (
-            <select
-              value={teamId}
-              onChange={e => setTeamId(e.target.value)}
-              className="w-full bg-ink-800/50 border border-ink-700/50 rounded-lg text-xs text-ink-200 px-2.5 py-2 focus:outline-none focus:border-gold-500/40"
-            >
-              {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-            </select>
-          )}
+      {teams.length > 1 && (
+        <select
+          value={teamId || ''}
+          onChange={e => setTeamId(e.target.value || null)}
+          className="w-full bg-ink-800/50 border border-ink-700/50 rounded-lg text-xs text-ink-200 px-2.5 py-2 focus:outline-none focus:border-gold-500/40"
+        >
+          {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+        </select>
+      )}
 
-          {colorsChanged && colors.length > 0 && (
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving}
-              className="w-full text-xs font-medium px-3 py-2 rounded-lg bg-gold-500/20 text-gold-400 hover:bg-gold-500/30 disabled:opacity-30 transition-colors"
-            >
-              {saving ? 'Envoi...' : 'Enregistrer'}
-            </button>
-          )}
-        </>
-      ) : existingColors.length > 0 ? (
-        <div className="flex items-center gap-1.5">
-          {existingColors.filter(c => INK_COLORS_CONFIG[c]).map(c => {
-            const config = INK_COLORS_CONFIG[c];
-            return (
-              <span
-                key={c}
-                className="inline-flex items-center px-2 py-px rounded-full text-[10px] font-semibold"
-                style={{
-                  backgroundColor: config.hex,
-                  color: c === 'AMBER' ? '#78350f' : '#fff',
-                  textShadow: c === 'AMBER' ? 'none' : '0 1px 2px rgba(0,0,0,0.3)',
-                }}
-              >
-                {config.label}
-              </span>
-            );
-          })}
-        </div>
-      ) : null}
+      {colorsChanged && colors.length > 0 && (
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="w-full text-xs font-medium px-3 py-2 rounded-lg bg-gold-500/20 text-gold-400 hover:bg-gold-500/30 disabled:opacity-30 transition-colors"
+        >
+          {saving ? 'Envoi...' : 'Enregistrer'}
+        </button>
+      )}
+
     </div>
   );
 }

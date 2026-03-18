@@ -194,16 +194,14 @@ export function ScoutPicker({ playerName, teams, eventId, existingColors, onSave
   teams: Team[];
   eventId: string;
   existingColors?: InkColor[];
-  onSaved: (playerName: string, colors: InkColor[], teamId: string) => void;
+  onSaved: (playerName: string, colors: InkColor[], teamId: string | null) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [colors, setColors] = useState<InkColor[]>(existingColors || []);
-  const [teamId, setTeamId] = useState(teams[0]?.id || '');
+  const [teamId, setTeamId] = useState(teams[0]?.id || null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => { setColors(existingColors || []); }, [existingColors]);
-
-  if (teams.length === 0) return null;
 
   const hasExisting = existingColors && existingColors.length > 0;
 
@@ -213,7 +211,7 @@ export function ScoutPicker({ playerName, teams, eventId, existingColors, onSave
   };
 
   const handleSave = async () => {
-    if (colors.length === 0 || !teamId) return;
+    if (colors.length === 0) return;
     setSaving(true);
     try {
       await onSaved(playerName, colors, teamId);
@@ -295,8 +293,8 @@ export function ScoutPicker({ playerName, teams, eventId, existingColors, onSave
               <div className="space-y-2">
                 <p className="text-xs text-ink-500 font-medium uppercase tracking-wide">Équipe</p>
                 <select
-                  value={teamId}
-                  onChange={e => setTeamId(e.target.value)}
+                  value={teamId || ''}
+                  onChange={e => setTeamId(e.target.value || null)}
                   className="w-full bg-ink-800/50 border border-ink-700/50 rounded-xl text-sm text-ink-200 px-3 py-2.5 focus:outline-none focus:border-gold-500/40"
                 >
                   {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}

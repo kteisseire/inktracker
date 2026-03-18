@@ -2,7 +2,7 @@ import type { InkColor } from '../constants/lorcana.js';
 
 export interface ScoutReport {
   id: string;
-  teamId: string;
+  teamId: string | null;
   eventId: string;
   playerName: string;
   deckColors: InkColor[];
@@ -13,21 +13,21 @@ export interface ScoutReport {
 }
 
 export interface CreateScoutReportRequest {
-  teamId: string;
+  teamId?: string | null;
   eventId: string;
   playerName: string;
   deckColors: InkColor[];
 }
 
 export interface BulkScoutReportRequest {
-  teamId: string;
+  teamId?: string | null;
   eventId: string;
   reports: { playerName: string; deckColors: InkColor[] }[];
 }
 
 export interface PotentialDeck {
   id: string;
-  teamId: string;
+  teamId: string | null;
   eventId: string;
   roundNumber: number;
   tableNumber: number;
@@ -41,7 +41,7 @@ export interface PotentialDeck {
 }
 
 export interface CreatePotentialDecksRequest {
-  teamId: string;
+  teamId?: string | null;
   eventId: string;
   roundNumber: number;
   tableNumber: number;

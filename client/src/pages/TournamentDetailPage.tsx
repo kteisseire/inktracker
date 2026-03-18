@@ -1069,10 +1069,10 @@ function MatchDetailModal({ match: m, roundNumber, isMe, getScout, possibleDecks
   // Rules for default checkbox state:
   // - No data at all → checked (uncertain)
   // - At least one certain deck → unchecked
-  // - Only potential decks → checked
+  // - At least one player with potential decks → unchecked (we have info to refine)
   const hasCertainScout = (scout1?.deckColors?.length ?? 0) > 0 || (scout2?.deckColors?.length ?? 0) > 0;
   const hasPotentials = p1Potentials.length > 0 || p2Potentials.length > 0;
-  const [uncertainMode, setUncertainMode] = useState(hasCertainScout ? false : hasPotentials ? true : true);
+  const [uncertainMode, setUncertainMode] = useState(hasCertainScout || hasPotentials ? false : true);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';

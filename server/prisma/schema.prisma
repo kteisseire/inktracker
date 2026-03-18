@@ -8,20 +8,22 @@ datasource db {
 }
 
 model User {
-  id             String          @id @default(uuid())
-  email          String          @unique
-  username       String          @unique
-  passwordHash   String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  googleId       String?         @unique
-  discordId      String?         @unique
-  decks          Deck[]
-  potentialDecks PotentialDeck[]
-  scoutReports   ScoutReport[]
-  teamInvites    TeamInvite[]    @relation("InvitedUser")
-  teamMembers    TeamMember[]
-  tournaments    Tournament[]
+  id                     String          @id @default(uuid())
+  email                  String          @unique
+  username               String          @unique
+  passwordHash           String?
+  passwordResetToken     String?
+  passwordResetExpiresAt DateTime?
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+  googleId               String?         @unique
+  discordId              String?         @unique
+  decks                  Deck[]
+  potentialDecks         PotentialDeck[]
+  scoutReports           ScoutReport[]
+  teamInvites            TeamInvite[]    @relation("InvitedUser")
+  teamMembers            TeamMember[]
+  tournaments            Tournament[]
 
   @@map("users")
 }

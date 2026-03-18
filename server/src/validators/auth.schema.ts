@@ -18,3 +18,12 @@ export const googleLoginSchema = z.object({
 export const discordLoginSchema = z.object({
   code: z.string().min(1, 'Code requis'),
 });
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('Email invalide'),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Token requis'),
+  password: z.string().min(6, 'Minimum 6 caractères'),
+});

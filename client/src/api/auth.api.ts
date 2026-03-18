@@ -1,5 +1,5 @@
 import api from './client.js';
-import type { AuthResponse, LoginRequest, RegisterRequest, UpdateProfileRequest, ChangePasswordRequest, User } from '@lorcana/shared';
+import type { AuthResponse, LoginRequest, RegisterRequest, UpdateProfileRequest, ChangePasswordRequest, ForgotPasswordRequest, ResetPasswordRequest, User } from '@lorcana/shared';
 
 export async function login(data: LoginRequest): Promise<AuthResponse> {
   const res = await api.post('/auth/login', data);
@@ -33,4 +33,14 @@ export async function updateProfile(data: UpdateProfileRequest): Promise<User> {
 
 export async function changePassword(data: ChangePasswordRequest): Promise<void> {
   await api.put('/auth/password', data);
+}
+
+export async function forgotPassword(data: ForgotPasswordRequest): Promise<{ message: string }> {
+  const res = await api.post('/auth/forgot-password', data);
+  return res.data;
+}
+
+export async function resetPassword(data: ResetPasswordRequest): Promise<{ message: string }> {
+  const res = await api.post('/auth/reset-password', data);
+  return res.data;
 }

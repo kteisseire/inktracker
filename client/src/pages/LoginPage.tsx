@@ -46,7 +46,12 @@ export function LoginPage() {
         </div>
 
         <div>
-          <label className="ink-label">Mot de passe</label>
+          <div className="flex items-center justify-between">
+            <label className="ink-label">Mot de passe</label>
+            <Link to="/forgot-password" className="text-xs text-gold-400 hover:text-gold-300 transition-colors">
+              Mot de passe oublié ?
+            </Link>
+          </div>
           <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="ink-input" />
         </div>
 

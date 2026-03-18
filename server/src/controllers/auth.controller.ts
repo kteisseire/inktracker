@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { OAuth2Client } from 'google-auth-library';
 import prisma from '../lib/prisma.js';
 import { signToken } from '../lib/jwt.js';
 import { AuthRequest } from '../middleware/auth.js';
+import { sendPasswordResetEmail } from '../lib/email.js';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -229,6 +231,70 @@ export async function updateProfile(req: AuthRequest, res: Response) {
   });
 
   res.json({ user: userResponse(user) });
+}
+
+export async function forgotPassword(req: Request, res: Response) {
+  const { email } = req.body;
+
+  // Always respond with success to prevent email enumeration
+  const successMsg = { message: 'Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.' };
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    res.json(successMsg);
+    return;
+  }
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordResetToken: hashedToken, passwordResetExpiresAt: expiresAt },
+  });
+
+  const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+  const resetUrl = `${clientUrl}/reset-password?token=${token}`;
+
+  try {
+    await sendPasswordResetEmail(user.email, resetUrl);
+  } catch (err) {
+    console.error('Failed to send password reset email:', err);
+  }
+
+  res.json(successMsg);
+}
+
+export async function resetPassword(req: Request, res: Response) {
+  const { token, password } = req.body;
+
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  const user = await prisma.user.findFirst({
+    where: {
+      passwordResetToken: hashedToken,
+      passwordResetExpiresAt: { gt: new Date() },
+    },
+  });
+
+  if (!user) {
+    res.status(400).json({ error: 'Lien invalide ou expiré' });
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordHash,
+      passwordResetToken: null,
+      passwordResetExpiresAt: null,
+    },
+  });
+
+  res.json({ message: 'Mot de passe réinitialisé avec succès' });
 }
 
 export async function changePassword(req: AuthRequest, res: Response) {

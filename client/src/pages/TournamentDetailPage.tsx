@@ -299,18 +299,16 @@ export function TournamentDetailPage() {
         >
           Mes rondes
         </button>
-        {hasEventLink && (
-          <button
-            onClick={() => setTab('bracket')}
-            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
-              tab === 'bracket'
-                ? 'text-gold-400 border-gold-500'
-                : 'text-ink-400 border-transparent hover:text-ink-200'
-            }`}
-          >
-            Arbre du tournoi
-          </button>
-        )}
+        <button
+          onClick={() => setTab('bracket')}
+          className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            tab === 'bracket'
+              ? 'text-gold-400 border-gold-500'
+              : 'text-ink-400 border-transparent hover:text-ink-200'
+          }`}
+        >
+          Arbre du tournoi
+        </button>
       </div>
 
       {/* Tab content */}
@@ -336,14 +334,18 @@ export function TournamentDetailPage() {
         </div>
       )}
 
-      {tab === 'bracket' && hasEventLink && (
-        <BracketTab
-          eventLink={tournament.eventLink!}
-          username={user?.username || ''}
-          tournamentId={id!}
-          existingRounds={rounds}
-          onRoundsChanged={load}
-        />
+      {tab === 'bracket' && (
+        hasEventLink ? (
+          <BracketTab
+            eventLink={tournament.eventLink!}
+            username={user?.username || ''}
+            tournamentId={id!}
+            existingRounds={rounds}
+            onRoundsChanged={load}
+          />
+        ) : (
+          <LinkPlayHubPrompt tournamentId={id!} onLinked={load} />
+        )
       )}
 
       {/* Sync confirmation modal */}
@@ -426,6 +428,76 @@ function findMyMatch(matches: EventMatch[], username: string): {
     };
   }
   return null;
+}
+
+function LinkPlayHubPrompt({ tournamentId, onLinked }: { tournamentId: string; onLinked: () => void }) {
+  const [link, setLink] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSave = async () => {
+    const eventId = extractEventId(link);
+    if (!eventId) {
+      setError('URL invalide. Exemple : https://tcg.ravensburgerplay.com/events/427780');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    try {
+      await updateTournament(tournamentId, { eventLink: link } as any);
+      onLinked();
+    } catch {
+      setError('Erreur lors de la sauvegarde');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center py-12 px-4">
+      <div className="ink-card p-6 sm:p-8 max-w-md w-full space-y-5 text-center">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-ink-800/60 flex items-center justify-center">
+          <svg className="w-7 h-7 text-ink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-2.562a4.5 4.5 0 00-6.364-6.364L4.5 8.244" />
+          </svg>
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-ink-100">Connecter le Play Hub</h3>
+          <p className="text-sm text-ink-400 mt-2 leading-relaxed">
+            Ajoutez le lien de votre tournoi Ravensburger Play Hub pour charger l'arbre du tournoi, les classements et activer le scouting.
+          </p>
+        </div>
+
+        <div className="space-y-3 text-left">
+          {error && <div className="ink-error text-xs">{error}</div>}
+          <div>
+            <label className="ink-label">Lien du tournoi</label>
+            <input
+              type="url"
+              value={link}
+              onChange={e => { setLink(e.target.value); setError(''); }}
+              placeholder="https://tcg.ravensburgerplay.com/events/..."
+              className="ink-input text-sm"
+            />
+          </div>
+          <button
+            onClick={handleSave}
+            disabled={!link.trim() || saving}
+            className="w-full ink-btn-primary py-2.5 text-sm"
+          >
+            {saving ? 'Connexion...' : 'Connecter'}
+          </button>
+        </div>
+
+        <p className="text-[11px] text-ink-600 leading-relaxed">
+          Retrouvez vos tournois sur{' '}
+          <a href="https://tcg.ravensburgerplay.com/my-events" target="_blank" rel="noopener noreferrer" className="text-ink-400 hover:text-gold-400 transition-colors underline">
+            tcg.ravensburgerplay.com
+          </a>
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function BracketTab({ eventLink, username, tournamentId, existingRounds, onRoundsChanged }: {

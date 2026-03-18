@@ -7,7 +7,7 @@ const INK_HEX: Record<string, string> = {
   RUBY: '#ef4444', SAPPHIRE: '#3b82f6', STEEL: '#6b7280',
 };
 const INK_LABELS: Record<string, string> = {
-  AMBER: 'Ambre', AMETHYST: 'Am\u00e9thyste', EMERALD: '\u00c9meraude',
+  AMBER: 'Ambre', AMETHYST: 'Améthyste', EMERALD: 'Émeraude',
   RUBY: 'Rubis', SAPPHIRE: 'Saphir', STEEL: 'Acier',
 };
 
@@ -124,7 +124,7 @@ function MockSyncBanner() {
     <div className="rounded-lg border border-gold-500/20 bg-ink-900/80 p-3 space-y-2 not-prose">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs font-medium text-ink-200">3 rondes \u00e0 synchroniser</p>
+          <p className="text-xs font-medium text-ink-200">3 rondes à synchroniser</p>
           <p className="text-[10px] text-ink-500">Depuis le Play Hub</p>
         </div>
         <MockBtn gold small>Synchroniser</MockBtn>
@@ -176,7 +176,7 @@ function MockDeduction() {
         </svg>
       </div>
       <div className="rounded-lg bg-ink-800/40 border border-green-500/20 p-2.5 text-xs">
-        <p className="text-green-400/80 text-[10px] mb-1.5">Alice qualifi\u00e9e Rubis/Saphir \u2192 Bob d\u00e9duit Ambre/Am\u00e9thyste</p>
+        <p className="text-green-400/80 text-[10px] mb-1.5">Alice qualifiée Rubis/Saphir → Bob déduit Ambre/Améthyste</p>
         <div className="flex items-center gap-1.5">
           <span className="text-ink-200">Alice</span>
           <InkDot color="RUBY" /><InkDot color="SAPPHIRE" />
@@ -184,7 +184,7 @@ function MockDeduction() {
         <div className="flex items-center gap-1.5 mt-1">
           <span className="text-ink-200">Bob</span>
           <InkDot color="AMBER" /><InkDot color="AMETHYST" />
-          <span className="text-[10px] text-green-400/60 ml-1">d\u00e9duit</span>
+          <span className="text-[10px] text-green-400/60 ml-1">déduit</span>
         </div>
       </div>
     </div>
@@ -250,12 +250,12 @@ const FAQ_SECTIONS: FaqSection[] = [
     icon: 'M5 3h14l-1.4 8.4A5 5 0 0112.6 16h-.8a5 5 0 01-5-4.6L5 3zM8 16h8m-4 0v4m-3 0h6',
     items: [
       {
-        question: 'Comment cr\u00e9er un tournoi ?',
+        question: 'Comment créer un tournoi ?',
         answer: (
           <div className="space-y-3">
             <p>Depuis la page Tournois, cliquez sur le bouton :</p>
             <MockBtn gold>+ Nouveau tournoi</MockBtn>
-            <p>Renseignez le nom, la date, le format (<code className="text-ink-300 bg-ink-800/50 px-1 rounded">Bo1</code>, <code className="text-ink-300 bg-ink-800/50 px-1 rounded">Bo3</code>, <code className="text-ink-300 bg-ink-800/50 px-1 rounded">Bo5</code>), le nombre de rondes suisses et le type de top cut. Vous pouvez aussi s\u00e9lectionner un de vos decks enregistr\u00e9s.</p>
+            <p>Renseignez le nom, la date, le format (<code className="text-ink-300 bg-ink-800/50 px-1 rounded">Bo1</code>, <code className="text-ink-300 bg-ink-800/50 px-1 rounded">Bo3</code>, <code className="text-ink-300 bg-ink-800/50 px-1 rounded">Bo5</code>), le nombre de rondes suisses et le type de top cut. Vous pouvez aussi sélectionner un de vos decks enregistrés.</p>
           </div>
         ),
       },
@@ -265,7 +265,7 @@ const FAQ_SECTIONS: FaqSection[] = [
           <div className="space-y-3">
             <p>Depuis la fiche d'un tournoi, dans l'onglet <MockTab label="Mes rondes" active />, cliquez sur :</p>
             <MockBtn gold>+ Ronde</MockBtn>
-            <p>Renseignez le nom de l'adversaire, le r\u00e9sultat (victoire, d\u00e9faite, nul) et les scores de chaque game. Vous pouvez noter si vous avez jou\u00e9 en premier.</p>
+            <p>Renseignez le nom de l'adversaire, le résultat (victoire, défaite, nul) et les scores de chaque game. Vous pouvez noter si vous avez joué en premier.</p>
           </div>
         ),
       },
@@ -273,9 +273,9 @@ const FAQ_SECTIONS: FaqSection[] = [
         question: "Qu'est-ce que la synchronisation Play Hub ?",
         answer: (
           <div className="space-y-3">
-            <p>Si votre tournoi est sur Ravensburger Play Hub, InkTracker peut r\u00e9cup\u00e9rer automatiquement vos rondes et r\u00e9sultats. Une banni\u00e8re de synchronisation appara\u00eet en haut de l'arbre :</p>
+            <p>Si votre tournoi est sur Ravensburger Play Hub, InkTracker peut récupérer automatiquement vos rondes et résultats. Une bannière de synchronisation apparaît en haut de l'arbre :</p>
             <MockSyncBanner />
-            <p>Cliquez sur <MockBtn gold small>Synchroniser</MockBtn> pour importer les rondes. Les scores (2-1, 2-0, etc.) sont fid\u00e8lement reproduits.</p>
+            <p>Cliquez sur <MockBtn gold small>Synchroniser</MockBtn> pour importer les rondes. Les scores (2-1, 2-0, etc.) sont fidèlement reproduits.</p>
           </div>
         ),
       },
@@ -283,16 +283,16 @@ const FAQ_SECTIONS: FaqSection[] = [
         question: 'Comment connecter le Play Hub ?',
         answer: (
           <div className="space-y-3">
-            <p>Allez dans l'onglet <MockTab label="Arbre du tournoi" active />. Si aucun lien n'est configur\u00e9, ce formulaire appara\u00eet :</p>
+            <p>Allez dans l'onglet <MockTab label="Arbre du tournoi" active />. Si aucun lien n'est configuré, ce formulaire apparaît :</p>
             <MockLinkPrompt />
-            <p>Collez l'URL de votre \u00e9v\u00e9nement Play Hub (ex : <code className="text-ink-300 bg-ink-800/50 px-1 rounded text-[11px]">tcg.ravensburgerplay.com/events/427780</code>) et cliquez <MockBtn gold small>Connecter</MockBtn>. L'arbre, les classements et le scouting se d\u00e9bloquent imm\u00e9diatement.</p>
+            <p>Collez l'URL de votre événement Play Hub (ex : <code className="text-ink-300 bg-ink-800/50 px-1 rounded text-[11px]">tcg.ravensburgerplay.com/events/427780</code>) et cliquez <MockBtn gold small>Connecter</MockBtn>. L'arbre, les classements et le scouting se débloquent immédiatement.</p>
           </div>
         ),
       },
       {
-        question: 'Les rondes suisses et le top cut sont-ils g\u00e9r\u00e9s ?',
+        question: 'Les rondes suisses et le top cut sont-ils gérés ?',
         answer: (
-          <p>Oui. Lors de la synchronisation, les rondes suisses et les rondes de top cut sont d\u00e9tect\u00e9es automatiquement. Elles sont affich\u00e9es dans des sections s\u00e9par\u00e9es et les scores sont fid\u00e8lement import\u00e9s.</p>
+          <p>Oui. Lors de la synchronisation, les rondes suisses et les rondes de top cut sont détectées automatiquement. Elles sont affichées dans des sections séparées et les scores sont fidèlement importés.</p>
         ),
       },
     ],
@@ -305,13 +305,13 @@ const FAQ_SECTIONS: FaqSection[] = [
         question: "Qu'est-ce que l'arbre du tournoi ?",
         answer: (
           <div className="space-y-3">
-            <p>L'onglet <MockTab label="Arbre du tournoi" active /> affiche les donn\u00e9es en direct depuis Play Hub. Vous y trouvez trois vues :</p>
+            <p>L'onglet <MockTab label="Arbre du tournoi" active /> affiche les données en direct depuis Play Hub. Vous y trouvez trois vues :</p>
             <div className="flex gap-1">
               <MockTab label="Classement" active />
               <MockTab label="Matchs" />
               <MockTab label="Rondes" />
             </div>
-            <p>Depuis la vue Matchs, chaque rencontre affiche les joueurs avec leurs scores. Cliquez sur un match pour ouvrir la fen\u00eatre de qualification de deck.</p>
+            <p>Depuis la vue Matchs, chaque rencontre affiche les joueurs avec leurs scores. Cliquez sur un match pour ouvrir la fenêtre de qualification de deck.</p>
           </div>
         ),
       },
@@ -319,16 +319,16 @@ const FAQ_SECTIONS: FaqSection[] = [
         question: "Comment qualifier le deck d'un joueur ?",
         answer: (
           <div className="space-y-3">
-            <p>Cliquez sur un match pour ouvrir la fen\u00eatre de qualification. \u00c0 c\u00f4t\u00e9 de chaque joueur, un bouton <MockScoutBtn /> permet de qualifier son deck.</p>
-            <p>S\u00e9lectionnez les 2 couleurs :</p>
+            <p>Cliquez sur un match pour ouvrir la fenêtre de qualification. À côté de chaque joueur, un bouton <MockScoutBtn /> permet de qualifier son deck.</p>
+            <p>Sélectionnez les 2 couleurs :</p>
             <MockColorGrid />
-            <p>L'enregistrement est <strong className="text-ink-200">automatique</strong> d\u00e8s que les 2 couleurs sont s\u00e9lectionn\u00e9es. Les pastilles apparaissent ensuite \u00e0 c\u00f4t\u00e9 du nom du joueur :</p>
+            <p>L'enregistrement est <strong className="text-ink-200">automatique</strong> dès que les 2 couleurs sont sélectionnées. Les pastilles apparaissent ensuite à côté du nom du joueur :</p>
             <div className="flex items-center gap-2">
               <span className="text-xs text-ink-200">Joueur_A</span>
               <InkDot color="RUBY" />
               <InkDot color="SAPPHIRE" />
             </div>
-            <p>Pour modifier un deck d\u00e9j\u00e0 qualifi\u00e9, cliquez sur <MockEditBtn /> \u00e0 c\u00f4t\u00e9 du nom.</p>
+            <p>Pour modifier un deck déjà qualifié, cliquez sur <MockEditBtn /> à côté du nom.</p>
           </div>
         ),
       },
@@ -338,7 +338,7 @@ const FAQ_SECTIONS: FaqSection[] = [
           <div className="space-y-3">
             <p>Cochez la case :</p>
             <MockCheckbox checked label="Je ne sais pas qui joue quel deck" />
-            <p>Vous pourrez d\u00e9finir 2 decks (Deck A et Deck B) sans les attribuer. Ils sont marqu\u00e9s comme potentiels :</p>
+            <p>Vous pourrez définir 2 decks (Deck A et Deck B) sans les attribuer. Ils sont marqués comme potentiels :</p>
             <div className="flex items-center gap-2 text-xs">
               <span className="text-ink-200">Joueur_A</span>
               <span className="text-amber-400 text-[10px]">?</span>
@@ -346,30 +346,30 @@ const FAQ_SECTIONS: FaqSection[] = [
               <span className="text-ink-600 text-[10px]">/</span>
               <InkDot color="AMBER" /><InkDot color="AMETHYST" />
             </div>
-            <p>Cliquez sur les pastilles pour voir le d\u00e9tail (qui a scout\u00e9, \u00e0 quelle table, quelle ronde).</p>
+            <p>Cliquez sur les pastilles pour voir le détail (qui a scouté, à quelle table, quelle ronde).</p>
           </div>
         ),
       },
       {
-        question: 'Comment fonctionne la d\u00e9duction automatique ?',
+        question: 'Comment fonctionne la déduction automatique ?',
         answer: (
           <div className="space-y-3">
-            <p>Quand vous qualifiez le deck d'un joueur de mani\u00e8re certaine, InkTracker v\u00e9rifie toutes les tables o\u00f9 ce joueur avait des decks potentiels :</p>
+            <p>Quand vous qualifiez le deck d'un joueur de manière certaine, InkTracker vérifie toutes les tables où ce joueur avait des decks potentiels :</p>
             <MockDeduction />
-            <p>Cette d\u00e9duction se propage <strong className="text-ink-200">en cascade</strong> : si le deck d\u00e9duit de Bob permet de r\u00e9soudre d'autres tables o\u00f9 il apparaissait, elles sont \u00e9galement r\u00e9solues automatiquement.</p>
+            <p>Cette déduction se propage <strong className="text-ink-200">en cascade</strong> : si le deck déduit de Bob permet de résoudre d'autres tables où il apparaissait, elles sont également résolues automatiquement.</p>
           </div>
         ),
       },
       {
-        question: "Le scouting fonctionne-t-il en \u00e9quipe ?",
+        question: "Le scouting fonctionne-t-il en équipe ?",
         answer: (
-          <p>Oui. Si vous \u00eates membre d'une \u00e9quipe, vos observations sont automatiquement partag\u00e9es avec tous les membres. Chaque membre peut qualifier des decks et toute l'\u00e9quipe b\u00e9n\u00e9ficie de l'ensemble des donn\u00e9es. Plus votre \u00e9quipe scoute, plus la couverture est compl\u00e8te.</p>
+          <p>Oui. Si vous êtes membre d'une équipe, vos observations sont automatiquement partagées avec tous les membres. Chaque membre peut qualifier des decks et toute l'équipe bénéficie de l'ensemble des données. Plus votre équipe scoute, plus la couverture est complète.</p>
         ),
       },
       {
-        question: 'Puis-je scouter sans \u00eatre dans une \u00e9quipe ?',
+        question: 'Puis-je scouter sans être dans une équipe ?',
         answer: (
-          <p>Oui. Le scouting fonctionne aussi en mode personnel. Vos observations sont priv\u00e9es et visibles uniquement par vous. Pour partager, cr\u00e9ez ou rejoignez une \u00e9quipe depuis la page "Mes \u00e9quipes".</p>
+          <p>Oui. Le scouting fonctionne aussi en mode personnel. Vos observations sont privées et visibles uniquement par vous. Pour partager, créez ou rejoignez une équipe depuis la page "Mes équipes".</p>
         ),
       },
     ],
@@ -384,12 +384,12 @@ const FAQ_SECTIONS: FaqSection[] = [
           <div className="space-y-3">
             <p>Depuis la page "Mes decks", cliquez sur :</p>
             <MockBtn gold>+ Nouveau deck</MockBtn>
-            <p>Donnez-lui un nom, s\u00e9lectionnez ses couleurs (1 \u00e0 3) :</p>
+            <p>Donnez-lui un nom, sélectionnez ses couleurs (1 à 3) :</p>
             <div className="flex gap-1.5">
               <InkBadge color="RUBY" />
               <InkBadge color="SAPPHIRE" />
             </div>
-            <p>Optionnellement, collez un lien vers votre liste (Dreamborn, Lorcanito, Duels.ink, Inkdecks) \u2014 les couleurs seront d\u00e9tect\u00e9es automatiquement.</p>
+            <p>Optionnellement, collez un lien vers votre liste (Dreamborn, Lorcanito, Duels.ink, Inkdecks) — les couleurs seront détectées automatiquement.</p>
           </div>
         ),
       },
@@ -397,7 +397,7 @@ const FAQ_SECTIONS: FaqSection[] = [
         question: "L'import automatique des couleurs fonctionne comment ?",
         answer: (
           <div className="space-y-3">
-            <p>Quand vous collez un lien de deck, InkTracker analyse la page et d\u00e9tecte les couleurs. Sites support\u00e9s :</p>
+            <p>Quand vous collez un lien de deck, InkTracker analyse la page et détecte les couleurs. Sites supportés :</p>
             <div className="flex flex-wrap gap-2">
               {['dreamborn.ink', 'lorcanito.com', 'duels.ink', 'inkdecks.com'].map(s => (
                 <span key={s} className="px-2 py-0.5 rounded bg-ink-800/50 text-[11px] text-ink-300 font-mono">{s}</span>
@@ -407,9 +407,9 @@ const FAQ_SECTIONS: FaqSection[] = [
         ),
       },
       {
-        question: "Qu'est-ce que le deck par d\u00e9faut ?",
+        question: "Qu'est-ce que le deck par défaut ?",
         answer: (
-          <p>Le deck par d\u00e9faut est pr\u00e9s\u00e9lectionn\u00e9 quand vous cr\u00e9ez un nouveau tournoi. Pratique si vous jouez souvent le m\u00eame deck. D\u00e9finissez-le depuis la page de d\u00e9tail du deck.</p>
+          <p>Le deck par défaut est présélectionné quand vous créez un nouveau tournoi. Pratique si vous jouez souvent le même deck. Définissez-le depuis la page de détail du deck.</p>
         ),
       },
     ],
@@ -424,24 +424,24 @@ const FAQ_SECTIONS: FaqSection[] = [
           <div className="space-y-3">
             <p>La page Statistiques vous donne :</p>
             <ul className="space-y-1.5 ml-4">
-              <li className="flex items-start gap-2"><span className="text-gold-400 mt-0.5">\u2022</span><span><strong className="text-ink-200">Win rate global</strong> \u2014 toutes rondes confondues</span></li>
-              <li className="flex items-start gap-2"><span className="text-gold-400 mt-0.5">\u2022</span><span><strong className="text-ink-200">Win rate par deck</strong> \u2014 performance de chaque deck</span></li>
-              <li className="flex items-start gap-2"><span className="text-gold-400 mt-0.5">\u2022</span><span><strong className="text-ink-200">Matchups</strong> \u2014 win rate couleur par couleur adverse</span></li>
-              <li className="flex items-start gap-2"><span className="text-gold-400 mt-0.5">\u2022</span><span><strong className="text-ink-200">Impact premier joueur</strong> \u2014 diff\u00e9rence quand vous jouez en premier vs second</span></li>
+              <li className="flex items-start gap-2"><span className="text-gold-400 mt-0.5">•</span><span><strong className="text-ink-200">Win rate global</strong> — toutes rondes confondues</span></li>
+              <li className="flex items-start gap-2"><span className="text-gold-400 mt-0.5">•</span><span><strong className="text-ink-200">Win rate par deck</strong> — performance de chaque deck</span></li>
+              <li className="flex items-start gap-2"><span className="text-gold-400 mt-0.5">•</span><span><strong className="text-ink-200">Matchups</strong> — win rate couleur par couleur adverse</span></li>
+              <li className="flex items-start gap-2"><span className="text-gold-400 mt-0.5">•</span><span><strong className="text-ink-200">Impact premier joueur</strong> — différence quand vous jouez en premier vs second</span></li>
             </ul>
-            <p>Vous pouvez filtrer par p\u00e9riode (dates).</p>
+            <p>Vous pouvez filtrer par période (dates).</p>
           </div>
         ),
       },
       {
-        question: 'Comment voir les stats d\u2019un deck sp\u00e9cifique ?',
+        question: 'Comment voir les stats d’un deck spécifique ?',
         answer: (
           <div className="space-y-3">
-            <p>Depuis "Mes decks", cliquez sur un deck pour voir ses statistiques d\u00e9di\u00e9es : win rate, matchups par couleur adverse, et historique des r\u00e9sultats.</p>
+            <p>Depuis "Mes decks", cliquez sur un deck pour voir ses statistiques dédiées : win rate, matchups par couleur adverse, et historique des résultats.</p>
             <div className="flex items-center gap-2">
               <InkBadge color="RUBY" />
               <InkBadge color="SAPPHIRE" />
-              <span className="text-xs text-ink-400">\u2192</span>
+              <span className="text-xs text-ink-400">→</span>
               <span className="text-xs text-green-400 font-semibold">67% WR</span>
               <span className="text-[10px] text-ink-500">(24 matchs)</span>
             </div>
@@ -451,36 +451,36 @@ const FAQ_SECTIONS: FaqSection[] = [
     ],
   },
   {
-    title: '\u00c9quipes',
+    title: 'Équipes',
     icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
     items: [
       {
-        question: 'Comment cr\u00e9er une \u00e9quipe ?',
+        question: 'Comment créer une équipe ?',
         answer: (
           <div className="space-y-3">
-            <p>Depuis "Mes \u00e9quipes", cliquez sur :</p>
-            <MockBtn gold>Cr\u00e9er une \u00e9quipe</MockBtn>
-            <p>Donnez-lui un nom et une description optionnelle. Vous devenez automatiquement propri\u00e9taire.</p>
+            <p>Depuis "Mes équipes", cliquez sur :</p>
+            <MockBtn gold>Créer une équipe</MockBtn>
+            <p>Donnez-lui un nom et une description optionnelle. Vous devenez automatiquement propriétaire.</p>
           </div>
         ),
       },
       {
         question: 'Comment inviter des membres ?',
         answer: (
-          <p>Depuis la fiche de votre \u00e9quipe, entrez le nom d'utilisateur InkTracker du joueur dans le champ d'invitation. L'invit\u00e9 pourra accepter ou refuser depuis sa page "\u00c9quipes".</p>
+          <p>Depuis la fiche de votre équipe, entrez le nom d'utilisateur InkTracker du joueur dans le champ d'invitation. L'invité pourra accepter ou refuser depuis sa page "Équipes".</p>
         ),
       },
       {
-        question: 'Quels sont les r\u00f4les dans une \u00e9quipe ?',
+        question: 'Quels sont les rôles dans une équipe ?',
         answer: (
           <div className="space-y-2">
             <div className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1.5 text-xs">
-              <span className="px-2 py-0.5 rounded bg-gold-500/15 text-gold-400 font-semibold text-center">Propri\u00e9taire</span>
-              <span className="text-ink-400 py-0.5">Cr\u00e9ateur de l'\u00e9quipe, tous les droits (supprimer, g\u00e9rer les r\u00f4les)</span>
+              <span className="px-2 py-0.5 rounded bg-gold-500/15 text-gold-400 font-semibold text-center">Propriétaire</span>
+              <span className="text-ink-400 py-0.5">Créateur de l'équipe, tous les droits (supprimer, gérer les rôles)</span>
               <span className="px-2 py-0.5 rounded bg-ink-700/50 text-ink-200 font-semibold text-center">Admin</span>
               <span className="text-ink-400 py-0.5">Peut inviter et retirer des membres</span>
               <span className="px-2 py-0.5 rounded bg-ink-800/50 text-ink-300 font-semibold text-center">Membre</span>
-              <span className="text-ink-400 py-0.5">Peut scouter et voir les donn\u00e9es partag\u00e9es</span>
+              <span className="text-ink-400 py-0.5">Peut scouter et voir les données partagées</span>
             </div>
           </div>
         ),
@@ -495,14 +495,14 @@ const FAQ_SECTIONS: FaqSection[] = [
         question: 'Comment fonctionne le compteur de Lore ?',
         answer: (
           <div className="space-y-3">
-            <p>Outil plein \u00e9cran optimis\u00e9 mobile. Deux compteurs face \u00e0 face (un joueur en haut invers\u00e9, l'autre en bas).</p>
+            <p>Outil plein écran optimisé mobile. Deux compteurs face à face (un joueur en haut inversé, l'autre en bas).</p>
             <div className="flex items-center gap-2">
               <MockBtn small>-1</MockBtn>
               <span className="text-lg font-bold text-ink-100 w-8 text-center">12</span>
               <MockBtn small>+1</MockBtn>
               <MockBtn small>+2</MockBtn>
             </div>
-            <p>Un historique des actions est consultable, et la victoire est d\u00e9tect\u00e9e automatiquement \u00e0 20 lore. Aucun compte requis.</p>
+            <p>Un historique des actions est consultable, et la victoire est détectée automatiquement à 20 lore. Aucun compte requis.</p>
           </div>
         ),
       },
@@ -518,7 +518,7 @@ const FAQ_SECTIONS: FaqSection[] = [
               </div>
               <div className="flex items-center gap-2 text-xs">
                 <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 font-semibold">Bubble</span>
-                <span className="text-ink-400">Record incertain, d\u00e9pend des d\u00e9partages</span>
+                <span className="text-ink-400">Record incertain, dépend des départages</span>
               </div>
             </div>
             <p>Aucun compte requis.</p>
@@ -528,37 +528,37 @@ const FAQ_SECTIONS: FaqSection[] = [
     ],
   },
   {
-    title: 'Compte et s\u00e9curit\u00e9',
+    title: 'Compte et sécurité',
     icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
     items: [
       {
         question: 'Quels modes de connexion sont disponibles ?',
         answer: (
           <div className="space-y-3">
-            <p>Trois m\u00e9thodes :</p>
+            <p>Trois méthodes :</p>
             <div className="flex flex-wrap gap-2">
               <MockBtn small>Email + mot de passe</MockBtn>
               <MockBtn small>Google</MockBtn>
               <MockBtn small>Discord</MockBtn>
             </div>
-            <p>Si vous utilisez le m\u00eame email avec plusieurs m\u00e9thodes, les comptes sont automatiquement li\u00e9s.</p>
+            <p>Si vous utilisez le même email avec plusieurs méthodes, les comptes sont automatiquement liés.</p>
           </div>
         ),
       },
       {
-        question: "J'ai oubli\u00e9 mon mot de passe, que faire ?",
+        question: "J'ai oublié mon mot de passe, que faire ?",
         answer: (
           <div className="space-y-3">
             <p>Sur la page de connexion, cliquez sur :</p>
-            <span className="text-xs text-gold-400 font-medium">Mot de passe oubli\u00e9 ?</span>
-            <p>Entrez votre email. Vous recevrez un lien de r\u00e9initialisation valable 1 heure. V\u00e9rifiez vos spams si vous ne le trouvez pas.</p>
+            <span className="text-xs text-gold-400 font-medium">Mot de passe oublié ?</span>
+            <p>Entrez votre email. Vous recevrez un lien de réinitialisation valable 1 heure. Vérifiez vos spams si vous ne le trouvez pas.</p>
           </div>
         ),
       },
       {
-        question: 'Mes donn\u00e9es sont-elles priv\u00e9es ?',
+        question: 'Mes données sont-elles privées ?',
         answer: (
-          <p>Oui. Vos tournois, rondes et statistiques sont accessibles uniquement par vous. Les donn\u00e9es de scouting sont partag\u00e9es uniquement avec les membres de votre \u00e9quipe si vous en avez une.</p>
+          <p>Oui. Vos tournois, rondes et statistiques sont accessibles uniquement par vous. Les données de scouting sont partagées uniquement avec les membres de votre équipe si vous en avez une.</p>
         ),
       },
     ],

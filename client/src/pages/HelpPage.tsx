@@ -1,9 +1,241 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, type ReactNode } from 'react';
+
+/* ── Visual mock helpers ── */
+
+const INK_HEX: Record<string, string> = {
+  AMBER: '#f59e0b', AMETHYST: '#8b5cf6', EMERALD: '#10b981',
+  RUBY: '#ef4444', SAPPHIRE: '#3b82f6', STEEL: '#6b7280',
+};
+const INK_LABELS: Record<string, string> = {
+  AMBER: 'Ambre', AMETHYST: 'Am\u00e9thyste', EMERALD: '\u00c9meraude',
+  RUBY: 'Rubis', SAPPHIRE: 'Saphir', STEEL: 'Acier',
+};
+
+function MockBtn({ children, gold, small }: { children: ReactNode; gold?: boolean; small?: boolean }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-xl font-semibold select-none whitespace-nowrap ${
+      small ? 'text-[11px] px-2.5 py-1' : 'text-xs px-3 py-1.5'
+    } ${gold
+      ? 'bg-gradient-to-r from-gold-500 to-gold-400 text-ink-950'
+      : 'border border-ink-700 text-ink-300 bg-ink-800/50'
+    }`}>
+      {children}
+    </span>
+  );
+}
+
+function MockTab({ label, active }: { label: string; active?: boolean }) {
+  return (
+    <span className={`inline-flex px-3 py-1.5 text-xs font-medium border-b-2 ${
+      active ? 'text-gold-400 border-gold-500' : 'text-ink-400 border-transparent'
+    }`}>
+      {label}
+    </span>
+  );
+}
+
+function InkDot({ color }: { color: string }) {
+  return (
+    <span
+      className="inline-block w-3 h-3 rounded-full ring-1 ring-white/10 align-middle"
+      style={{ backgroundColor: INK_HEX[color] }}
+      title={INK_LABELS[color]}
+    />
+  );
+}
+
+function InkBadge({ color }: { color: string }) {
+  return (
+    <span
+      className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide"
+      style={{
+        backgroundColor: INK_HEX[color],
+        color: color === 'AMBER' ? '#78350f' : '#fff',
+        textShadow: color === 'AMBER' ? 'none' : '0 1px 2px rgba(0,0,0,0.3)',
+      }}
+    >
+      {INK_LABELS[color]}
+    </span>
+  );
+}
+
+function MockCheckbox({ checked, label }: { checked: boolean; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-2 select-none">
+      <span className={`w-4 h-4 rounded border flex items-center justify-center ${
+        checked ? 'border-amber-400 bg-amber-400' : 'border-ink-600'
+      }`}>
+        {checked && (
+          <svg className="w-3 h-3 text-ink-950" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        )}
+      </span>
+      <span className="text-xs text-ink-300">{label}</span>
+    </span>
+  );
+}
+
+function MockScoutBtn() {
+  return (
+    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gold-500/15 text-gold-400">
+      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+      </svg>
+    </span>
+  );
+}
+
+function MockEditBtn() {
+  return (
+    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-ink-800/60 text-ink-400">
+      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+      </svg>
+    </span>
+  );
+}
+
+function MockMatch({ p1, p2, p1Colors, p2Colors, score }: { p1: string; p2: string; p1Colors?: string[]; p2Colors?: string[]; score?: string }) {
+  return (
+    <div className="rounded-lg bg-ink-800/40 border border-ink-700/30 p-2.5 text-xs space-y-1.5 not-prose">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <span className="text-ink-200 font-medium">{p1}</span>
+          {p1Colors?.map(c => <InkDot key={c} color={c} />)}
+          {!p1Colors && <MockScoutBtn />}
+        </div>
+        {score && <span className="text-green-400 font-semibold">{score.split('-')[0]}</span>}
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <span className="text-ink-200 font-medium">{p2}</span>
+          {p2Colors?.map(c => <InkDot key={c} color={c} />)}
+          {!p2Colors && <MockScoutBtn />}
+        </div>
+        {score && <span className="text-red-400 font-semibold">{score.split('-')[1]}</span>}
+      </div>
+    </div>
+  );
+}
+
+function MockSyncBanner() {
+  return (
+    <div className="rounded-lg border border-gold-500/20 bg-ink-900/80 p-3 space-y-2 not-prose">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs font-medium text-ink-200">3 rondes \u00e0 synchroniser</p>
+          <p className="text-[10px] text-ink-500">Depuis le Play Hub</p>
+        </div>
+        <MockBtn gold small>Synchroniser</MockBtn>
+      </div>
+      <div className="space-y-1">
+        {[
+          { r: 1, opp: 'Joueur_A', result: 'V', score: '2-0', cls: 'text-green-400' },
+          { r: 2, opp: 'Joueur_B', result: 'D', score: '1-2', cls: 'text-red-400' },
+          { r: 3, opp: 'Joueur_C', result: 'V', score: '2-1', cls: 'text-green-400' },
+        ].map(d => (
+          <div key={d.r} className="flex items-center justify-between text-[10px] px-2 py-1 rounded bg-ink-900/50">
+            <span className="text-ink-400">R{d.r} vs <span className="text-ink-200">{d.opp}</span></span>
+            <div className="flex items-center gap-2">
+              <span className={d.cls}>{d.result} {d.score}</span>
+              <span className="text-ink-600">+ nouveau</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MockDeduction() {
+  return (
+    <div className="space-y-2 not-prose">
+      <div className="rounded-lg bg-ink-800/40 border border-ink-700/30 p-2.5 text-xs">
+        <p className="text-ink-500 mb-1.5">Ronde 3 — Table 12</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <span className="text-ink-200">Alice</span>
+            <span className="text-amber-400 text-[10px]">?</span>
+            <InkDot color="RUBY" /><InkDot color="SAPPHIRE" />
+            <span className="text-ink-600 text-[10px] mx-0.5">/</span>
+            <InkDot color="AMBER" /><InkDot color="AMETHYST" />
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 mt-1">
+          <span className="text-ink-200">Bob</span>
+          <span className="text-amber-400 text-[10px]">?</span>
+          <InkDot color="RUBY" /><InkDot color="SAPPHIRE" />
+          <span className="text-ink-600 text-[10px] mx-0.5">/</span>
+          <InkDot color="AMBER" /><InkDot color="AMETHYST" />
+        </div>
+      </div>
+      <div className="flex justify-center">
+        <svg className="w-4 h-4 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+        </svg>
+      </div>
+      <div className="rounded-lg bg-ink-800/40 border border-green-500/20 p-2.5 text-xs">
+        <p className="text-green-400/80 text-[10px] mb-1.5">Alice qualifi\u00e9e Rubis/Saphir \u2192 Bob d\u00e9duit Ambre/Am\u00e9thyste</p>
+        <div className="flex items-center gap-1.5">
+          <span className="text-ink-200">Alice</span>
+          <InkDot color="RUBY" /><InkDot color="SAPPHIRE" />
+        </div>
+        <div className="flex items-center gap-1.5 mt-1">
+          <span className="text-ink-200">Bob</span>
+          <InkDot color="AMBER" /><InkDot color="AMETHYST" />
+          <span className="text-[10px] text-green-400/60 ml-1">d\u00e9duit</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MockColorGrid() {
+  const colors = ['AMBER', 'AMETHYST', 'EMERALD', 'RUBY', 'SAPPHIRE', 'STEEL'];
+  return (
+    <div className="grid grid-cols-3 gap-1.5 max-w-[200px] not-prose">
+      {colors.map(c => (
+        <span
+          key={c}
+          className={`flex items-center justify-center px-2 py-1.5 rounded-lg text-[10px] font-semibold ${
+            c === 'RUBY' || c === 'SAPPHIRE' ? 'ring-2 ring-gold-400 scale-[1.02]' : 'opacity-40'
+          }`}
+          style={{
+            backgroundColor: INK_HEX[c],
+            color: c === 'AMBER' ? '#78350f' : '#fff',
+            textShadow: c === 'AMBER' ? 'none' : '0 1px 2px rgba(0,0,0,0.3)',
+          }}
+        >
+          {INK_LABELS[c]}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function MockLinkPrompt() {
+  return (
+    <div className="rounded-lg bg-ink-800/40 border border-ink-700/30 p-3 space-y-2 not-prose max-w-[280px]">
+      <div className="flex items-center gap-2">
+        <svg className="w-5 h-5 text-ink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-2.562a4.5 4.5 0 00-6.364-6.364L4.5 8.244" />
+        </svg>
+        <span className="text-xs font-semibold text-ink-100">Connecter le Play Hub</span>
+      </div>
+      <div className="rounded-lg bg-ink-900/50 border border-ink-700/30 px-2.5 py-1.5 text-[10px] text-ink-500 truncate">
+        https://tcg.ravensburgerplay.com/events/...
+      </div>
+      <MockBtn gold small>Connecter</MockBtn>
+    </div>
+  );
+}
+
+/* ── FAQ data with rich content ── */
 
 interface FaqItem {
   question: string;
-  answer: string;
+  answer: ReactNode;
 }
 
 interface FaqSection {
@@ -19,23 +251,49 @@ const FAQ_SECTIONS: FaqSection[] = [
     items: [
       {
         question: 'Comment cr\u00e9er un tournoi ?',
-        answer: 'Depuis la page "Tournois", cliquez sur "+ Nouveau tournoi". Renseignez le nom, la date, le format (Bo1, Bo3, Bo5), le nombre de rondes suisses et le type de top cut. Vous pouvez aussi s\u00e9lectionner un de vos decks enregistr\u00e9s.',
+        answer: (
+          <div className="space-y-3">
+            <p>Depuis la page Tournois, cliquez sur le bouton :</p>
+            <MockBtn gold>+ Nouveau tournoi</MockBtn>
+            <p>Renseignez le nom, la date, le format (<code className="text-ink-300 bg-ink-800/50 px-1 rounded">Bo1</code>, <code className="text-ink-300 bg-ink-800/50 px-1 rounded">Bo3</code>, <code className="text-ink-300 bg-ink-800/50 px-1 rounded">Bo5</code>), le nombre de rondes suisses et le type de top cut. Vous pouvez aussi s\u00e9lectionner un de vos decks enregistr\u00e9s.</p>
+          </div>
+        ),
       },
       {
         question: 'Comment ajouter mes rondes ?',
-        answer: 'Depuis la fiche d\'un tournoi, cliquez sur "+ Ronde" dans l\'onglet "Mes rondes". Renseignez le nom de l\'adversaire, le r\u00e9sultat (victoire, d\u00e9faite, nul) et les scores de chaque game. Vous pouvez aussi noter si vous avez jou\u00e9 en premier.',
+        answer: (
+          <div className="space-y-3">
+            <p>Depuis la fiche d'un tournoi, dans l'onglet <MockTab label="Mes rondes" active />, cliquez sur :</p>
+            <MockBtn gold>+ Ronde</MockBtn>
+            <p>Renseignez le nom de l'adversaire, le r\u00e9sultat (victoire, d\u00e9faite, nul) et les scores de chaque game. Vous pouvez noter si vous avez jou\u00e9 en premier.</p>
+          </div>
+        ),
       },
       {
-        question: 'Qu\'est-ce que la synchronisation Play Hub ?',
-        answer: 'Si votre tournoi est enregistr\u00e9 sur Ravensburger Play Hub (tcg.ravensburgerplay.com), collez le lien de l\'\u00e9v\u00e9nement dans les param\u00e8tres du tournoi. InkTracker pourra alors r\u00e9cup\u00e9rer automatiquement les classements, les rondes et vos r\u00e9sultats. Vos rondes sont pr\u00e9-remplies \u2014 il suffit de cliquer "Synchroniser" pour les importer dans vos donn\u00e9es.',
+        question: "Qu'est-ce que la synchronisation Play Hub ?",
+        answer: (
+          <div className="space-y-3">
+            <p>Si votre tournoi est sur Ravensburger Play Hub, InkTracker peut r\u00e9cup\u00e9rer automatiquement vos rondes et r\u00e9sultats. Une banni\u00e8re de synchronisation appara\u00eet en haut de l'arbre :</p>
+            <MockSyncBanner />
+            <p>Cliquez sur <MockBtn gold small>Synchroniser</MockBtn> pour importer les rondes. Les scores (2-1, 2-0, etc.) sont fid\u00e8lement reproduits.</p>
+          </div>
+        ),
       },
       {
         question: 'Comment connecter le Play Hub ?',
-        answer: 'Allez dans l\'onglet "Arbre du tournoi" de votre tournoi. Si aucun lien n\'est configur\u00e9, un formulaire vous permet de coller directement l\'URL de l\'\u00e9v\u00e9nement Play Hub (ex : https://tcg.ravensburgerplay.com/events/427780). Vous pouvez aussi l\'ajouter en modifiant le tournoi.',
+        answer: (
+          <div className="space-y-3">
+            <p>Allez dans l'onglet <MockTab label="Arbre du tournoi" active />. Si aucun lien n'est configur\u00e9, ce formulaire appara\u00eet :</p>
+            <MockLinkPrompt />
+            <p>Collez l'URL de votre \u00e9v\u00e9nement Play Hub (ex : <code className="text-ink-300 bg-ink-800/50 px-1 rounded text-[11px]">tcg.ravensburgerplay.com/events/427780</code>) et cliquez <MockBtn gold small>Connecter</MockBtn>. L'arbre, les classements et le scouting se d\u00e9bloquent imm\u00e9diatement.</p>
+          </div>
+        ),
       },
       {
         question: 'Les rondes suisses et le top cut sont-ils g\u00e9r\u00e9s ?',
-        answer: 'Oui. Lors de la synchronisation Play Hub, les rondes suisses et les rondes de top cut sont d\u00e9tect\u00e9es automatiquement et affich\u00e9es s\u00e9par\u00e9ment. Les scores (2-1, 2-0, etc.) sont fid\u00e8lement import\u00e9s.',
+        answer: (
+          <p>Oui. Lors de la synchronisation, les rondes suisses et les rondes de top cut sont d\u00e9tect\u00e9es automatiquement. Elles sont affich\u00e9es dans des sections s\u00e9par\u00e9es et les scores sont fid\u00e8lement import\u00e9s.</p>
+        ),
       },
     ],
   },
@@ -44,28 +302,75 @@ const FAQ_SECTIONS: FaqSection[] = [
     icon: 'M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z',
     items: [
       {
-        question: 'Qu\'est-ce que l\'arbre du tournoi ?',
-        answer: 'L\'arbre du tournoi affiche les donn\u00e9es en direct depuis Ravensburger Play Hub : classement, rondes et matchs. Depuis cet onglet, vous pouvez consulter les r\u00e9sultats de chaque ronde, voir le classement en cours et scouter les decks adverses.',
+        question: "Qu'est-ce que l'arbre du tournoi ?",
+        answer: (
+          <div className="space-y-3">
+            <p>L'onglet <MockTab label="Arbre du tournoi" active /> affiche les donn\u00e9es en direct depuis Play Hub. Vous y trouvez trois vues :</p>
+            <div className="flex gap-1">
+              <MockTab label="Classement" active />
+              <MockTab label="Matchs" />
+              <MockTab label="Rondes" />
+            </div>
+            <p>Depuis la vue Matchs, chaque rencontre affiche les joueurs avec leurs scores. Cliquez sur un match pour ouvrir la fen\u00eatre de qualification de deck.</p>
+          </div>
+        ),
       },
       {
-        question: 'Comment qualifier le deck d\'un joueur ?',
-        answer: 'Cliquez sur un match dans l\'arbre du tournoi. Une fen\u00eatre de qualification s\'ouvre. S\u00e9lectionnez les 2 couleurs du deck du joueur \u2014 l\'enregistrement est automatique d\u00e8s que les 2 couleurs sont choisies. Vous verrez ensuite les pastilles de couleur appara\u00eetre \u00e0 c\u00f4t\u00e9 du nom du joueur.',
+        question: "Comment qualifier le deck d'un joueur ?",
+        answer: (
+          <div className="space-y-3">
+            <p>Cliquez sur un match pour ouvrir la fen\u00eatre de qualification. \u00c0 c\u00f4t\u00e9 de chaque joueur, un bouton <MockScoutBtn /> permet de qualifier son deck.</p>
+            <p>S\u00e9lectionnez les 2 couleurs :</p>
+            <MockColorGrid />
+            <p>L'enregistrement est <strong className="text-ink-200">automatique</strong> d\u00e8s que les 2 couleurs sont s\u00e9lectionn\u00e9es. Les pastilles apparaissent ensuite \u00e0 c\u00f4t\u00e9 du nom du joueur :</p>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-ink-200">Joueur_A</span>
+              <InkDot color="RUBY" />
+              <InkDot color="SAPPHIRE" />
+            </div>
+            <p>Pour modifier un deck d\u00e9j\u00e0 qualifi\u00e9, cliquez sur <MockEditBtn /> \u00e0 c\u00f4t\u00e9 du nom.</p>
+          </div>
+        ),
       },
       {
         question: 'Que faire si je ne sais pas qui joue quel deck ?',
-        answer: 'Cochez la case "Je ne sais pas qui joue quel deck". Vous pourrez alors d\u00e9finir 2 decks (Deck A et Deck B) sans les attribuer \u00e0 un joueur pr\u00e9cis. Ces decks sont marqu\u00e9s comme "potentiels" (affich\u00e9s avec un point d\'interrogation). D\u00e8s qu\'une info future confirme le deck d\'un des joueurs, l\'autre sera automatiquement d\u00e9duit.',
+        answer: (
+          <div className="space-y-3">
+            <p>Cochez la case :</p>
+            <MockCheckbox checked label="Je ne sais pas qui joue quel deck" />
+            <p>Vous pourrez d\u00e9finir 2 decks (Deck A et Deck B) sans les attribuer. Ils sont marqu\u00e9s comme potentiels :</p>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-ink-200">Joueur_A</span>
+              <span className="text-amber-400 text-[10px]">?</span>
+              <InkDot color="RUBY" /><InkDot color="SAPPHIRE" />
+              <span className="text-ink-600 text-[10px]">/</span>
+              <InkDot color="AMBER" /><InkDot color="AMETHYST" />
+            </div>
+            <p>Cliquez sur les pastilles pour voir le d\u00e9tail (qui a scout\u00e9, \u00e0 quelle table, quelle ronde).</p>
+          </div>
+        ),
       },
       {
         question: 'Comment fonctionne la d\u00e9duction automatique ?',
-        answer: 'Quand vous qualifiez le deck d\'un joueur de mani\u00e8re certaine, InkTracker v\u00e9rifie toutes les tables o\u00f9 ce joueur avait des decks potentiels. Si une table avait 2 decks possibles et qu\'un correspond au deck confirm\u00e9, l\'adversaire de cette table re\u00e7oit automatiquement l\'autre deck. Cette d\u00e9duction se propage en cascade : si le deck d\u00e9duit de l\'adversaire permet \u00e0 son tour de r\u00e9soudre d\'autres tables, elles sont \u00e9galement r\u00e9solues.',
+        answer: (
+          <div className="space-y-3">
+            <p>Quand vous qualifiez le deck d'un joueur de mani\u00e8re certaine, InkTracker v\u00e9rifie toutes les tables o\u00f9 ce joueur avait des decks potentiels :</p>
+            <MockDeduction />
+            <p>Cette d\u00e9duction se propage <strong className="text-ink-200">en cascade</strong> : si le deck d\u00e9duit de Bob permet de r\u00e9soudre d'autres tables o\u00f9 il apparaissait, elles sont \u00e9galement r\u00e9solues automatiquement.</p>
+          </div>
+        ),
       },
       {
-        question: 'Le scouting fonctionne-t-il en \u00e9quipe ?',
-        answer: 'Oui. Si vous \u00eates membre d\'une \u00e9quipe, vos observations de deck sont automatiquement partag\u00e9es avec tous les membres. Chaque membre peut qualifier des decks et toute l\'\u00e9quipe b\u00e9n\u00e9ficie de l\'ensemble des donn\u00e9es collect\u00e9es. Plus votre \u00e9quipe scoute, plus la couverture est compl\u00e8te.',
+        question: "Le scouting fonctionne-t-il en \u00e9quipe ?",
+        answer: (
+          <p>Oui. Si vous \u00eates membre d'une \u00e9quipe, vos observations sont automatiquement partag\u00e9es avec tous les membres. Chaque membre peut qualifier des decks et toute l'\u00e9quipe b\u00e9n\u00e9ficie de l'ensemble des donn\u00e9es. Plus votre \u00e9quipe scoute, plus la couverture est compl\u00e8te.</p>
+        ),
       },
       {
         question: 'Puis-je scouter sans \u00eatre dans une \u00e9quipe ?',
-        answer: 'Oui. Le scouting fonctionne aussi en mode personnel. Vos observations sont priv\u00e9es et visibles uniquement par vous. Pour partager avec d\'autres joueurs, cr\u00e9ez ou rejoignez une \u00e9quipe.',
+        answer: (
+          <p>Oui. Le scouting fonctionne aussi en mode personnel. Vos observations sont priv\u00e9es et visibles uniquement par vous. Pour partager, cr\u00e9ez ou rejoignez une \u00e9quipe depuis la page "Mes \u00e9quipes".</p>
+        ),
       },
     ],
   },
@@ -75,15 +380,37 @@ const FAQ_SECTIONS: FaqSection[] = [
     items: [
       {
         question: 'Comment ajouter un deck ?',
-        answer: 'Depuis la page "Mes decks", cliquez sur "+ Nouveau deck". Donnez-lui un nom, s\u00e9lectionnez ses couleurs (1 \u00e0 3), et optionnellement collez un lien vers votre liste (Dreamborn, Lorcanito, Duels.ink, Inkdecks).',
+        answer: (
+          <div className="space-y-3">
+            <p>Depuis la page "Mes decks", cliquez sur :</p>
+            <MockBtn gold>+ Nouveau deck</MockBtn>
+            <p>Donnez-lui un nom, s\u00e9lectionnez ses couleurs (1 \u00e0 3) :</p>
+            <div className="flex gap-1.5">
+              <InkBadge color="RUBY" />
+              <InkBadge color="SAPPHIRE" />
+            </div>
+            <p>Optionnellement, collez un lien vers votre liste (Dreamborn, Lorcanito, Duels.ink, Inkdecks) \u2014 les couleurs seront d\u00e9tect\u00e9es automatiquement.</p>
+          </div>
+        ),
       },
       {
-        question: 'L\'import automatique des couleurs fonctionne comment ?',
-        answer: 'Quand vous collez un lien de deck depuis Dreamborn, Lorcanito, Duels.ink ou Inkdecks, InkTracker analyse la page et d\u00e9tecte automatiquement les couleurs du deck. Vous n\'avez pas besoin de les s\u00e9lectionner manuellement.',
+        question: "L'import automatique des couleurs fonctionne comment ?",
+        answer: (
+          <div className="space-y-3">
+            <p>Quand vous collez un lien de deck, InkTracker analyse la page et d\u00e9tecte les couleurs. Sites support\u00e9s :</p>
+            <div className="flex flex-wrap gap-2">
+              {['dreamborn.ink', 'lorcanito.com', 'duels.ink', 'inkdecks.com'].map(s => (
+                <span key={s} className="px-2 py-0.5 rounded bg-ink-800/50 text-[11px] text-ink-300 font-mono">{s}</span>
+              ))}
+            </div>
+          </div>
+        ),
       },
       {
-        question: 'Qu\'est-ce que le deck par d\u00e9faut ?',
-        answer: 'Le deck par d\u00e9faut est pr\u00e9s\u00e9lectionn\u00e9 quand vous cr\u00e9ez un nouveau tournoi. Pratique si vous jouez souvent le m\u00eame deck.',
+        question: "Qu'est-ce que le deck par d\u00e9faut ?",
+        answer: (
+          <p>Le deck par d\u00e9faut est pr\u00e9s\u00e9lectionn\u00e9 quand vous cr\u00e9ez un nouveau tournoi. Pratique si vous jouez souvent le m\u00eame deck. D\u00e9finissez-le depuis la page de d\u00e9tail du deck.</p>
+        ),
       },
     ],
   },
@@ -93,11 +420,33 @@ const FAQ_SECTIONS: FaqSection[] = [
     items: [
       {
         question: 'Quelles statistiques sont disponibles ?',
-        answer: 'InkTracker calcule votre win rate global, votre win rate par deck, l\'analyse des matchups couleur par couleur (quels decks vous battez le plus, lesquels vous posent probl\u00e8me), et l\'impact du premier joueur sur vos r\u00e9sultats. Vous pouvez filtrer par p\u00e9riode.',
+        answer: (
+          <div className="space-y-3">
+            <p>La page Statistiques vous donne :</p>
+            <ul className="space-y-1.5 ml-4">
+              <li className="flex items-start gap-2"><span className="text-gold-400 mt-0.5">\u2022</span><span><strong className="text-ink-200">Win rate global</strong> \u2014 toutes rondes confondues</span></li>
+              <li className="flex items-start gap-2"><span className="text-gold-400 mt-0.5">\u2022</span><span><strong className="text-ink-200">Win rate par deck</strong> \u2014 performance de chaque deck</span></li>
+              <li className="flex items-start gap-2"><span className="text-gold-400 mt-0.5">\u2022</span><span><strong className="text-ink-200">Matchups</strong> \u2014 win rate couleur par couleur adverse</span></li>
+              <li className="flex items-start gap-2"><span className="text-gold-400 mt-0.5">\u2022</span><span><strong className="text-ink-200">Impact premier joueur</strong> \u2014 diff\u00e9rence quand vous jouez en premier vs second</span></li>
+            </ul>
+            <p>Vous pouvez filtrer par p\u00e9riode (dates).</p>
+          </div>
+        ),
       },
       {
-        question: 'Comment sont calcul\u00e9es les stats par deck ?',
-        answer: 'Depuis la page "Mes decks", cliquez sur un deck pour voir ses statistiques d\u00e9di\u00e9es : win rate avec ce deck, performance par matchup (couleurs adverses), et \u00e9volution dans le temps.',
+        question: 'Comment voir les stats d\u2019un deck sp\u00e9cifique ?',
+        answer: (
+          <div className="space-y-3">
+            <p>Depuis "Mes decks", cliquez sur un deck pour voir ses statistiques d\u00e9di\u00e9es : win rate, matchups par couleur adverse, et historique des r\u00e9sultats.</p>
+            <div className="flex items-center gap-2">
+              <InkBadge color="RUBY" />
+              <InkBadge color="SAPPHIRE" />
+              <span className="text-xs text-ink-400">\u2192</span>
+              <span className="text-xs text-green-400 font-semibold">67% WR</span>
+              <span className="text-[10px] text-ink-500">(24 matchs)</span>
+            </div>
+          </div>
+        ),
       },
     ],
   },
@@ -107,15 +456,34 @@ const FAQ_SECTIONS: FaqSection[] = [
     items: [
       {
         question: 'Comment cr\u00e9er une \u00e9quipe ?',
-        answer: 'Depuis la page "Mes \u00e9quipes", cliquez sur "Cr\u00e9er une \u00e9quipe". Donnez-lui un nom et une description optionnelle. Vous devenez automatiquement propri\u00e9taire de l\'\u00e9quipe.',
+        answer: (
+          <div className="space-y-3">
+            <p>Depuis "Mes \u00e9quipes", cliquez sur :</p>
+            <MockBtn gold>Cr\u00e9er une \u00e9quipe</MockBtn>
+            <p>Donnez-lui un nom et une description optionnelle. Vous devenez automatiquement propri\u00e9taire.</p>
+          </div>
+        ),
       },
       {
         question: 'Comment inviter des membres ?',
-        answer: 'Depuis la fiche de votre \u00e9quipe, utilisez la section "Invitations" pour inviter un joueur par son nom d\'utilisateur InkTracker. L\'invit\u00e9 recevra une notification et pourra accepter ou refuser.',
+        answer: (
+          <p>Depuis la fiche de votre \u00e9quipe, entrez le nom d'utilisateur InkTracker du joueur dans le champ d'invitation. L'invit\u00e9 pourra accepter ou refuser depuis sa page "\u00c9quipes".</p>
+        ),
       },
       {
         question: 'Quels sont les r\u00f4les dans une \u00e9quipe ?',
-        answer: 'Trois r\u00f4les existent : Propri\u00e9taire (cr\u00e9ateur, tous les droits), Admin (peut inviter et g\u00e9rer les membres) et Membre (peut scouter et voir les donn\u00e9es partag\u00e9es). Le scouting de deck est accessible \u00e0 tous les r\u00f4les.',
+        answer: (
+          <div className="space-y-2">
+            <div className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1.5 text-xs">
+              <span className="px-2 py-0.5 rounded bg-gold-500/15 text-gold-400 font-semibold text-center">Propri\u00e9taire</span>
+              <span className="text-ink-400 py-0.5">Cr\u00e9ateur de l'\u00e9quipe, tous les droits (supprimer, g\u00e9rer les r\u00f4les)</span>
+              <span className="px-2 py-0.5 rounded bg-ink-700/50 text-ink-200 font-semibold text-center">Admin</span>
+              <span className="text-ink-400 py-0.5">Peut inviter et retirer des membres</span>
+              <span className="px-2 py-0.5 rounded bg-ink-800/50 text-ink-300 font-semibold text-center">Membre</span>
+              <span className="text-ink-400 py-0.5">Peut scouter et voir les donn\u00e9es partag\u00e9es</span>
+            </div>
+          </div>
+        ),
       },
     ],
   },
@@ -125,11 +493,37 @@ const FAQ_SECTIONS: FaqSection[] = [
     items: [
       {
         question: 'Comment fonctionne le compteur de Lore ?',
-        answer: 'Le compteur de Lore est un outil plein \u00e9cran optimis\u00e9 pour mobile. Il affiche deux compteurs face \u00e0 face (un joueur en haut, l\'autre en bas, invers\u00e9 pour que chacun lise son score). Utilisez les boutons +1, +2, -1 pour modifier le score. Un historique des actions est consultable, et la victoire est d\u00e9tect\u00e9e automatiquement \u00e0 20 lore. Aucun compte requis.',
+        answer: (
+          <div className="space-y-3">
+            <p>Outil plein \u00e9cran optimis\u00e9 mobile. Deux compteurs face \u00e0 face (un joueur en haut invers\u00e9, l'autre en bas).</p>
+            <div className="flex items-center gap-2">
+              <MockBtn small>-1</MockBtn>
+              <span className="text-lg font-bold text-ink-100 w-8 text-center">12</span>
+              <MockBtn small>+1</MockBtn>
+              <MockBtn small>+2</MockBtn>
+            </div>
+            <p>Un historique des actions est consultable, et la victoire est d\u00e9tect\u00e9e automatiquement \u00e0 20 lore. Aucun compte requis.</p>
+          </div>
+        ),
       },
       {
         question: 'Comment fonctionne le calculateur de Top Cut ?',
-        answer: 'Entrez le nombre de joueurs, le nombre de rondes suisses et la taille du top cut (top 4, 8, 16 ou 32). L\'outil calcule le record minimum pour \u00eatre "safe" (qualifi\u00e9 \u00e0 coup s\u00fbr) et le record "bubble" (qualification incertaine, d\u00e9pend des d\u00e9partages). Aucun compte requis.',
+        answer: (
+          <div className="space-y-3">
+            <p>Entrez le nombre de joueurs, rondes suisses et taille du top cut. L'outil affiche :</p>
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="px-2 py-0.5 rounded bg-green-500/15 text-green-400 font-semibold">Safe</span>
+                <span className="text-ink-400">Record garanti pour passer le cut</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 font-semibold">Bubble</span>
+                <span className="text-ink-400">Record incertain, d\u00e9pend des d\u00e9partages</span>
+              </div>
+            </div>
+            <p>Aucun compte requis.</p>
+          </div>
+        ),
       },
     ],
   },
@@ -139,19 +533,39 @@ const FAQ_SECTIONS: FaqSection[] = [
     items: [
       {
         question: 'Quels modes de connexion sont disponibles ?',
-        answer: 'Vous pouvez vous connecter avec un email et mot de passe, via Google ou via Discord. Si vous utilisez le m\u00eame email pour plusieurs m\u00e9thodes, les comptes sont automatiquement li\u00e9s.',
+        answer: (
+          <div className="space-y-3">
+            <p>Trois m\u00e9thodes :</p>
+            <div className="flex flex-wrap gap-2">
+              <MockBtn small>Email + mot de passe</MockBtn>
+              <MockBtn small>Google</MockBtn>
+              <MockBtn small>Discord</MockBtn>
+            </div>
+            <p>Si vous utilisez le m\u00eame email avec plusieurs m\u00e9thodes, les comptes sont automatiquement li\u00e9s.</p>
+          </div>
+        ),
       },
       {
-        question: 'J\'ai oubli\u00e9 mon mot de passe, que faire ?',
-        answer: 'Sur la page de connexion, cliquez sur "Mot de passe oubli\u00e9 ?". Entrez votre email et vous recevrez un lien de r\u00e9initialisation valable 1 heure. Si vous ne le trouvez pas, v\u00e9rifiez vos spams.',
+        question: "J'ai oubli\u00e9 mon mot de passe, que faire ?",
+        answer: (
+          <div className="space-y-3">
+            <p>Sur la page de connexion, cliquez sur :</p>
+            <span className="text-xs text-gold-400 font-medium">Mot de passe oubli\u00e9 ?</span>
+            <p>Entrez votre email. Vous recevrez un lien de r\u00e9initialisation valable 1 heure. V\u00e9rifiez vos spams si vous ne le trouvez pas.</p>
+          </div>
+        ),
       },
       {
         question: 'Mes donn\u00e9es sont-elles priv\u00e9es ?',
-        answer: 'Oui. Vos tournois, rondes et statistiques sont accessibles uniquement par vous. Les donn\u00e9es de scouting sont partag\u00e9es uniquement avec les membres de votre \u00e9quipe si vous en avez une.',
+        answer: (
+          <p>Oui. Vos tournois, rondes et statistiques sont accessibles uniquement par vous. Les donn\u00e9es de scouting sont partag\u00e9es uniquement avec les membres de votre \u00e9quipe si vous en avez une.</p>
+        ),
       },
     ],
   },
 ];
+
+/* ── Accordion ── */
 
 function Accordion({ item }: { item: FaqItem }) {
   const [open, setOpen] = useState(false);
@@ -171,13 +585,15 @@ function Accordion({ item }: { item: FaqItem }) {
         </svg>
       </button>
       {open && (
-        <div className="pb-4 pr-6">
-          <p className="text-sm text-ink-400 leading-relaxed">{item.answer}</p>
+        <div className="pb-5 pr-4 text-sm text-ink-400 leading-relaxed">
+          {item.answer}
         </div>
       )}
     </div>
   );
 }
+
+/* ── Page ── */
 
 export function HelpPage() {
   return (

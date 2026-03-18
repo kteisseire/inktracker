@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { listUsers } from '../api/admin.api.js';
+import { listSuggestions, deleteSuggestion, type Suggestion } from '../api/suggestion.api.js';
 import type { AdminUserInfo } from '@lorcana/shared';
 
 function formatRelative(dateStr: string): string {
@@ -18,15 +19,26 @@ function formatRelative(dateStr: string): string {
 
 export function AdminPage() {
   const [users, setUsers] = useState<AdminUserInfo[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [tab, setTab] = useState<'users' | 'suggestions'>('users');
 
   useEffect(() => {
-    listUsers()
-      .then(setUsers)
-      .catch(() => setError('Accès refusé'))
-      .finally(() => setLoading(false));
+    Promise.all([
+      listUsers().catch(() => { setError('Accès refusé'); return [] as AdminUserInfo[]; }),
+      listSuggestions().catch(() => [] as Suggestion[]),
+    ]).then(([u, s]) => {
+      setUsers(u);
+      setSuggestions(s);
+    }).finally(() => setLoading(false));
   }, []);
+
+  const handleDeleteSuggestion = async (id: string) => {
+    if (!confirm('Supprimer cette suggestion ?')) return;
+    await deleteSuggestion(id);
+    setSuggestions(prev => prev.filter(s => s.id !== id));
+  };
 
   if (loading) {
     return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gold-400"></div></div>;
@@ -44,9 +56,62 @@ export function AdminPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Administration</h1>
-        <span className="text-sm text-ink-400">{users.length} utilisateur{users.length > 1 ? 's' : ''}</span>
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-ink-800/50">
+        <button
+          onClick={() => setTab('users')}
+          className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            tab === 'users' ? 'text-gold-400 border-gold-500' : 'text-ink-400 border-transparent hover:text-ink-200'
+          }`}
+        >
+          Utilisateurs ({users.length})
+        </button>
+        <button
+          onClick={() => setTab('suggestions')}
+          className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            tab === 'suggestions' ? 'text-gold-400 border-gold-500' : 'text-ink-400 border-transparent hover:text-ink-200'
+          }`}
+        >
+          Suggestions ({suggestions.length})
+        </button>
+      </div>
+
+      {tab === 'suggestions' && (
+        <div className="space-y-3">
+          {suggestions.length === 0 ? (
+            <div className="ink-card p-8 text-center text-ink-400">Aucune suggestion pour le moment</div>
+          ) : (
+            suggestions.map(s => (
+              <div key={s.id} className="ink-card p-4 space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm text-ink-100 whitespace-pre-wrap flex-1">{s.content}</p>
+                  <button
+                    onClick={() => handleDeleteSuggestion(s.id)}
+                    className="text-ink-600 hover:text-red-400 transition-colors p-1 shrink-0"
+                    title="Supprimer"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-ink-500">
+                  {s.user ? (
+                    <span className="text-ink-300">{s.user.username} <span className="text-ink-600">({s.user.email})</span></span>
+                  ) : (
+                    <span className="text-ink-600 italic">Utilisateur supprimé</span>
+                  )}
+                  <span>{formatRelative(s.createdAt)}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {tab === 'users' && <>
       {/* Desktop table */}
       <div className="ink-card overflow-hidden hidden md:block">
         <table className="w-full text-sm">
@@ -110,6 +175,7 @@ export function AdminPage() {
           </div>
         ))}
       </div>
+      </>}
     </div>
   );
 }

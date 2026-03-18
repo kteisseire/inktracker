@@ -1,4 +1,6 @@
 import { useState, type ReactNode } from 'react';
+import { useAuth } from '../context/AuthContext.js';
+import { submitSuggestion } from '../api/suggestion.api.js';
 
 /* ── Visual mock helpers ── */
 
@@ -619,6 +621,8 @@ export function HelpPage() {
         </section>
       ))}
 
+      <SuggestionForm />
+
       <div className="text-center py-4">
         <p className="text-sm text-ink-500">
           Une question non couverte ?{' '}
@@ -628,5 +632,74 @@ export function HelpPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+function SuggestionForm() {
+  const { user } = useAuth();
+  const [content, setContent] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!content.trim()) return;
+    setSending(true);
+    setError('');
+    try {
+      await submitSuggestion(content.trim());
+      setContent('');
+      setSent(true);
+      setTimeout(() => setSent(false), 4000);
+    } catch {
+      setError('Erreur lors de l\'envoi. Réessayez.');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (!user) {
+    return (
+      <div className="ink-card p-5 sm:p-6 text-center text-sm text-ink-500">
+        <p>Connectez-vous pour proposer une idée d'amélioration.</p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="ink-card p-5 sm:p-6 space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-gold-500/10 flex items-center justify-center shrink-0">
+          <svg className="w-4 h-4 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+          </svg>
+        </div>
+        <h2 className="text-base font-semibold text-ink-100">Une idée d'amélioration ?</h2>
+      </div>
+      <textarea
+        value={content}
+        onChange={e => setContent(e.target.value)}
+        placeholder="Décrivez votre idée ou suggestion..."
+        maxLength={2000}
+        rows={3}
+        className="ink-input w-full resize-none"
+        required
+      />
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs text-ink-600">{content.length}/2000</p>
+        <div className="flex items-center gap-3">
+          {sent && <span className="text-sm text-green-400">Merci pour votre suggestion !</span>}
+          {error && <span className="text-sm text-red-400">{error}</span>}
+          <button
+            type="submit"
+            disabled={sending || !content.trim()}
+            className="ink-btn-primary text-sm px-5 py-2.5 disabled:opacity-40"
+          >
+            {sending ? 'Envoi...' : 'Envoyer'}
+          </button>
+        </div>
+      </div>
+    </form>
   );
 }

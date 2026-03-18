@@ -24,6 +24,7 @@ model User {
   scoutReports           ScoutReport[]
   teamInvites            TeamInvite[]    @relation("InvitedUser")
   teamMembers            TeamMember[]
+  suggestions            Suggestion[]
   tournaments            Tournament[]
 
   @@map("users")
@@ -199,6 +200,17 @@ model EventCache {
   updatedAt DateTime @updatedAt
 
   @@map("event_caches")
+}
+
+model Suggestion {
+  id        String   @id @default(uuid())
+  content   String
+  userId    String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@map("suggestions")
 }
 
 enum InkColor {

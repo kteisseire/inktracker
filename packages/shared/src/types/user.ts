@@ -5,7 +5,21 @@ export interface User {
   hasPassword: boolean;
   hasGoogle: boolean;
   hasDiscord: boolean;
+  isAdmin: boolean;
   createdAt: string;
+}
+
+export interface AdminUserInfo {
+  id: string;
+  email: string;
+  username: string;
+  hasPassword: boolean;
+  hasGoogle: boolean;
+  hasDiscord: boolean;
+  createdAt: string;
+  tournamentsCount: number;
+  decksCount: number;
+  teamsCount: number;
 }
 
 export interface UpdateProfileRequest {

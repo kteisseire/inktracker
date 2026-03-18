@@ -23,6 +23,7 @@ import { DiscordCallbackPage } from './pages/DiscordCallbackPage.js';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage.js';
 import { ResetPasswordPage } from './pages/ResetPasswordPage.js';
 import { HelpPage } from './pages/HelpPage.js';
+import { AdminPage } from './pages/AdminPage.js';
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,7 @@ function AppRoutes() {
       <Route path="/teams" element={<ProtectedRoute><Layout><TeamsPage /></Layout></ProtectedRoute>} />
       <Route path="/teams/:id" element={<ProtectedRoute><Layout><TeamDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Layout><ProfilePage /></Layout></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute><Layout><AdminPage /></Layout></ProtectedRoute>} />
 
       {/* Public tools & help */}
       <Route path="/top-cut" element={<Layout><TopCutCalculatorPage /></Layout>} />

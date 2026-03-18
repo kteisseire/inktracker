@@ -7,9 +7,11 @@ import deckRoutes from './deck.routes.js';
 import ravensburgerRoutes from './ravensburger.routes.js';
 import teamRoutes from './team.routes.js';
 import scoutingRoutes from './scouting.routes.js';
+import adminRoutes from './admin.routes.js';
 
 const router = Router();
 
+router.use('/admin', adminRoutes);
 router.use('/auth', authRoutes);
 router.use('/tournaments', tournamentRoutes);
 router.use('/tournaments/:tournamentId/rounds', roundRoutes);

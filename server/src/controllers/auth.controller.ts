@@ -9,8 +9,14 @@ import { sendPasswordResetEmail } from '../lib/email.js';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+const ADMIN_EMAILS = ['kevin87100@gmail.com'];
+
+export function isAdminEmail(email: string): boolean {
+  return ADMIN_EMAILS.includes(email.toLowerCase());
+}
+
 function userResponse(u: { id: string; email: string; username: string; passwordHash?: string | null; googleId?: string | null; discordId?: string | null; createdAt: Date }) {
-  return { id: u.id, email: u.email, username: u.username, hasPassword: !!u.passwordHash, hasGoogle: !!u.googleId, hasDiscord: !!u.discordId, createdAt: u.createdAt };
+  return { id: u.id, email: u.email, username: u.username, hasPassword: !!u.passwordHash, hasGoogle: !!u.googleId, hasDiscord: !!u.discordId, isAdmin: isAdminEmail(u.email), createdAt: u.createdAt };
 }
 
 export async function register(req: Request, res: Response) {

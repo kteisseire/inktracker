@@ -8,14 +8,25 @@ export async function listMyTeams(req: AuthRequest, res: Response) {
     where: { userId: req.userId },
     include: {
       team: {
-        include: { _count: { select: { members: true } } },
+        include: {
+          _count: { select: { members: true } },
+          members: {
+            include: { user: { select: { id: true, username: true } } },
+            orderBy: [{ role: 'asc' as const }, { joinedAt: 'asc' as const }],
+          },
+        },
       },
     },
     orderBy: { joinedAt: 'desc' },
   });
 
   const teams = memberships.map(m => ({
-    ...m.team,
+    id: m.team.id,
+    name: m.team.name,
+    description: m.team.description,
+    createdAt: m.team.createdAt,
+    updatedAt: m.team.updatedAt,
+    members: m.team.members.map(mem => ({ id: mem.id, teamId: mem.teamId, userId: mem.userId, role: mem.role, joinedAt: mem.joinedAt, user: mem.user })),
     memberCount: m.team._count.members,
     myRole: m.role,
   }));

@@ -610,8 +610,23 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
   const [potentialDecks, setPotentialDecks] = useState<PotentialDeck[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [overrideUsername, setOverrideUsername] = useState<string | null>(null);
+  const [teamFilter, setTeamFilter] = useState(false);
 
   const effectiveUsername = overrideUsername || username;
+
+  // Build set of team member usernames (lowercase) for filtering
+  const teamMemberNames = useMemo(() => {
+    if (!teamFilter || teams.length === 0) return null;
+    const names = new Set<string>();
+    for (const t of teams) {
+      if (t.members) {
+        for (const m of t.members) {
+          names.add(m.user.username.toLowerCase());
+        }
+      }
+    }
+    return names;
+  }, [teamFilter, teams]);
 
   // Build a lookup map: playerName (lowercase) -> ScoutReport (certain decks only)
   const scoutMap = new Map<string, ScoutReport>();
@@ -868,7 +883,7 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
       )}
 
       {/* View mode toggle */}
-      <div className="flex gap-1">
+      <div className="flex items-center gap-1">
         <button
           onClick={() => setViewMode('standings')}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
@@ -885,6 +900,23 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
         >
           Matchs
         </button>
+
+        {teams.length > 0 && (
+          <>
+            <div className="w-px h-4 bg-ink-800 mx-1" />
+            <button
+              onClick={() => setTeamFilter(!teamFilter)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                teamFilter ? 'bg-gold-500/15 text-gold-400 border border-gold-500/30' : 'text-ink-500 hover:text-ink-300'
+              }`}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Mon équipe
+            </button>
+          </>
+        )}
       </div>
 
       {/* Round filter + refresh */}
@@ -917,9 +949,9 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
       </div>
 
       {viewMode === 'standings' ? (
-        <StandingsView standings={currentRound.standings} roundNumber={currentRound.roundNumber} username={effectiveUsername} scoutMap={scoutMap} possibleDecks={possibleDecks} teams={teams} eventId={eventId} onScout={handleScout} />
+        <StandingsView standings={currentRound.standings} roundNumber={currentRound.roundNumber} username={effectiveUsername} scoutMap={scoutMap} possibleDecks={possibleDecks} teams={teams} eventId={eventId} onScout={handleScout} teamMemberNames={teamMemberNames} />
       ) : (
-        <MatchesView matches={currentRound.matches} roundNumber={currentRound.roundNumber} username={effectiveUsername} scoutMap={scoutMap} possibleDecks={possibleDecks} teams={teams} eventId={eventId} onScout={handleScout} onPotentialDecks={handlePotentialDecks} />
+        <MatchesView matches={currentRound.matches} roundNumber={currentRound.roundNumber} username={effectiveUsername} scoutMap={scoutMap} possibleDecks={possibleDecks} teams={teams} eventId={eventId} onScout={handleScout} onPotentialDecks={handlePotentialDecks} teamMemberNames={teamMemberNames} />
       )}
     </div>
   );
@@ -977,24 +1009,28 @@ function Pagination({ page, totalPages, onPageChange }: { page: number; totalPag
 type ScoutHandler = (playerName: string, colors: InkColor[], teamId: string | null) => Promise<void>;
 type PotentialDecksHandler = (teamId: string | null, roundNumber: number, tableNumber: number, player1Name: string, player2Name: string, decks: InkColor[][]) => Promise<void>;
 
-function StandingsView({ standings, roundNumber, username, scoutMap, possibleDecks, teams, eventId, onScout }: { standings: EventStanding[]; roundNumber: number; username: string; scoutMap: Map<string, ScoutReport>; possibleDecks: Map<string, PotentialDeck[]>; teams: Team[]; eventId: string; onScout: ScoutHandler }) {
+function StandingsView({ standings, roundNumber, username, scoutMap, possibleDecks, teams, eventId, onScout, teamMemberNames }: { standings: EventStanding[]; roundNumber: number; username: string; scoutMap: Map<string, ScoutReport>; possibleDecks: Map<string, PotentialDeck[]>; teams: Team[]; eventId: string; onScout: ScoutHandler; teamMemberNames: Set<string> | null }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
-  // Reset page when search changes
-  useEffect(() => { setPage(1); }, [search]);
+  // Reset page when search or team filter changes
+  useEffect(() => { setPage(1); }, [search, teamMemberNames]);
 
   if (standings.length === 0) {
     return <div className="ink-card p-6 text-center text-ink-400">Aucun classement pour cette ronde</div>;
   }
 
   const isMe = (name: string) => username && name.toLowerCase() === username.toLowerCase();
+  const isTeammate = (name: string) => teamMemberNames ? teamMemberNames.has(name.toLowerCase()) : false;
   const getScout = (name: string) => scoutMap.get(name.toLowerCase());
 
   const query = search.toLowerCase().trim();
-  const filtered = query
+  let filtered = query
     ? standings.filter(s => s.playerName.toLowerCase().includes(query))
     : standings;
+  if (teamMemberNames) {
+    filtered = filtered.filter(s => teamMemberNames.has(s.playerName.toLowerCase()));
+  }
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -1025,11 +1061,12 @@ function StandingsView({ standings, roundNumber, username, scoutMap, possibleDec
           <tbody className="divide-y divide-ink-800/50">
             {paginated.map((s, i) => {
               const me = isMe(s.playerName);
+              const teammate = !me && isTeammate(s.playerName);
               const scout = getScout(s.playerName);
               return (
-                <tr key={s.rank} className={me ? 'bg-gold-400/10 border-l-2 border-l-gold-400' : s.rank <= 3 ? 'bg-gold-400/5' : ''}>
+                <tr key={s.rank} className={me ? 'bg-gold-400/10 border-l-2 border-l-gold-400' : teammate ? 'bg-blue-500/5' : s.rank <= 3 ? 'bg-gold-400/5' : ''}>
                   <td className="text-center px-3 py-2.5 font-bold text-ink-500">{s.rank}</td>
-                  <td className={`px-3 py-2.5 font-medium max-w-[250px] ${me ? 'text-gold-400' : 'text-ink-100'}`}>
+                  <td className={`px-3 py-2.5 font-medium max-w-[250px] ${me ? 'text-gold-400' : teammate ? 'text-blue-400' : 'text-ink-100'}`}>
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="truncate">{s.playerName}</span>
                       <ScoutDeckBadges scout={scout} possibleDecks={possibleDecks.get(s.playerName.toLowerCase())} />
@@ -1053,13 +1090,14 @@ function StandingsView({ standings, roundNumber, username, scoutMap, possibleDec
       <div className="sm:hidden space-y-1.5">
         {paginated.map((s, i) => {
           const me = isMe(s.playerName);
+          const teammate = !me && isTeammate(s.playerName);
           const scout = getScout(s.playerName);
           return (
-            <div key={s.rank} className={`ink-card px-3 py-2.5 flex items-center gap-3 ${me ? 'border-gold-500/30 bg-gold-400/5' : s.rank <= 3 ? 'border-gold-500/20' : ''}`}>
+            <div key={s.rank} className={`ink-card px-3 py-2.5 flex items-center gap-3 ${me ? 'border-gold-500/30 bg-gold-400/5' : teammate ? 'border-blue-500/30 bg-blue-500/5' : s.rank <= 3 ? 'border-gold-500/20' : ''}`}>
               <span className="text-sm font-bold text-ink-500 w-6 text-center shrink-0">{s.rank}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <span className={`font-medium text-sm truncate ${me ? 'text-gold-400' : 'text-ink-100'}`}>{s.playerName}</span>
+                  <span className={`font-medium text-sm truncate ${me ? 'text-gold-400' : teammate ? 'text-blue-400' : 'text-ink-100'}`}>{s.playerName}</span>
                   <ScoutDeckBadges scout={scout} possibleDecks={possibleDecks.get(s.playerName.toLowerCase())} />
                   {teams.length > 0 && (
                     <ScoutPicker playerName={s.playerName} teams={teams} eventId={eventId} existingColors={scout?.deckColors} onSaved={onScout} />
@@ -1085,31 +1123,36 @@ function StandingsView({ standings, roundNumber, username, scoutMap, possibleDec
   );
 }
 
-function MatchesView({ matches, roundNumber, username, scoutMap, possibleDecks, teams, eventId, onScout, onPotentialDecks }: { matches: EventMatch[]; roundNumber: number; username: string; scoutMap: Map<string, ScoutReport>; possibleDecks: Map<string, PotentialDeck[]>; teams: Team[]; eventId: string; onScout: ScoutHandler; onPotentialDecks: PotentialDecksHandler }) {
+function MatchesView({ matches, roundNumber, username, scoutMap, possibleDecks, teams, eventId, onScout, onPotentialDecks, teamMemberNames }: { matches: EventMatch[]; roundNumber: number; username: string; scoutMap: Map<string, ScoutReport>; possibleDecks: Map<string, PotentialDeck[]>; teams: Team[]; eventId: string; onScout: ScoutHandler; onPotentialDecks: PotentialDecksHandler; teamMemberNames: Set<string> | null }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [selectedMatch, setSelectedMatch] = useState<EventMatch | null>(null);
 
-  useEffect(() => { setPage(1); }, [search]);
+  useEffect(() => { setPage(1); }, [search, teamMemberNames]);
 
   if (matches.length === 0) {
     return <div className="ink-card p-6 text-center text-ink-400">Aucun match pour cette ronde</div>;
   }
 
   const isMe = (name: string) => username && name.toLowerCase() === username.toLowerCase();
+  const isTeammate = (name: string) => teamMemberNames ? teamMemberNames.has(name.toLowerCase()) : false;
   const getScout = (name: string) => scoutMap.get(name.toLowerCase());
 
-  // Sort so the user's match appears first
+  // Sort so the user's match appears first, then teammates
   const sorted = username
     ? [...matches].sort((a, b) => {
         const aIsMe = a.players.some(p => isMe(p.playerName));
         const bIsMe = b.players.some(p => isMe(p.playerName));
-        return aIsMe === bIsMe ? 0 : aIsMe ? -1 : 1;
+        if (aIsMe !== bIsMe) return aIsMe ? -1 : 1;
+        const aIsTeam = a.players.some(p => isTeammate(p.playerName));
+        const bIsTeam = b.players.some(p => isTeammate(p.playerName));
+        if (aIsTeam !== bIsTeam) return aIsTeam ? -1 : 1;
+        return 0;
       })
     : matches;
 
   const query = search.toLowerCase().trim();
-  const filtered = query
+  let filtered = query
     ? sorted.filter(m => {
         if (m.players.some(p => p.playerName.toLowerCase().includes(query))) return true;
         if (m.table > 0 && `t${m.table}` === query) return true;
@@ -1117,6 +1160,9 @@ function MatchesView({ matches, roundNumber, username, scoutMap, possibleDecks, 
         return false;
       })
     : sorted;
+  if (teamMemberNames) {
+    filtered = filtered.filter(m => m.players.some(p => teamMemberNames.has(p.playerName.toLowerCase())));
+  }
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -1135,16 +1181,18 @@ function MatchesView({ matches, roundNumber, username, scoutMap, possibleDecks, 
         const p1Wins = m.winnerId === p1?.playerId;
         const p2Wins = m.winnerId === p2?.playerId;
         const myMatch = m.players.some(p => isMe(p.playerName));
+        const teamMatch = !myMatch && m.players.some(p => isTeammate(p.playerName));
         const scout1 = p1 ? getScout(p1.playerName) : undefined;
         const scout2 = p2 ? getScout(p2.playerName) : undefined;
 
         if (m.isBye) {
           const byeIsMe = isMe(p1?.playerName || '');
+          const byeIsTeam = !byeIsMe && isTeammate(p1?.playerName || '');
           return (
-            <div key={m.matchId} className={`ink-card px-3 sm:px-4 py-3 flex items-center justify-between ${byeIsMe ? 'border-gold-500/30 bg-gold-400/5' : ''}`}>
+            <div key={m.matchId} className={`ink-card px-3 sm:px-4 py-3 flex items-center justify-between ${byeIsMe ? 'border-gold-500/30 bg-gold-400/5' : byeIsTeam ? 'border-blue-500/30 bg-blue-500/5' : ''}`}>
               <div className="flex items-center gap-2">
                 {m.table > 0 && <span className="text-xs text-ink-600">T{m.table}</span>}
-                <span className={`font-medium text-sm ${byeIsMe ? 'text-gold-400' : 'text-ink-100'}`}>{p1?.playerName || 'Inconnu'}</span>
+                <span className={`font-medium text-sm ${byeIsMe ? 'text-gold-400' : byeIsTeam ? 'text-blue-400' : 'text-ink-100'}`}>{p1?.playerName || 'Inconnu'}</span>
               </div>
               <span className="text-xs text-ink-500 bg-ink-800/50 px-2 py-0.5 rounded-full">BYE</span>
             </div>
@@ -1155,14 +1203,14 @@ function MatchesView({ matches, roundNumber, username, scoutMap, possibleDecks, 
           <div
             key={m.matchId}
             onClick={() => setSelectedMatch(m)}
-            className={`ink-card px-3 sm:px-4 py-3 cursor-pointer transition-all hover:border-gold-500/25 ${myMatch ? 'border-gold-500/30 bg-gold-400/5' : ''}`}
+            className={`ink-card px-3 sm:px-4 py-3 cursor-pointer transition-all hover:border-gold-500/25 ${myMatch ? 'border-gold-500/30 bg-gold-400/5' : teamMatch ? 'border-blue-500/30 bg-blue-500/5' : ''}`}
           >
             <div className="flex items-center gap-2">
               {m.table > 0 && <span className="text-xs text-ink-600 shrink-0 w-7">T{m.table}</span>}
               <div className="flex-1 flex items-center gap-2 min-w-0">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1 min-w-0">
-                    <span className={`text-sm truncate ${isMe(p1?.playerName || '') ? 'font-bold text-gold-400' : p1Wins ? 'font-bold text-green-400' : 'text-ink-300'}`}>
+                    <span className={`text-sm truncate ${isMe(p1?.playerName || '') ? 'font-bold text-gold-400' : isTeammate(p1?.playerName || '') ? 'font-bold text-blue-400' : p1Wins ? 'font-bold text-green-400' : 'text-ink-300'}`}>
                       {p1?.playerName || 'Inconnu'}
                     </span>
                     {p1 && <ScoutDeckBadges scout={scout1} possibleDecks={possibleDecks.get(p1.playerName.toLowerCase())} />}
@@ -1184,7 +1232,7 @@ function MatchesView({ matches, roundNumber, username, scoutMap, possibleDecks, 
                 <div className="flex-1 min-w-0 text-right">
                   <div className="flex items-center gap-1 min-w-0 justify-end">
                     {p2 && <ScoutDeckBadges scout={scout2} possibleDecks={possibleDecks.get(p2.playerName.toLowerCase())} />}
-                    <span className={`text-sm truncate ${isMe(p2?.playerName || '') ? 'font-bold text-gold-400' : p2Wins ? 'font-bold text-green-400' : 'text-ink-300'}`}>
+                    <span className={`text-sm truncate ${isMe(p2?.playerName || '') ? 'font-bold text-gold-400' : isTeammate(p2?.playerName || '') ? 'font-bold text-blue-400' : p2Wins ? 'font-bold text-green-400' : 'text-ink-300'}`}>
                       {p2?.playerName || 'Inconnu'}
                     </span>
                   </div>

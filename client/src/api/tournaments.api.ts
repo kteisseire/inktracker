@@ -24,3 +24,8 @@ export async function updateTournament(id: string, data: UpdateTournamentRequest
 export async function deleteTournament(id: string): Promise<void> {
   await api.delete(`/tournaments/${id}`);
 }
+
+export async function getTeamPresence(): Promise<Record<string, { count: number; members: string[] }>> {
+  const res = await api.get('/tournaments/team-presence');
+  return res.data.presence;
+}

@@ -29,6 +29,89 @@ export async function listTournaments(req: AuthRequest, res: Response) {
   res.json({ tournaments, total, page, limit });
 }
 
+export async function getTeamPresence(req: AuthRequest, res: Response) {
+  // Get all team members' usernames for the user's teams
+  const memberships = await prisma.teamMember.findMany({
+    where: { userId: req.userId },
+    select: { teamId: true },
+  });
+  if (memberships.length === 0) {
+    res.json({ presence: {} });
+    return;
+  }
+
+  const teamIds = memberships.map(m => m.teamId);
+  const allMembers = await prisma.teamMember.findMany({
+    where: { teamId: { in: teamIds } },
+    include: { user: { select: { username: true } } },
+  });
+  const teamUsernames = new Set(allMembers.map(m => m.user.username.toLowerCase()));
+
+  // Get user's tournaments with eventLinks
+  const tournaments = await prisma.tournament.findMany({
+    where: { userId: req.userId, eventLink: { not: null } },
+    select: { id: true, eventLink: true },
+  });
+
+  if (tournaments.length === 0) {
+    res.json({ presence: {} });
+    return;
+  }
+
+  // Extract event IDs
+  const eventMap = new Map<string, string>(); // eventId -> tournamentId
+  for (const t of tournaments) {
+    const match = t.eventLink!.match(/events\/(\d+)/);
+    if (match) eventMap.set(match[1], t.id);
+  }
+
+  if (eventMap.size === 0) {
+    res.json({ presence: {} });
+    return;
+  }
+
+  // Fetch cached event data
+  const caches = await prisma.eventCache.findMany({
+    where: { eventId: { in: [...eventMap.keys()] } },
+  });
+
+  const presence: Record<string, { count: number; members: string[] }> = {};
+
+  for (const cache of caches) {
+    const tournamentId = eventMap.get(cache.eventId);
+    if (!tournamentId) continue;
+
+    const data = cache.data as any;
+    if (!data?.rounds) continue;
+
+    // Collect all unique player names from this event
+    const playerNames = new Set<string>();
+    for (const round of data.rounds) {
+      if (!round.matches) continue;
+      for (const match of round.matches) {
+        if (!match.players) continue;
+        for (const p of match.players) {
+          if (p.playerName) playerNames.add(p.playerName);
+        }
+      }
+    }
+
+    // Find team members in this event
+    const found: string[] = [];
+    for (const name of playerNames) {
+      if (teamUsernames.has(name.toLowerCase())) {
+        found.push(name);
+      }
+    }
+
+    if (found.length > 0) {
+      presence[tournamentId] = { count: found.length, members: found.sort() };
+    }
+  }
+
+  res.json({ presence });
+}
+
 export async function getTournament(req: AuthRequest, res: Response) {
   let tournament = await prisma.tournament.findFirst({
     where: { id: req.params.id, userId: req.userId },

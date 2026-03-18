@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { listTournaments } from '../api/tournaments.api.js';
+import { listTournaments, getTeamPresence } from '../api/tournaments.api.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
 import { HelpButton } from '../components/ui/HelpButton.js';
 import type { Tournament } from '@lorcana/shared';
@@ -8,12 +8,51 @@ import type { Tournament } from '@lorcana/shared';
 const FORMAT_LABELS: Record<string, string> = { BO1: 'Bo1', BO3: 'Bo3', BO5: 'Bo5' };
 const TOPCUT_LABELS: Record<string, string> = { NONE: '—', TOP4: 'Top 4', TOP8: 'Top 8', TOP16: 'Top 16', TOP32: 'Top 32' };
 
+function TeamBadge({ count, members }: { count: number; members: string[] }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handle = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, [open]);
+
+  return (
+    <div className="relative inline-block" ref={ref}>
+      <button
+        onClick={e => { e.preventDefault(); e.stopPropagation(); setOpen(!open); }}
+        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 transition-colors"
+        title={`${count} coéquipier${count > 1 ? 's' : ''}`}
+      >
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        {count}
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 bg-ink-900 border border-ink-700/50 rounded-lg shadow-xl z-50 py-1.5 min-w-[140px]">
+          <p className="px-3 py-1 text-[10px] text-ink-500 uppercase tracking-wider font-medium">Équipe</p>
+          {members.map(name => (
+            <div key={name} className="px-3 py-1.5 text-xs text-ink-200">{name}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TournamentsPage() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
+  const [presence, setPresence] = useState<Record<string, { count: number; members: string[] }>>({});
 
   useEffect(() => {
     listTournaments(1, 50).then(r => setTournaments(r.tournaments)).finally(() => setLoading(false));
+    getTeamPresence().then(setPresence).catch(() => {});
   }, []);
 
   if (loading) {
@@ -57,12 +96,16 @@ export function TournamentsPage() {
                   const wins = t.rounds?.filter(m => m.result === 'WIN').length || 0;
                   const losses = t.rounds?.filter(m => m.result === 'LOSS').length || 0;
                   const draws = t.rounds?.filter(m => m.result === 'DRAW').length || 0;
+                  const tp = presence[t.id];
                   return (
                     <tr key={t.id} className="hover:bg-ink-800/30 transition-colors">
                       <td className="px-4 py-3">
-                        <Link to={`/tournaments/${t.id}`} className="font-medium text-ink-100 hover:text-gold-400 transition-colors">
-                          {t.name}
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link to={`/tournaments/${t.id}`} className="font-medium text-ink-100 hover:text-gold-400 transition-colors">
+                            {t.name}
+                          </Link>
+                          {tp && <TeamBadge count={tp.count} members={tp.members} />}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-ink-400">{new Date(t.date).toLocaleDateString('fr-FR')}</td>
                       <td className="px-4 py-3 text-ink-400">{t.location || '—'}</td>
@@ -91,11 +134,15 @@ export function TournamentsPage() {
               const wins = t.rounds?.filter(m => m.result === 'WIN').length || 0;
               const losses = t.rounds?.filter(m => m.result === 'LOSS').length || 0;
               const draws = t.rounds?.filter(m => m.result === 'DRAW').length || 0;
+              const tp = presence[t.id];
               return (
                 <Link key={t.id} to={`/tournaments/${t.id}`} className="block ink-card-hover p-4">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="min-w-0">
-                      <h3 className="font-medium text-ink-100 truncate">{t.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-ink-100 truncate">{t.name}</h3>
+                        {tp && <TeamBadge count={tp.count} members={tp.members} />}
+                      </div>
                       <p className="text-xs text-ink-500 mt-0.5">
                         {new Date(t.date).toLocaleDateString('fr-FR')}
                         {t.location && ` — ${t.location}`}

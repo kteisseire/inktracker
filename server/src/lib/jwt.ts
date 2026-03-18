@@ -1,6 +1,11 @@
 import jwt, { type SignOptions } from 'jsonwebtoken';
 
-const SECRET = process.env.JWT_SECRET || 'dev-secret';
+function getSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error('JWT_SECRET environment variable is required');
+  return secret;
+}
+const SECRET = getSecret();
 const EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 export function signToken(userId: string): string {

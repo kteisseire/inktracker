@@ -67,7 +67,7 @@ export async function extractDeckColors(req: AuthRequest, res: Response) {
     return;
   }
 
-  if (!allowed.some(d => hostname === d || hostname.endsWith('.' + d))) {
+  if (!allowed.some(d => hostname === d || hostname === `www.${d}`)) {
     res.status(400).json({ error: 'Site non supporté. Sites acceptés : dreamborn.ink, lorcanito.com, duels.ink, inkdecks.com' });
     return;
   }

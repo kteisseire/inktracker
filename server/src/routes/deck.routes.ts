@@ -4,14 +4,14 @@ import { listDecks, getDeck, createDeck, updateDeck, deleteDeck, setDefaultDeck 
 import { authMiddleware } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { validate } from '../middleware/validate.js';
-import { createDeckSchema, updateDeckSchema } from '../validators/deck.schema.js';
+import { createDeckSchema, updateDeckSchema, extractColorsSchema } from '../validators/deck.schema.js';
 
 const router = Router();
 
 router.use(authMiddleware);
 
 // Deck color extraction from URL
-router.post('/colors', asyncHandler(extractDeckColors));
+router.post('/colors', validate(extractColorsSchema), asyncHandler(extractDeckColors));
 
 // Deck CRUD
 router.get('/', asyncHandler(listDecks));

@@ -10,7 +10,7 @@ const PORT = parseInt(process.env.PORT || '3001');
 
 app.use(helmet());
 app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
 app.use('/api/v1', routes);
 

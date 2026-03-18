@@ -14,10 +14,19 @@ export function DiscordCallbackPage() {
     called.current = true;
 
     const code = searchParams.get('code');
+    const state = searchParams.get('state');
     const errorParam = searchParams.get('error');
 
     if (errorParam) {
       setError('Connexion Discord annulée');
+      return;
+    }
+
+    // Verify CSRF state parameter
+    const savedState = sessionStorage.getItem('discord_oauth_state');
+    sessionStorage.removeItem('discord_oauth_state');
+    if (!state || state !== savedState) {
+      setError('Erreur de sécurité : état OAuth invalide');
       return;
     }
 

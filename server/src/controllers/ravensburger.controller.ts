@@ -71,9 +71,10 @@ export async function getEventInfo(req: Request, res: Response) {
 
 /** Fetch all pages from a paginated RPH endpoint */
 async function fetchAllPages(path: string): Promise<any[]> {
+  const MAX_PAGES = 50;
   const results: any[] = [];
   let page = 1;
-  while (true) {
+  while (page <= MAX_PAGES) {
     const sep = path.includes('?') ? '&' : '?';
     const r = await rphFetch(`${path}${sep}page=${page}&page_size=100`);
     if (!r.ok) break;

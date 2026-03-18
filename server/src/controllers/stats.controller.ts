@@ -5,9 +5,16 @@ import { AuthRequest } from '../middleware/auth.js';
 function dateFilter(req: AuthRequest) {
   const from = req.query.from as string | undefined;
   const to = req.query.to as string | undefined;
+  const isoDateRegex = /^\d{4}-\d{2}-\d{2}/;
   const filter: any = {};
-  if (from) filter.gte = new Date(from);
-  if (to) filter.lte = new Date(to);
+  if (from && isoDateRegex.test(from)) {
+    const d = new Date(from);
+    if (!isNaN(d.getTime())) filter.gte = d;
+  }
+  if (to && isoDateRegex.test(to)) {
+    const d = new Date(to);
+    if (!isNaN(d.getTime())) filter.lte = d;
+  }
   return Object.keys(filter).length > 0 ? { date: filter } : {};
 }
 

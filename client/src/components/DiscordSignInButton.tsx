@@ -4,12 +4,16 @@ export function DiscordSignInButton() {
   const handleClick = () => {
     if (!DISCORD_CLIENT_ID) return;
 
+    const state = crypto.randomUUID();
+    sessionStorage.setItem('discord_oauth_state', state);
+
     const redirectUri = `${window.location.origin}/auth/discord/callback`;
     const params = new URLSearchParams({
       client_id: DISCORD_CLIENT_ID,
       redirect_uri: redirectUri,
       response_type: 'code',
       scope: 'identify email',
+      state,
     });
 
     window.location.href = `https://discord.com/api/oauth2/authorize?${params}`;

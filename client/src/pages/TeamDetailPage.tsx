@@ -126,7 +126,7 @@ function TeamHeader({ team, isOwner, isAdmin, onUpdated, onDeleted }: {
     <div className="ink-card p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide truncate">{team.name}</h1>
+          <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide truncate">{team.name}</h1>
           {team.description && <p className="text-sm text-ink-400 mt-1">{team.description}</p>}
           <p className="text-xs text-ink-500 mt-2">
             Créée le {new Date(team.createdAt).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}

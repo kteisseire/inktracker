@@ -211,7 +211,7 @@ export function Header() {
         {/* Mobile hamburger */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="md:hidden p-2.5 -mr-1 text-ink-400 hover:text-ink-100 transition-colors rounded-lg active:bg-ink-800/50"
+          className="md:hidden p-3 -mr-2 text-ink-400 hover:text-ink-100 transition-colors rounded-lg active:bg-ink-800/50"
           aria-label="Menu"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

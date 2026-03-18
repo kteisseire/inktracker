@@ -34,7 +34,7 @@ export function DashboardPage() {
     <div className="space-y-6 sm:space-y-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide">Tableau de bord</h1>
+          <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Tableau de bord</h1>
           <HelpButton sections={['Tournois', 'Statistiques']} />
         </div>
         <Link to="/tournaments/new" className="ink-btn-primary text-sm px-4 py-2">
@@ -134,7 +134,7 @@ function FeatureCard({ icon, title, description }: { icon: string; title: string
       <span className="text-xl text-gold-400 shrink-0 mt-0.5">{icon}</span>
       <div>
         <h3 className="text-sm font-semibold text-ink-100">{title}</h3>
-        <p className="text-xs text-ink-500 mt-0.5">{description}</p>
+        <p className="text-xs sm:text-sm text-ink-500 mt-0.5">{description}</p>
       </div>
     </div>
   );
@@ -143,7 +143,7 @@ function FeatureCard({ icon, title, description }: { icon: string; title: string
 function StatCard({ label, value, highlight }: { label: string; value: string | number; highlight?: boolean }) {
   return (
     <div className="ink-card p-3 sm:p-4">
-      <p className="text-xs sm:text-sm text-ink-400">{label}</p>
+      <p className="text-sm text-ink-400">{label}</p>
       <p className={`text-xl sm:text-2xl font-bold mt-1 ${highlight ? 'text-gold-400' : 'text-ink-100'}`}>
         {value}
       </p>

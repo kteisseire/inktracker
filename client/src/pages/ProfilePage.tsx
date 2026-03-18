@@ -16,7 +16,7 @@ export function ProfilePage() {
   return (
     <div className="max-w-lg mx-auto space-y-6">
       <div className="flex items-center gap-2">
-        <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide">Mon profil</h1>
+        <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Mon profil</h1>
         <HelpButton sections={['Compte et sécurité']} />
       </div>
 

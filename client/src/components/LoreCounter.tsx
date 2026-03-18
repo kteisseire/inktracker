@@ -149,24 +149,24 @@ export function LoreCounter({ onClose, initialState }: LoreCounterProps) {
   return (
     <div className="fixed inset-0 z-[100] bg-ink-950 flex flex-col select-none" style={{ touchAction: 'manipulation' }}>
       {/* Top bar */}
-      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-2 py-2 safe-area-top">
-        <button onClick={handleClose} className="text-ink-500 hover:text-ink-300 transition-colors p-2" aria-label="Fermer">
+      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-1 py-1 safe-area-top">
+        <button onClick={handleClose} className="text-ink-500 hover:text-ink-300 transition-colors p-3" aria-label="Fermer">
           <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
         <div className="flex items-center gap-0.5">
-          <button onClick={() => { setShowHistory(!showHistory); setShowMenu(false); }} className="text-ink-500 hover:text-ink-300 transition-colors p-2" aria-label="Historique">
+          <button onClick={() => { setShowHistory(!showHistory); setShowMenu(false); }} className="text-ink-500 hover:text-ink-300 transition-colors p-3" aria-label="Historique">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </button>
-          <button onClick={undoLast} disabled={rawHistory.length === 0} className="text-ink-500 hover:text-ink-300 transition-colors p-2 disabled:opacity-30" aria-label="Annuler">
+          <button onClick={undoLast} disabled={rawHistory.length === 0} className="text-ink-500 hover:text-ink-300 transition-colors p-3 disabled:opacity-30" aria-label="Annuler">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a5 5 0 015 5v2M3 10l4-4m-4 4l4 4" />
             </svg>
           </button>
-          <button onClick={() => { setShowMenu(!showMenu); setShowHistory(false); }} className="text-ink-500 hover:text-ink-300 transition-colors p-2" aria-label="Options">
+          <button onClick={() => { setShowMenu(!showMenu); setShowHistory(false); }} className="text-ink-500 hover:text-ink-300 transition-colors p-3" aria-label="Options">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01" />
             </svg>
@@ -234,7 +234,7 @@ export function LoreCounter({ onClose, initialState }: LoreCounterProps) {
         <div className="absolute inset-0 z-30 bg-ink-950/95 backdrop-blur-sm flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-ink-800/50">
             <h2 className="font-display font-bold text-ink-100 tracking-wide">Historique</h2>
-            <button onClick={() => setShowHistory(false)} className="text-ink-500 hover:text-ink-300 transition-colors p-1">
+            <button onClick={() => setShowHistory(false)} className="text-ink-500 hover:text-ink-300 transition-colors p-2">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>

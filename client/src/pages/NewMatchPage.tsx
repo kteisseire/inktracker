@@ -295,7 +295,7 @@ export function NewMatchPage() {
       <Link to={`/tournaments/${tournamentId}`} className="text-sm text-ink-500 hover:text-gold-400 transition-colors">
         &larr; Retour au tournoi
       </Link>
-      <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide mt-2 mb-6">
+      <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide mt-2 mb-6">
         {isEdit ? 'Modifier la ronde' : 'Ajouter une ronde'}
       </h1>
 

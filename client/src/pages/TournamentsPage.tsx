@@ -25,19 +25,19 @@ function TeamBadge({ count, members }: { count: number; members: string[] }) {
     <div className="relative inline-block" ref={ref}>
       <button
         onClick={e => { e.preventDefault(); e.stopPropagation(); setOpen(!open); }}
-        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 transition-colors"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 transition-colors"
         title={`${count} coéquipier${count > 1 ? 's' : ''}`}
       >
-        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
         {count}
       </button>
       {open && (
         <div className="absolute top-full left-0 mt-1 bg-ink-900 border border-ink-700/50 rounded-lg shadow-xl z-50 py-1.5 min-w-[140px]">
-          <p className="px-3 py-1 text-[10px] text-ink-500 uppercase tracking-wider font-medium">Équipe</p>
+          <p className="px-3 py-1.5 text-xs text-ink-500 uppercase tracking-wider font-medium">Équipe</p>
           {members.map(name => (
-            <div key={name} className="px-3 py-1.5 text-xs text-ink-200">{name}</div>
+            <div key={name} className="px-3 py-2 text-sm text-ink-200">{name}</div>
           ))}
         </div>
       )}
@@ -63,7 +63,7 @@ export function TournamentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide">Mes tournois</h1>
+          <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Mes tournois</h1>
           <HelpButton sections={['Tournois']} />
         </div>
         <Link to="/tournaments/new" className="ink-btn-primary text-sm px-4 py-2">+ Nouveau</Link>

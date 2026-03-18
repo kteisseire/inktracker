@@ -90,7 +90,7 @@ export function TopCutCalculatorPage() {
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
         <div className="flex items-center gap-2">
-          <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide">Top Cut Calculator</h1>
+          <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Top Cut Calculator</h1>
           <HelpButton sections={['Outils gratuits']} />
         </div>
         <p className="text-sm text-ink-500 mt-1">

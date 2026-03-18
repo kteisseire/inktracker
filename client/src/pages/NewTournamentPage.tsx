@@ -268,7 +268,7 @@ export function NewTournamentPage() {
       {isEdit && (
         <Link to={`/tournaments/${editId}`} className="text-sm text-ink-500 hover:text-gold-400 transition-colors">&larr; Retour au tournoi</Link>
       )}
-      <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide mb-6 mt-1">
+      <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide mb-6 mt-1">
         {isEdit ? 'Modifier le tournoi' : 'Nouveau tournoi'}
       </h1>
 
@@ -397,21 +397,21 @@ export function NewTournamentPage() {
                 <button
                   key={deck.id} type="button"
                   onClick={() => handleDeckSelect(deck.id)}
-                  className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl border text-sm transition-all ${
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm transition-all ${
                     selectedDeckId === deck.id
                       ? 'border-gold-500 bg-gold-500/10 ring-2 ring-gold-500/30'
                       : 'border-ink-700/50 bg-ink-900/50 hover:border-ink-600/50'
                   }`}
                 >
                   <DeckBadges colors={deck.colors as any} />
-                  <span className="text-ink-200 font-medium text-xs sm:text-sm">{deck.name}</span>
-                  {deck.isDefault && <span className="text-[10px] text-gold-400 font-medium hidden sm:inline">(défaut)</span>}
+                  <span className="text-ink-200 font-medium text-sm">{deck.name}</span>
+                  {deck.isDefault && <span className="text-xs text-gold-400 font-medium hidden sm:inline">(défaut)</span>}
                 </button>
               ))}
               <button
                 type="button"
                 onClick={() => handleDeckSelect('')}
-                className={`px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl border text-sm transition-all ${
+                className={`px-3 py-2.5 rounded-xl border text-sm transition-all ${
                   selectedDeckId === ''
                     ? 'border-gold-500 bg-gold-500/10 ring-2 ring-gold-500/30'
                     : 'border-ink-700/50 bg-ink-900/50 hover:border-ink-600/50'

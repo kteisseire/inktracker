@@ -122,7 +122,7 @@ export function ScoutDeckBadges({ scout, possibleDecks }: { scout?: ScoutReport;
                 <div className="flex items-center gap-1.5">
                   {certainColors.map(c => <InkBadge key={c} color={c} />)}
                 </div>
-                <div className="space-y-1 text-[11px] text-ink-500">
+                <div className="space-y-1 text-xs text-ink-500">
                   <div className="flex items-center gap-1.5">
                     <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -150,7 +150,7 @@ export function ScoutDeckBadges({ scout, possibleDecks }: { scout?: ScoutReport;
                       <div className="flex items-center gap-1.5">
                         {(deck.deckColors as InkColor[]).filter(c => INK_COLORS_CONFIG[c]).map(c => <InkBadge key={c} color={c} />)}
                       </div>
-                      <div className="space-y-1 text-[11px] text-ink-500">
+                      <div className="space-y-1 text-xs text-ink-500">
                         <div className="flex items-center gap-1.5">
                           <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -232,14 +232,14 @@ export function ScoutPicker({ playerName, teams, eventId, existingColors, onSave
       <button
         type="button"
         onClick={handleOpen}
-        className={`inline-flex items-center justify-center w-5 h-5 rounded-full transition-colors shrink-0 ${
+        className={`inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors shrink-0 ${
           hasExisting
             ? 'text-ink-400 bg-ink-800/60 hover:bg-ink-700/60 hover:text-ink-200'
             : 'text-gold-400 bg-gold-500/15 hover:bg-gold-500/25'
         }`}
         title={hasExisting ? `Modifier le deck de ${playerName}` : `Qualifier le deck de ${playerName}`}
       >
-        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
           {hasExisting ? (
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
           ) : (

@@ -137,7 +137,7 @@ export function DecksPage() {
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide">Mes decks</h1>
+          <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Mes decks</h1>
           <HelpButton sections={['Decks']} />
         </div>
         {!showForm && !editingDeck && (

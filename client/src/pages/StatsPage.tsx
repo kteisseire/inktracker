@@ -40,7 +40,7 @@ export function StatsPage() {
   return (
     <div className="space-y-6 sm:space-y-8">
       <div className="flex items-center gap-2">
-        <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide">Statistiques</h1>
+        <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Statistiques</h1>
         <HelpButton sections={['Statistiques']} />
       </div>
 

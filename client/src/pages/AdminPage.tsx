@@ -43,7 +43,7 @@ export function AdminPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide">Administration</h1>
+        <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Administration</h1>
         <span className="text-sm text-ink-400">{users.length} utilisateur{users.length > 1 ? 's' : ''}</span>
       </div>
 

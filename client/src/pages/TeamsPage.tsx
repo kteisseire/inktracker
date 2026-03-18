@@ -36,7 +36,7 @@ export function TeamsPage() {
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide">Mes équipes</h1>
+          <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Mes équipes</h1>
           <HelpButton sections={['Équipes']} />
         </div>
         {!showForm && (

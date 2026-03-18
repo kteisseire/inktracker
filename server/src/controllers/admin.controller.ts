@@ -12,6 +12,7 @@ export async function listUsers(_req: AuthRequest, res: Response) {
       googleId: true,
       discordId: true,
       createdAt: true,
+      lastLoginAt: true,
       _count: {
         select: {
           tournaments: true,
@@ -32,6 +33,7 @@ export async function listUsers(_req: AuthRequest, res: Response) {
       hasGoogle: !!u.googleId,
       hasDiscord: !!u.discordId,
       createdAt: u.createdAt,
+      lastLoginAt: u.lastLoginAt,
       tournamentsCount: u._count.tournaments,
       decksCount: u._count.decks,
       teamsCount: u._count.teamMembers,

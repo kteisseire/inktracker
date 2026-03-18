@@ -2,6 +2,20 @@ import { useEffect, useState } from 'react';
 import { listUsers } from '../api/admin.api.js';
 import type { AdminUserInfo } from '@lorcana/shared';
 
+function formatRelative(dateStr: string): string {
+  const now = Date.now();
+  const d = new Date(dateStr).getTime();
+  const diffMs = now - d;
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "à l'instant";
+  if (diffMin < 60) return `il y a ${diffMin} min`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `il y a ${diffH}h`;
+  const diffD = Math.floor(diffH / 24);
+  if (diffD < 7) return `il y a ${diffD}j`;
+  return new Date(dateStr).toLocaleDateString('fr-FR');
+}
+
 export function AdminPage() {
   const [users, setUsers] = useState<AdminUserInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +58,7 @@ export function AdminPage() {
               <th className="text-center px-4 py-3 font-medium">Tournois</th>
               <th className="text-center px-4 py-3 font-medium">Decks</th>
               <th className="text-center px-4 py-3 font-medium">Équipes</th>
+              <th className="text-left px-4 py-3 font-medium">Dernière connexion</th>
               <th className="text-left px-4 py-3 font-medium">Inscription</th>
             </tr>
           </thead>
@@ -62,6 +77,7 @@ export function AdminPage() {
                 <td className="px-4 py-3 text-center text-ink-300">{u.tournamentsCount}</td>
                 <td className="px-4 py-3 text-center text-ink-300">{u.decksCount}</td>
                 <td className="px-4 py-3 text-center text-ink-300">{u.teamsCount}</td>
+                <td className="px-4 py-3 text-ink-500 text-xs">{u.lastLoginAt ? formatRelative(u.lastLoginAt) : '—'}</td>
                 <td className="px-4 py-3 text-ink-500 text-xs">{new Date(u.createdAt).toLocaleDateString('fr-FR')}</td>
               </tr>
             ))}
@@ -78,6 +94,9 @@ export function AdminPage() {
               <span className="text-xs text-ink-500">{new Date(u.createdAt).toLocaleDateString('fr-FR')}</span>
             </div>
             <p className="text-sm text-ink-400">{u.email}</p>
+            {u.lastLoginAt && (
+              <p className="text-xs text-ink-500">Dernière connexion : {formatRelative(u.lastLoginAt)}</p>
+            )}
             <div className="flex items-center gap-1.5">
               {u.hasPassword && <AuthBadge label="Email" />}
               {u.hasGoogle && <AuthBadge label="Google" />}

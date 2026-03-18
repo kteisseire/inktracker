@@ -16,6 +16,7 @@ model User {
   passwordResetExpiresAt DateTime?
   createdAt              DateTime        @default(now())
   updatedAt              DateTime        @updatedAt
+  lastLoginAt            DateTime?
   googleId               String?         @unique
   discordId              String?         @unique
   decks                  Deck[]

@@ -19,6 +19,10 @@ function userResponse(u: { id: string; email: string; username: string; password
   return { id: u.id, email: u.email, username: u.username, hasPassword: !!u.passwordHash, hasGoogle: !!u.googleId, hasDiscord: !!u.discordId, isAdmin: isAdminEmail(u.email), createdAt: u.createdAt };
 }
 
+function touchLastLogin(userId: string) {
+  prisma.user.update({ where: { id: userId }, data: { lastLoginAt: new Date() } }).catch(() => {});
+}
+
 export async function register(req: Request, res: Response) {
   const { email, username, password } = req.body;
 
@@ -36,6 +40,7 @@ export async function register(req: Request, res: Response) {
   });
 
   const token = signToken(user.id);
+  touchLastLogin(user.id);
   res.status(201).json({ user: userResponse(user), token });
 }
 
@@ -49,6 +54,7 @@ export async function login(req: Request, res: Response) {
   }
 
   const token = signToken(user.id);
+  touchLastLogin(user.id);
   res.json({ user: userResponse(user), token });
 }
 
@@ -100,6 +106,7 @@ export async function googleLogin(req: Request, res: Response) {
   }
 
   const token = signToken(user!.id);
+  touchLastLogin(user!.id);
   res.json({ user: userResponse(user!), token });
 }
 
@@ -191,6 +198,7 @@ export async function discordLogin(req: Request, res: Response) {
   }
 
   const token = signToken(user!.id);
+  touchLastLogin(user!.id);
   res.json({ user: userResponse(user!), token });
 }
 
@@ -200,6 +208,7 @@ export async function getMe(req: AuthRequest, res: Response) {
     res.status(404).json({ error: 'Utilisateur non trouvé' });
     return;
   }
+  touchLastLogin(user.id);
   res.json({ user: userResponse(user) });
 }
 

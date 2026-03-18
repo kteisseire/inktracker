@@ -17,6 +17,7 @@ export interface AdminUserInfo {
   hasGoogle: boolean;
   hasDiscord: boolean;
   createdAt: string;
+  lastLoginAt: string | null;
   tournamentsCount: number;
   decksCount: number;
   teamsCount: number;

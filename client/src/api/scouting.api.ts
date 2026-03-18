@@ -5,7 +5,7 @@ export async function getEventScoutReports(eventId: string, teamId?: string): Pr
   const res = await api.get(`/scouting/events/${eventId}`, {
     params: teamId ? { teamId } : undefined,
   });
-  return { reports: res.data.reports, potentialDecks: res.data.potentialDecks };
+  return { reports: res.data.reports || [], potentialDecks: res.data.potentialDecks || [] };
 }
 
 export async function upsertScoutReport(data: CreateScoutReportRequest): Promise<ScoutReport> {

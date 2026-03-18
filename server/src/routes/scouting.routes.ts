@@ -18,4 +18,4 @@ router.post('/potential-decks', validate(createPotentialDecksSchema), asyncHandl
 router.delete('/:reportId', asyncHandler(deleteScoutReport));
 
 export default router;
-// v3
+// v4

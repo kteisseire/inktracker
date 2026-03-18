@@ -13,6 +13,9 @@
     "build": "npm run build --workspace=packages/shared && npm run build --workspace=server && npm run build --workspace=client",
     "build:server": "cd server && npx prisma generate && npx prisma db push --accept-data-loss && cd .. && npm run build --workspace=packages/shared && npm run build --workspace=server"
   },
+  "prisma": {
+    "schema": "server/prisma/schema.prisma"
+  },
   "devDependencies": {
     "concurrently": "^8.2.2",
     "typescript": "^5.4.0"

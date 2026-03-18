@@ -103,6 +103,25 @@ export function TournamentDetailPage() {
 
   useEffect(() => { load(); }, [id]);
 
+  // Auto-estimate placement from W/L record when no Play Hub link
+  useEffect(() => {
+    if (!tournament || !tournament.playerCount) return;
+    const hasEvent = !!(tournament.eventLink && extractEventId(tournament.eventLink));
+    if (hasEvent) return;
+    const rounds = tournament.rounds || [];
+    const w = rounds.filter(r => r.result === 'WIN').length;
+    const l = rounds.filter(r => r.result === 'LOSS').length;
+    const d = rounds.filter(r => r.result === 'DRAW').length;
+    const totalPlayed = w + l + d;
+    if (totalPlayed === 0) return;
+    const myPoints = w * 3 + d;
+    const maxPoints = totalPlayed * 3;
+    const estimated = Math.max(1, Math.round(tournament.playerCount * (1 - myPoints / maxPoints) + 0.5));
+    if (estimated !== tournament.placement) {
+      updateTournament(id!, { placement: estimated }).then(() => load()).catch(() => {});
+    }
+  }, [tournament]);
+
   // Build possibleDecks for "Mes rondes" from potentialDecks
   // For a player: if they have a certain ScoutReport, show that. Otherwise show all PotentialDecks where they appear.
   const roundsPossibleDecks = useMemo(() => {
@@ -202,7 +221,7 @@ export function TournamentDetailPage() {
         <Link to="/tournaments" className="text-sm text-ink-500 hover:text-gold-400 transition-colors">&larr; Retour</Link>
         <div className="flex items-center justify-between gap-3 mt-1">
           <div className="flex items-center gap-2 min-w-0">
-            <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-100 tracking-wide truncate min-w-0">{tournament.name}</h1>
+            <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide truncate min-w-0">{tournament.name}</h1>
             <HelpButton sections={['Tournois', 'Arbre du tournoi et scouting']} />
           </div>
           <DropdownMenu
@@ -243,7 +262,7 @@ export function TournamentDetailPage() {
       </div>
 
       {/* Info cards */}
-      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
         <InfoCard label="Deck" value={
           tournament.myDeckLink ? (
             <a href={tournament.myDeckLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:opacity-80">
@@ -253,8 +272,7 @@ export function TournamentDetailPage() {
           ) : (
             <DeckBadges colors={tournament.myDeckColors as any} />
           )
-        } className="col-span-2 sm:col-span-1" />
-        <InfoCard label="Format" value={FORMAT_LABELS[tournament.format]} />
+        } />
         <InfoCard label="Bilan" value={
           <span className="text-sm">
             <span className="text-green-400">{wins}V</span>
@@ -263,8 +281,9 @@ export function TournamentDetailPage() {
             {draws > 0 && <>{' '}<span className="text-ink-400">{draws}N</span></>}
           </span>
         } />
-        <InfoCard label="Top Cut" value={TOPCUT_LABELS[tournament.topCut]} className="hidden sm:block" />
-        <InfoCard label="Joueurs" value={tournament.playerCount ?? '—'} className="hidden sm:block" />
+        <InfoCard label="Format" value={FORMAT_LABELS[tournament.format]} />
+        <InfoCard label="Top Cut" value={TOPCUT_LABELS[tournament.topCut]} />
+        <InfoCard label="Joueurs" value={tournament.playerCount ?? '—'} className="col-span-2 sm:col-span-1" />
       </div>
 
       {/* Top Cut Progress */}
@@ -292,7 +311,7 @@ export function TournamentDetailPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-ink-800/50">
+      <div className="flex gap-1 border-b border-ink-800/50 sticky top-[53px] sm:top-[57px] z-30 bg-ink-950/95 backdrop-blur-md -mx-3 sm:-mx-4 px-3 sm:px-4">
         <button
           onClick={() => setTab('rounds')}
           className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
@@ -346,6 +365,8 @@ export function TournamentDetailPage() {
             tournamentId={id!}
             existingRounds={rounds}
             onRoundsChanged={load}
+            currentPlacement={tournament.placement}
+            playerCount={tournament.playerCount}
           />
         ) : (
           <LinkPlayHubPrompt tournamentId={id!} onLinked={load} />
@@ -591,12 +612,14 @@ function LinkPlayHubPrompt({ tournamentId, onLinked }: { tournamentId: string; o
   );
 }
 
-function BracketTab({ eventLink, username, tournamentId, existingRounds, onRoundsChanged }: {
+function BracketTab({ eventLink, username, tournamentId, existingRounds, onRoundsChanged, currentPlacement, playerCount }: {
   eventLink: string;
   username: string;
   tournamentId: string;
   existingRounds: Round[];
   onRoundsChanged: () => void;
+  currentPlacement: number | null;
+  playerCount: number | null;
 }) {
   const eventId = extractEventId(eventLink)!;
   const [data, setData] = useState<EventRoundsData | null>(null);
@@ -692,6 +715,25 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
   }, [eventId]);
 
   useEffect(() => { loadRounds(); }, [loadRounds]);
+
+  // Auto-calculate placement from Play Hub standings
+  useEffect(() => {
+    if (!data || !effectiveUsername) return;
+    const completedRounds = data.rounds.filter(r => r.status === 'COMPLETE');
+    if (completedRounds.length === 0) return;
+    const lastRound = completedRounds[completedRounds.length - 1];
+    if (!lastRound.standings || lastRound.standings.length === 0) return;
+    const me = lastRound.standings.find(s => s.playerName.toLowerCase() === effectiveUsername.toLowerCase());
+    if (!me) return;
+    const rank = me.rank;
+    if (rank && rank !== currentPlacement) {
+      const updates: Record<string, any> = { placement: rank };
+      if (!playerCount && lastRound.standings.length > 0) {
+        updates.playerCount = lastRound.standings.length;
+      }
+      updateTournament(tournamentId, updates).then(() => onRoundsChanged()).catch(() => {});
+    }
+  }, [data, effectiveUsername, currentPlacement, playerCount, tournamentId, onRoundsChanged]);
 
   // Load scout reports + potential decks + teams in parallel
   useEffect(() => {
@@ -883,10 +925,10 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
       )}
 
       {/* View mode toggle */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1.5">
         <button
           onClick={() => setViewMode('standings')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+          className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
             viewMode === 'standings' ? 'bg-ink-700/50 text-ink-100' : 'text-ink-500 hover:text-ink-300'
           }`}
         >
@@ -894,7 +936,7 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
         </button>
         <button
           onClick={() => setViewMode('matches')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+          className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
             viewMode === 'matches' ? 'bg-ink-700/50 text-ink-100' : 'text-ink-500 hover:text-ink-300'
           }`}
         >
@@ -903,10 +945,10 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
 
         {teams.length > 0 && (
           <>
-            <div className="w-px h-4 bg-ink-800 mx-1" />
+            <div className="w-px h-5 bg-ink-800 mx-0.5" />
             <button
               onClick={() => setTeamFilter(!teamFilter)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+              className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
                 teamFilter ? 'bg-gold-500/15 text-gold-400 border border-gold-500/30' : 'text-ink-500 hover:text-ink-300'
               }`}
             >
@@ -1772,7 +1814,7 @@ function TopCutProgress({ playerCount, swissRounds, topCutSize, swissWins, swiss
 function InfoCard({ label, value, className }: { label: string; value: React.ReactNode; className?: string }) {
   return (
     <div className={`ink-card p-2.5 sm:p-3 ${className ?? ''}`}>
-      <p className="text-[10px] sm:text-xs text-ink-500 mb-0.5 sm:mb-1">{label}</p>
+      <p className="text-xs text-ink-500 mb-0.5 sm:mb-1">{label}</p>
       <div className="font-medium text-ink-100 text-sm">{value}</div>
     </div>
   );

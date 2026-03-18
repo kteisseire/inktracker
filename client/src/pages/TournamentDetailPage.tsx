@@ -395,6 +395,93 @@ export function TournamentDetailPage() {
   );
 }
 
+/* ─── Username Mismatch Banner ─── */
+
+function UsernameMismatchBanner({ username, overrideUsername, allPlayerNames, onSelect, onReset }: {
+  username: string;
+  overrideUsername: string | null;
+  allPlayerNames: string[];
+  onSelect: (name: string) => void;
+  onReset: () => void;
+}) {
+  const [search, setSearch] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const filtered = search.length > 0
+    ? allPlayerNames.filter(n => n.toLowerCase().includes(search.toLowerCase()))
+    : allPlayerNames;
+
+  useEffect(() => {
+    const handle = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setShowSuggestions(false);
+    };
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, []);
+
+  const handleSelect = (name: string) => {
+    onSelect(name);
+    setSearch('');
+    setShowSuggestions(false);
+  };
+
+  return (
+    <div className="ink-card p-4 border-amber-500/20 space-y-3">
+      <div className="flex items-start gap-3">
+        <svg className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+        </svg>
+        <div className="flex-1">
+          <p className="text-sm text-ink-200">
+            Pseudo <strong className="text-amber-400">&quot;{overrideUsername || username}&quot;</strong> non trouvé dans ce tournoi.
+          </p>
+          <p className="text-xs text-ink-500 mt-1">
+            Votre pseudo Play Hub est peut-être différent. Sélectionnez votre nom dans la liste des participants :
+          </p>
+        </div>
+      </div>
+
+      <div className="relative" ref={containerRef}>
+        <input
+          ref={inputRef}
+          type="text"
+          value={search}
+          onChange={e => { setSearch(e.target.value); setShowSuggestions(true); }}
+          onFocus={() => setShowSuggestions(true)}
+          placeholder="Rechercher votre pseudo Play Hub..."
+          className="w-full bg-ink-900/50 border border-ink-700/50 rounded-lg px-3 py-2 text-sm text-ink-100 placeholder:text-ink-600 focus:outline-none focus:border-gold-500/50 focus:ring-1 focus:ring-gold-500/25"
+        />
+        {showSuggestions && filtered.length > 0 && (
+          <div className="absolute top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-ink-900 border border-ink-700/50 rounded-lg shadow-xl z-50">
+            {filtered.map(name => (
+              <button
+                key={name}
+                onClick={() => handleSelect(name)}
+                className="w-full text-left px-3 py-2 text-sm text-ink-300 hover:text-ink-100 hover:bg-ink-800/50 transition-colors"
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        )}
+        {showSuggestions && search.length > 0 && filtered.length === 0 && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-ink-900 border border-ink-700/50 rounded-lg shadow-xl z-50 p-3 text-sm text-ink-500 text-center">
+            Aucun joueur trouvé
+          </div>
+        )}
+      </div>
+
+      {overrideUsername && (
+        <button onClick={onReset} className="text-xs text-ink-500 hover:text-ink-300 transition-colors">
+          ← Revenir à mon pseudo ({username})
+        </button>
+      )}
+    </div>
+  );
+}
+
 /* ─── Bracket Tab ─── */
 
 /** Extract my match info from a Play Hub round */
@@ -522,6 +609,9 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
   const [scoutReports, setScoutReports] = useState<ScoutReport[]>([]);
   const [potentialDecks, setPotentialDecks] = useState<PotentialDeck[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [overrideUsername, setOverrideUsername] = useState<string | null>(null);
+
+  const effectiveUsername = overrideUsername || username;
 
   // Build a lookup map: playerName (lowercase) -> ScoutReport (certain decks only)
   const scoutMap = new Map<string, ScoutReport>();
@@ -626,11 +716,11 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
   // Compute top cut round number offset (top cut rounds continue numbering from swiss)
   const topCutOffset = data ? Math.max(0, ...data.rounds.filter(r => r.roundType === 'SWISS').map(r => r.roundNumber)) : 0;
 
-  const syncDiff = data && username ? data.rounds
+  const syncDiff = data && effectiveUsername ? data.rounds
     .filter(r => r.status === 'COMPLETE')
     .map(r => {
       const isTopCut = r.roundType !== 'SWISS';
-      const myMatch = findMyMatch(r.matches, username);
+      const myMatch = findMyMatch(r.matches, effectiveUsername);
       if (!myMatch) return null;
       // Top cut rounds: renumber starting from 1
       const roundNumber = isTopCut ? r.roundNumber - topCutOffset : r.roundNumber;
@@ -719,8 +809,11 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
 
   const currentRound = data.rounds.find(r => r.roundNumber === selectedRound) || data.rounds[data.rounds.length - 1];
 
-  // Check if username was found in any match
-  const userFound = username && data.rounds.some(r => r.matches.some(m => m.players.some(p => p.playerName.toLowerCase() === username.toLowerCase())));
+  // Check if effectiveUsername was found in any match
+  const userFound = effectiveUsername && data.rounds.some(r => r.matches.some(m => m.players.some(p => p.playerName.toLowerCase() === effectiveUsername.toLowerCase())));
+
+  // Collect all unique player names from the tournament for autocomplete
+  const allPlayerNames = data ? [...new Set(data.rounds.flatMap(r => r.matches.flatMap(m => m.players.map(p => p.playerName))).filter(Boolean))].sort() : [];
 
   return (
     <div className="space-y-4">
@@ -733,7 +826,7 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
                 {syncDiff.length} ronde{syncDiff.length > 1 ? 's' : ''} à synchroniser
               </p>
               <p className="text-xs text-ink-500 mt-0.5">
-                Depuis le Play Hub ({username})
+                Depuis le Play Hub ({effectiveUsername})
               </p>
             </div>
             <button
@@ -764,10 +857,14 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
         </div>
       )}
 
-      {userFound === false && username && (
-        <div className="ink-card p-3 text-sm text-ink-500 text-center">
-          Pseudo &quot;{username}&quot; non trouvé dans ce tournoi. Vérifiez que votre pseudo InkTracker correspond à celui du Play Hub.
-        </div>
+      {userFound === false && effectiveUsername && (
+        <UsernameMismatchBanner
+          username={username}
+          overrideUsername={overrideUsername}
+          allPlayerNames={allPlayerNames}
+          onSelect={setOverrideUsername}
+          onReset={() => setOverrideUsername(null)}
+        />
       )}
 
       {/* View mode toggle */}
@@ -820,9 +917,9 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
       </div>
 
       {viewMode === 'standings' ? (
-        <StandingsView standings={currentRound.standings} roundNumber={currentRound.roundNumber} username={username} scoutMap={scoutMap} possibleDecks={possibleDecks} teams={teams} eventId={eventId} onScout={handleScout} />
+        <StandingsView standings={currentRound.standings} roundNumber={currentRound.roundNumber} username={effectiveUsername} scoutMap={scoutMap} possibleDecks={possibleDecks} teams={teams} eventId={eventId} onScout={handleScout} />
       ) : (
-        <MatchesView matches={currentRound.matches} roundNumber={currentRound.roundNumber} username={username} scoutMap={scoutMap} possibleDecks={possibleDecks} teams={teams} eventId={eventId} onScout={handleScout} onPotentialDecks={handlePotentialDecks} />
+        <MatchesView matches={currentRound.matches} roundNumber={currentRound.roundNumber} username={effectiveUsername} scoutMap={scoutMap} possibleDecks={possibleDecks} teams={teams} eventId={eventId} onScout={handleScout} onPotentialDecks={handlePotentialDecks} />
       )}
     </div>
   );

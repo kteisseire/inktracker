@@ -9,6 +9,108 @@ async function verifyTeamMembership(teamId: string, userId: string) {
   });
 }
 
+/**
+ * Cascade deduction: when a player gets a certain deck, check all potential decks
+ * involving that player. If a table had 2 potential decks and one matches the certain
+ * deck, the opponent gets the other deck as certain. This propagates recursively.
+ */
+async function cascadeDeduction(
+  eventId: string,
+  playerName: string,
+  deckColors: string[],
+  reportedById: string,
+  teamId: string | null,
+  processed: Set<string> = new Set(),
+): Promise<any[]> {
+  const key = playerName.toLowerCase();
+  if (processed.has(key)) return [];
+  processed.add(key);
+
+  const sortedColors = [...deckColors].sort().join(',');
+
+  // Find all potential decks where this player is involved
+  const potentials = await prisma.potentialDeck.findMany({
+    where: {
+      eventId,
+      OR: [
+        { player1Name: { equals: playerName, mode: 'insensitive' } },
+        { player2Name: { equals: playerName, mode: 'insensitive' } },
+      ],
+    },
+  });
+
+  // Group by table (roundNumber + tableNumber)
+  const tables = new Map<string, typeof potentials>();
+  for (const p of potentials) {
+    const tableKey = `${p.roundNumber}-${p.tableNumber}`;
+    if (!tables.has(tableKey)) tables.set(tableKey, []);
+    tables.get(tableKey)!.push(p);
+  }
+
+  const deducedReports: any[] = [];
+
+  for (const [, tableDecks] of tables) {
+    if (tableDecks.length !== 2) continue;
+
+    // Find which deck matches the certain deck
+    const matchIdx = tableDecks.findIndex(d => [...d.deckColors].sort().join(',') === sortedColors);
+    if (matchIdx === -1) continue; // no match — contradiction, skip
+
+    const otherDeck = tableDecks[1 - matchIdx];
+    const sample = tableDecks[0];
+
+    // Determine the opponent
+    const opponentName = sample.player1Name.toLowerCase() === key
+      ? sample.player2Name
+      : sample.player1Name;
+
+    // Check if opponent already has a certain deck
+    const existingReport = await prisma.scoutReport.findFirst({
+      where: {
+        eventId,
+        playerName: { equals: opponentName, mode: 'insensitive' },
+        reportedById,
+      },
+    });
+    if (existingReport) continue; // already has certain deck
+
+    // Create certain deck for opponent
+    const newReport = await prisma.scoutReport.upsert({
+      where: { reportedById_eventId_playerName: { reportedById, eventId, playerName: opponentName.trim() } },
+      update: {
+        deckColors: otherDeck.deckColors,
+        teamId,
+        updatedAt: new Date(),
+      },
+      create: {
+        teamId,
+        eventId,
+        playerName: opponentName.trim(),
+        deckColors: otherDeck.deckColors,
+        reportedById,
+      },
+      include: {
+        reportedBy: { select: { id: true, username: true } },
+      },
+    });
+
+    deducedReports.push(newReport);
+
+    // Cascade: check opponent's other tables
+    const cascaded = await cascadeDeduction(
+      eventId,
+      opponentName,
+      otherDeck.deckColors as string[],
+      reportedById,
+      teamId,
+      processed,
+    );
+    deducedReports.push(...cascaded);
+  }
+
+  return deducedReports;
+}
+
 /** Get all scout reports for a given event, scoped to user's personal reports + team reports */
 export async function getEventScoutReports(req: AuthRequest, res: Response) {
   const { eventId } = req.params;
@@ -79,7 +181,10 @@ export async function upsertScoutReport(req: AuthRequest, res: Response) {
     },
   });
 
-  res.json({ report });
+  // Cascade deduction from potential decks
+  const deduced = await cascadeDeduction(eventId, playerName.trim(), deckColors, req.userId!, teamId || null);
+
+  res.json({ report, deduced });
 }
 
 /** Bulk upsert scout reports */

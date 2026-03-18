@@ -10,7 +10,7 @@ import { DeckBadges, ScoutDeckBadges, ScoutPicker } from '../components/ui/InkBa
 import { INK_COLORS_CONFIG } from '../lib/colors.js';
 import { getEventScoutReports, upsertScoutReport, createPotentialDecks as createPotentialDecksApi } from '../api/scouting.api.js';
 import { listMyTeams } from '../api/team.api.js';
-import { INK_COLORS } from '@lorcana/shared';
+import { INK_COLORS, getRecommendedSwissRounds, getRecommendedTopCut } from '@lorcana/shared';
 import type { Tournament, Round, Game, MatchResult, ScoutReport, InkColor, Team, PotentialDeck } from '@lorcana/shared';
 
 const FORMAT_LABELS: Record<string, string> = { BO1: 'Bo1', BO3: 'Bo3', BO5: 'Bo5' };
@@ -159,8 +159,13 @@ export function TournamentDetailPage() {
     if (syncData.name) updates.name = syncData.name;
     if (syncData.date) updates.date = syncData.date.split('T')[0];
     if (syncData.location) updates.location = syncData.location;
-    if (syncData.playerCount) updates.playerCount = syncData.playerCount;
-    if (syncData.swissRounds) updates.swissRounds = syncData.swissRounds;
+    if (syncData.playerCount) {
+      updates.playerCount = syncData.playerCount;
+      updates.swissRounds = syncData.swissRounds || getRecommendedSwissRounds(syncData.playerCount);
+      updates.topCut = getRecommendedTopCut(syncData.playerCount);
+    } else if (syncData.swissRounds) {
+      updates.swissRounds = syncData.swissRounds;
+    }
     if (Object.keys(updates).length > 0) {
       await updateTournament(id!, updates);
       load();
@@ -521,10 +526,14 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
   }, [eventId]);
 
   const handleScout: ScoutHandler = async (playerName, colors, teamId) => {
-    const report = await upsertScoutReport({ teamId, eventId, playerName, deckColors: colors });
+    const { report, deduced } = await upsertScoutReport({ teamId, eventId, playerName, deckColors: colors });
     setScoutReports(prev => {
-      const next = prev.filter(r => r.playerName.toLowerCase() !== playerName.toLowerCase() || r.teamId !== teamId);
-      return [...next, report];
+      let next = prev.filter(r => r.playerName.toLowerCase() !== playerName.toLowerCase());
+      // Also merge deduced reports from cascade
+      for (const d of deduced) {
+        next = next.filter(r => r.playerName.toLowerCase() !== d.playerName.toLowerCase());
+      }
+      return [...next, report, ...deduced];
     });
   };
 
@@ -538,20 +547,33 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
   };
 
   // Compute sync diff
+  // Compute top cut round number offset (top cut rounds continue numbering from swiss)
+  const topCutOffset = data ? Math.max(0, ...data.rounds.filter(r => r.roundType === 'SWISS').map(r => r.roundNumber)) : 0;
+
   const syncDiff = data && username ? data.rounds
-    .filter(r => r.status === 'COMPLETE' && r.roundType === 'SWISS')
+    .filter(r => r.status === 'COMPLETE')
     .map(r => {
+      const isTopCut = r.roundType !== 'SWISS';
       const myMatch = findMyMatch(r.matches, username);
       if (!myMatch) return null;
-      const existing = existingRounds.find(er => er.roundNumber === r.roundNumber && !er.isTopCut);
+      // Top cut rounds: renumber starting from 1
+      const roundNumber = isTopCut ? r.roundNumber - topCutOffset : r.roundNumber;
+      if (roundNumber <= 0) return null;
+      const existing = existingRounds.find(er => er.roundNumber === roundNumber && er.isTopCut === isTopCut);
       const needsCreate = !existing;
+      // Also check if games score differs
+      const existingGamesWon = existing?.games?.filter(g => g.result === 'WIN').length ?? 0;
+      const existingGamesLost = existing?.games?.filter(g => g.result === 'LOSS').length ?? 0;
+      const scoresDiffer = existing && (existingGamesWon !== myMatch.gamesWon || existingGamesLost !== myMatch.gamesLost);
       const needsUpdate = existing && (
         existing.result !== myMatch.result ||
-        (existing.opponentName || '') !== myMatch.opponentName
+        (existing.opponentName || '') !== myMatch.opponentName ||
+        scoresDiffer
       );
       if (!needsCreate && !needsUpdate) return null;
       return {
-        roundNumber: r.roundNumber,
+        roundNumber,
+        isTopCut,
         opponentName: myMatch.opponentName,
         result: myMatch.result,
         gamesWon: myMatch.gamesWon,
@@ -562,7 +584,7 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
       };
     })
     .filter(Boolean) as Array<{
-      roundNumber: number; opponentName: string; result: MatchResult;
+      roundNumber: number; isTopCut: boolean; opponentName: string; result: MatchResult;
       gamesWon: number; gamesLost: number; isBye: boolean;
       existingRoundId?: string; action: 'create' | 'update';
     }>
@@ -575,25 +597,21 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
       for (const diff of syncDiff) {
         const payload = {
           roundNumber: diff.roundNumber,
-          isTopCut: false,
+          isTopCut: diff.isTopCut,
           opponentName: diff.opponentName,
           result: diff.result,
-          games: diff.isBye ? undefined : [{
-            gameNumber: 1,
-            result: diff.result,
-            myScore: diff.result === 'WIN' ? 20 : 0,
-            opponentScore: diff.result === 'LOSS' ? 20 : 0,
-          }, ...(diff.gamesWon + diff.gamesLost > 1 ? [{
-            gameNumber: 2,
-            result: (diff.gamesWon >= 2 ? 'WIN' : 'LOSS') as MatchResult,
-            myScore: diff.gamesWon >= 2 ? 20 : 0,
-            opponentScore: diff.gamesWon >= 2 ? 0 : 20,
-          }] : []), ...(diff.gamesWon + diff.gamesLost > 2 ? [{
-            gameNumber: 3,
-            result: diff.result,
-            myScore: diff.result === 'WIN' ? 20 : 0,
-            opponentScore: diff.result === 'LOSS' ? 20 : 0,
-          }] : [])],
+          games: diff.isBye ? undefined : (() => {
+            const games: { gameNumber: number; result: MatchResult; myScore: number; opponentScore: number }[] = [];
+            let gameNum = 1;
+            // Add won games first, then lost games
+            for (let i = 0; i < diff.gamesWon; i++) {
+              games.push({ gameNumber: gameNum++, result: 'WIN', myScore: 20, opponentScore: 0 });
+            }
+            for (let i = 0; i < diff.gamesLost; i++) {
+              games.push({ gameNumber: gameNum++, result: 'LOSS', myScore: 0, opponentScore: 20 });
+            }
+            return games.length > 0 ? games : [{ gameNumber: 1, result: diff.result, myScore: diff.result === 'WIN' ? 20 : 0, opponentScore: diff.result === 'LOSS' ? 20 : 0 }];
+          })(),
         };
 
         if (diff.action === 'create') {
@@ -652,13 +670,13 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
           </div>
           <div className="space-y-1">
             {syncDiff.map(d => (
-              <div key={d.roundNumber} className="flex items-center justify-between text-xs px-2.5 py-1.5 rounded-lg bg-ink-900/50">
+              <div key={`${d.isTopCut ? 'tc' : 'sw'}-${d.roundNumber}`} className="flex items-center justify-between text-xs px-2.5 py-1.5 rounded-lg bg-ink-900/50">
                 <span className="text-ink-400">
-                  R{d.roundNumber} vs <span className="text-ink-200">{d.opponentName}</span>
+                  {d.isTopCut ? 'TC' : 'R'}{d.roundNumber} vs <span className="text-ink-200">{d.opponentName}</span>
                 </span>
                 <div className="flex items-center gap-2">
                   <span className={d.result === 'WIN' ? 'text-green-400' : d.result === 'LOSS' ? 'text-red-400' : 'text-ink-400'}>
-                    {d.result === 'WIN' ? 'V' : d.result === 'LOSS' ? 'D' : 'N'}
+                    {d.result === 'WIN' ? 'V' : d.result === 'LOSS' ? 'D' : 'N'} {d.gamesWon}-{d.gamesLost}
                   </span>
                   <span className="text-ink-600">
                     {d.action === 'create' ? '+ nouveau' : '↺ mise à jour'}
@@ -676,10 +694,30 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
         </div>
       )}
 
+      {/* View mode toggle */}
+      <div className="flex gap-1">
+        <button
+          onClick={() => setViewMode('standings')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            viewMode === 'standings' ? 'bg-ink-700/50 text-ink-100' : 'text-ink-500 hover:text-ink-300'
+          }`}
+        >
+          Classement
+        </button>
+        <button
+          onClick={() => setViewMode('matches')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            viewMode === 'matches' ? 'bg-ink-700/50 text-ink-100' : 'text-ink-500 hover:text-ink-300'
+          }`}
+        >
+          Matchs
+        </button>
+      </div>
+
       {/* Round filter + refresh */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex gap-1.5 overflow-x-auto pb-1">
-          {data.rounds.map(r => (
+          {[...data.rounds].reverse().map(r => (
             <button
               key={r.roundId}
               onClick={() => setSelectedRound(r.roundNumber)}
@@ -702,26 +740,6 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
           <svg className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-        </button>
-      </div>
-
-      {/* View mode toggle */}
-      <div className="flex gap-1">
-        <button
-          onClick={() => setViewMode('standings')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-            viewMode === 'standings' ? 'bg-ink-700/50 text-ink-100' : 'text-ink-500 hover:text-ink-300'
-          }`}
-        >
-          Classement
-        </button>
-        <button
-          onClick={() => setViewMode('matches')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-            viewMode === 'matches' ? 'bg-ink-700/50 text-ink-100' : 'text-ink-500 hover:text-ink-300'
-          }`}
-        >
-          Matchs
         </button>
       </div>
 
@@ -1062,7 +1080,7 @@ function MatchDetailModal({ match: m, roundNumber, isMe, getScout, possibleDecks
   }, []);
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center" onClick={e => { e.stopPropagation(); onClose(); }}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
         className="relative w-full sm:max-w-md bg-ink-900 border border-ink-700/50 rounded-t-2xl sm:rounded-2xl shadow-2xl p-5 sm:p-6 space-y-5 max-h-[90vh] overflow-y-auto"
@@ -1242,28 +1260,37 @@ function UncertainDeckPicker({ p1Name, p2Name, existingPotentials, teams, roundN
   // Don't pre-fill color grids — user must select from scratch each time
   const [deckA, setDeckA] = useState<InkColor[]>([]);
   const [deckB, setDeckB] = useState<InkColor[]>([]);
-  const [teamId, setTeamId] = useState(teams[0]?.id || null);
+  const [teamId] = useState(teams[0]?.id || null);
   const [saving, setSaving] = useState(false);
 
-  const toggleA = (color: InkColor) => {
-    if (deckA.includes(color)) setDeckA(deckA.filter(c => c !== color));
-    else if (deckA.length < 2) setDeckA([...deckA, color]);
-  };
-  const toggleB = (color: InkColor) => {
-    if (deckB.includes(color)) setDeckB(deckB.filter(c => c !== color));
-    else if (deckB.length < 2) setDeckB([...deckB, color]);
-  };
-
-  const canSave = deckA.length > 0 && deckB.length > 0;
-
-  const handleSave = async () => {
-    if (!canSave) return;
+  const savingRef = useRef(false);
+  const autoSave = async (a: InkColor[], b: InkColor[]) => {
+    if (a.length !== 2 || b.length !== 2 || savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     try {
-      await onPotentialDecks(teamId, roundNumber, tableNumber, p1Name, p2Name, [deckA, deckB]);
+      await onPotentialDecks(teamId, roundNumber, tableNumber, p1Name, p2Name, [a, b]);
     } finally {
       setSaving(false);
+      savingRef.current = false;
     }
+  };
+
+  const toggleA = (color: InkColor) => {
+    let next: InkColor[];
+    if (deckA.includes(color)) next = deckA.filter(c => c !== color);
+    else if (deckA.length < 2) next = [...deckA, color];
+    else return;
+    setDeckA(next);
+    autoSave(next, deckB);
+  };
+  const toggleB = (color: InkColor) => {
+    let next: InkColor[];
+    if (deckB.includes(color)) next = deckB.filter(c => c !== color);
+    else if (deckB.length < 2) next = [...deckB, color];
+    else return;
+    setDeckB(next);
+    autoSave(deckA, next);
   };
 
   return (
@@ -1287,25 +1314,8 @@ function UncertainDeckPicker({ p1Name, p2Name, existingPotentials, teams, roundN
         <ColorGrid colors={deckB} onToggle={toggleB} />
       </div>
 
-      {teams.length > 1 && (
-        <select
-          value={teamId || ''}
-          onChange={e => setTeamId(e.target.value || null)}
-          className="w-full bg-ink-800/50 border border-ink-700/50 rounded-lg text-xs text-ink-200 px-2.5 py-2 focus:outline-none focus:border-gold-500/40"
-        >
-          {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-        </select>
-      )}
-
-      {canSave && (
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full text-xs font-medium px-3 py-2 rounded-lg bg-gold-500/20 text-gold-400 hover:bg-gold-500/30 disabled:opacity-30 transition-colors"
-        >
-          {saving ? 'Envoi...' : 'Enregistrer les deux decks'}
-        </button>
+      {saving && (
+        <p className="text-[10px] text-gold-400/60 text-center">Enregistrement...</p>
       )}
     </div>
   );
@@ -1328,21 +1338,32 @@ function InlineScoutSection({ name, isWinner, isCurrentUser, scout, potentialDec
 
   useEffect(() => { setColors((scout?.deckColors || []) as InkColor[]); }, [scout]);
 
-  const toggle = (color: InkColor) => {
-    if (colors.includes(color)) setColors(colors.filter(c => c !== color));
-    else if (colors.length < 2) setColors([...colors, color]);
-  };
-
-  const colorsChanged = colors.length > 0 && JSON.stringify(colors.slice().sort()) !== JSON.stringify(existingColors.slice().sort());
-
-  const handleSave = async () => {
-    if (colors.length === 0) return;
+  const savingRef = useRef(false);
+  const autoSave = async (newColors: InkColor[]) => {
+    if (newColors.length !== 2 || savingRef.current) return;
+    const same = JSON.stringify(newColors.slice().sort()) === JSON.stringify(existingColors.slice().sort());
+    if (same) return;
+    savingRef.current = true;
     setSaving(true);
     try {
-      await onScout(name, colors, teamId);
+      await onScout(name, newColors, teamId);
     } finally {
       setSaving(false);
+      savingRef.current = false;
     }
+  };
+
+  const toggle = (color: InkColor) => {
+    let next: InkColor[];
+    if (colors.includes(color)) {
+      next = colors.filter(c => c !== color);
+    } else if (colors.length < 2) {
+      next = [...colors, color];
+    } else {
+      return;
+    }
+    setColors(next);
+    autoSave(next);
   };
 
   return (
@@ -1376,17 +1397,9 @@ function InlineScoutSection({ name, isWinner, isCurrentUser, scout, potentialDec
         </select>
       )}
 
-      {colorsChanged && colors.length > 0 && (
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full text-xs font-medium px-3 py-2 rounded-lg bg-gold-500/20 text-gold-400 hover:bg-gold-500/30 disabled:opacity-30 transition-colors"
-        >
-          {saving ? 'Envoi...' : 'Enregistrer'}
-        </button>
+      {saving && (
+        <p className="text-[10px] text-gold-400/60 text-center">Enregistrement...</p>
       )}
-
     </div>
   );
 }

@@ -8,9 +8,9 @@ export async function getEventScoutReports(eventId: string, teamId?: string): Pr
   return { reports: res.data.reports || [], potentialDecks: res.data.potentialDecks || [] };
 }
 
-export async function upsertScoutReport(data: CreateScoutReportRequest): Promise<ScoutReport> {
+export async function upsertScoutReport(data: CreateScoutReportRequest): Promise<{ report: ScoutReport; deduced: ScoutReport[] }> {
   const res = await api.post('/scouting', data);
-  return res.data.report;
+  return { report: res.data.report, deduced: res.data.deduced || [] };
 }
 
 export async function bulkUpsertScoutReports(data: BulkScoutReportRequest): Promise<ScoutReport[]> {

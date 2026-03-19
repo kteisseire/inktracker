@@ -16,6 +16,7 @@ interface GroupedLoreEntry {
   fromValue: number;
   toValue: number;
   count: number;
+  timestamp: number;
 }
 
 function groupHistory(raw: RawLoreEntry[]): GroupedLoreEntry[] {
@@ -27,6 +28,7 @@ function groupHistory(raw: RawLoreEntry[]): GroupedLoreEntry[] {
     fromValue: raw[0].newValue - raw[0].delta,
     toValue: raw[0].newValue,
     count: 1,
+    timestamp: raw[0].timestamp,
     lastTimestamp: raw[0].timestamp,
   };
 
@@ -50,6 +52,7 @@ function groupHistory(raw: RawLoreEntry[]): GroupedLoreEntry[] {
         fromValue: entry.newValue - entry.delta,
         toValue: entry.newValue,
         count: 1,
+        timestamp: entry.timestamp,
         lastTimestamp: entry.timestamp,
       };
     }
@@ -248,6 +251,9 @@ export function LoreCounter({ onClose, initialState }: LoreCounterProps) {
                 {[...grouped].reverse().map((entry, i) => (
                   <div key={i} className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-ink-900/50">
                     <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-ink-600 font-mono w-14 shrink-0">
+                        {new Date(entry.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      </span>
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                         entry.player === 'me'
                           ? 'bg-lorcana-sapphire/15 text-lorcana-sapphire'

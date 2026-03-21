@@ -1,4 +1,5 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
+import crypto from 'crypto';
 import prisma from '../lib/prisma.js';
 import { AuthRequest } from '../middleware/auth.js';
 
@@ -227,4 +228,50 @@ export async function deleteTournament(req: AuthRequest, res: Response) {
 
   await prisma.tournament.delete({ where: { id: req.params.id } });
   res.status(204).send();
+}
+
+// Generate or return existing shareId for a tournament
+export async function shareTournament(req: AuthRequest, res: Response) {
+  const tournament = await prisma.tournament.findFirst({
+    where: { id: req.params.id, userId: req.userId },
+  });
+  if (!tournament) {
+    res.status(404).json({ error: 'Tournoi non trouvé' });
+    return;
+  }
+
+  if (tournament.shareId) {
+    res.json({ shareId: tournament.shareId });
+    return;
+  }
+
+  // Generate a short unique ID (8 chars)
+  const shareId = crypto.randomBytes(4).toString('hex');
+  await prisma.tournament.update({
+    where: { id: tournament.id },
+    data: { shareId },
+  });
+
+  res.json({ shareId });
+}
+
+// Public: get a shared tournament (no auth required)
+export async function getSharedTournament(req: Request, res: Response) {
+  const tournament = await prisma.tournament.findUnique({
+    where: { shareId: req.params.shareId },
+    include: {
+      rounds: {
+        orderBy: [{ isTopCut: 'asc' as const }, { roundNumber: 'asc' as const }],
+        include: { games: { orderBy: { gameNumber: 'asc' as const } } },
+      },
+      user: { select: { username: true } },
+    },
+  });
+
+  if (!tournament) {
+    res.status(404).json({ error: 'Tournoi non trouvé' });
+    return;
+  }
+
+  res.json({ tournament });
 }

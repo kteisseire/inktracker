@@ -29,3 +29,13 @@ export async function getTeamPresence(): Promise<Record<string, { count: number;
   const res = await api.get('/tournaments/team-presence');
   return res.data.presence;
 }
+
+export async function shareTournament(id: string): Promise<string> {
+  const res = await api.post(`/tournaments/${id}/share`);
+  return res.data.shareId;
+}
+
+export async function getSharedTournament(shareId: string): Promise<Tournament & { user: { username: string } }> {
+  const res = await api.get(`/tournaments/shared/${shareId}`);
+  return res.data.tournament;
+}

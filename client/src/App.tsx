@@ -24,6 +24,7 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage.js';
 import { ResetPasswordPage } from './pages/ResetPasswordPage.js';
 import { HelpPage } from './pages/HelpPage.js';
 import { AdminPage } from './pages/AdminPage.js';
+import { SharedTournamentPage } from './pages/SharedTournamentPage.js';
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,7 @@ function AppRoutes() {
       <Route path="/admin" element={<ProtectedRoute><Layout><AdminPage /></Layout></ProtectedRoute>} />
 
       {/* Public tools & help */}
+      <Route path="/t/:shareId" element={<Layout><SharedTournamentPage /></Layout>} />
       <Route path="/top-cut" element={<Layout><TopCutCalculatorPage /></Layout>} />
       <Route path="/lore-counter" element={<LoreCounterPage />} />
       <Route path="/help" element={<Layout><HelpPage /></Layout>} />

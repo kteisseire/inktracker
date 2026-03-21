@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getTournament, deleteTournament, updateTournament } from '../api/tournaments.api.js';
+import { getTournament, deleteTournament, updateTournament, shareTournament } from '../api/tournaments.api.js';
 import { createRound, updateRound, deleteRound } from '../api/matches.api.js';
 import { fetchEventInfo, fetchEventRounds, extractEventId } from '../api/ravensburger.api.js';
 import type { RavensburgerEventInfo, EventRoundsData, EventRound, EventStanding, EventMatch } from '../api/ravensburger.api.js';
@@ -14,6 +14,7 @@ import { INK_COLORS, getRecommendedSwissRounds, getRecommendedTopCut } from '@lo
 import type { Tournament, Round, Game, MatchResult, ScoutReport, InkColor, Team, PotentialDeck } from '@lorcana/shared';
 import { HelpButton } from '../components/ui/HelpButton.js';
 import { exportTournamentImage } from '../lib/exportTournamentImage.js';
+import { getQrCodeUrl } from '../lib/qrcode.js';
 
 const FORMAT_LABELS: Record<string, string> = { BO1: 'Bo1', BO3: 'Bo3', BO5: 'Bo5' };
 const TOPCUT_LABELS: Record<string, string> = { NONE: 'Aucun', TOP4: 'Top 4', TOP8: 'Top 8', TOP16: 'Top 16', TOP32: 'Top 32' };
@@ -65,6 +66,10 @@ export function TournamentDetailPage() {
   const [tab, setTab] = useState<Tab>('rounds');
   const [roundsScoutMap, setRoundsScoutMap] = useState<Map<string, ScoutReport>>(new Map());
   const [roundsPotentialDecks, setRoundsPotentialDecks] = useState<PotentialDeck[]>([]);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   const load = () => {
     getTournament(id!).then(t => {
@@ -149,6 +154,28 @@ export function TournamentDetailPage() {
     navigate('/tournaments');
   };
 
+  const handleShare = async () => {
+    setShareModalOpen(true);
+    if (shareUrl) return; // Already generated
+    setShareLoading(true);
+    try {
+      const sid = await shareTournament(id!);
+      const baseUrl = window.location.origin;
+      setShareUrl(`${baseUrl}/t/${sid}`);
+    } catch {
+      // fail silently
+    } finally {
+      setShareLoading(false);
+    }
+  };
+
+  const handleCopyShareUrl = async () => {
+    if (!shareUrl) return;
+    await navigator.clipboard.writeText(shareUrl);
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2000);
+  };
+
   const handleDeleteRound = async (roundId: string) => {
     if (!confirm('Supprimer cette ronde ?')) return;
     await deleteRound(id!, roundId);
@@ -227,6 +254,7 @@ export function TournamentDetailPage() {
           </div>
           <DropdownMenu
             items={[
+              { label: 'Partager', onClick: handleShare },
               { label: 'Exporter image', onClick: () => exportTournamentImage(tournament, user?.username || 'Joueur') },
               { label: 'Modifier', onClick: () => navigate(`/tournaments/${id}/edit`) },
               { label: 'Supprimer', onClick: handleDeleteTournament, danger: true },
@@ -381,6 +409,68 @@ export function TournamentDetailPage() {
       )}
 
       {/* Sync confirmation modal */}
+      {/* Share modal with QR code */}
+      {shareModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center" onClick={() => setShareModalOpen(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative w-full sm:max-w-sm bg-ink-900 border border-ink-700/50 rounded-t-2xl sm:rounded-2xl shadow-2xl p-5 sm:p-6" onClick={e => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setShareModalOpen(false)}
+              className="absolute top-3 right-3 p-2 rounded-lg text-ink-500 hover:text-ink-300 hover:bg-ink-800/50 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="space-y-4">
+              <h3 className="text-base font-semibold text-ink-100">Partager ce tournoi</h3>
+
+              {shareLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold-400" />
+                </div>
+              ) : shareUrl ? (
+                <>
+                  {/* QR Code */}
+                  <div className="flex justify-center">
+                    <img
+                      src={getQrCodeUrl(shareUrl)}
+                      alt="QR Code"
+                      className="w-48 h-48 rounded-xl"
+                    />
+                  </div>
+
+                  {/* URL + copy */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={shareUrl}
+                      className="flex-1 bg-ink-800/50 border border-ink-700/50 rounded-xl text-sm text-ink-300 px-3 py-2.5 focus:outline-none select-all"
+                      onClick={e => (e.target as HTMLInputElement).select()}
+                    />
+                    <button
+                      onClick={handleCopyShareUrl}
+                      className="shrink-0 px-3 py-2.5 rounded-xl bg-gold-500/20 text-gold-400 hover:bg-gold-500/30 text-sm font-medium transition-colors"
+                    >
+                      {shareCopied ? 'Copié !' : 'Copier'}
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-ink-500 text-center">
+                    Toute personne avec ce lien pourra voir votre tournoi
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-red-400 text-center py-4">Erreur lors de la génération du lien</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {syncData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/80 backdrop-blur-sm px-4">
           <div className="ink-card p-5 sm:p-6 max-w-md w-full space-y-4">

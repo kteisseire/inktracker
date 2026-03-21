@@ -3,6 +3,7 @@ import {
   listMyTeams, getTeam, createTeam, updateTeam, deleteTeam,
   inviteMember, cancelInvite, listMyInvites, respondToInvite,
   updateMemberRole, removeMember, searchUsers,
+  generateInviteCode, getTeamByInviteCode, joinTeamByCode,
 } from '../controllers/team.controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
@@ -10,6 +11,12 @@ import { validate } from '../middleware/validate.js';
 import { createTeamSchema, updateTeamSchema, inviteMemberSchema, updateMemberRoleSchema } from '../validators/team.schema.js';
 
 const router = Router();
+
+// Public route — get team info by invite code
+router.get('/join/:inviteCode', asyncHandler(getTeamByInviteCode));
+
+// Authenticated route — join team by invite code
+router.post('/join/:inviteCode', authMiddleware, asyncHandler(joinTeamByCode));
 
 router.use(authMiddleware);
 
@@ -30,6 +37,9 @@ router.delete('/:id', asyncHandler(deleteTeam));
 // Members
 router.put('/:id/members/:memberId/role', validate(updateMemberRoleSchema), asyncHandler(updateMemberRole));
 router.delete('/:id/members/:memberId', asyncHandler(removeMember));
+
+// Invite code (QR sharing)
+router.post('/:id/invite-code', asyncHandler(generateInviteCode));
 
 // Invites (team-scoped)
 router.post('/:id/invites', validate(inviteMemberSchema), asyncHandler(inviteMember));

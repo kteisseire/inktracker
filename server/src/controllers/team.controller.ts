@@ -1,4 +1,5 @@
-import { Response } from 'express';
+import { Response, Request } from 'express';
+import crypto from 'crypto';
 import prisma from '../lib/prisma.js';
 import { AuthRequest } from '../middleware/auth.js';
 
@@ -91,7 +92,10 @@ export async function updateTeam(req: AuthRequest, res: Response) {
 
   const team = await prisma.team.update({
     where: { id: req.params.id },
-    data: req.body,
+    data: {
+      name: req.body.name,
+      description: req.body.description,
+    },
   });
   res.json({ team });
 }
@@ -283,6 +287,79 @@ export async function removeMember(req: AuthRequest, res: Response) {
 
   await prisma.teamMember.delete({ where: { id: target.id } });
   res.status(204).send();
+}
+
+// ─── Generate invite code (admin+) ───
+export async function generateInviteCode(req: AuthRequest, res: Response) {
+  const membership = await prisma.teamMember.findUnique({
+    where: { teamId_userId: { teamId: req.params.id, userId: req.userId! } },
+  });
+  if (!membership || (membership.role !== 'OWNER' && membership.role !== 'ADMIN')) {
+    res.status(403).json({ error: 'Permission insuffisante' });
+    return;
+  }
+
+  const team = await prisma.team.findUnique({ where: { id: req.params.id } });
+  if (!team) {
+    res.status(404).json({ error: 'Équipe non trouvée' });
+    return;
+  }
+
+  if (team.inviteCode) {
+    res.json({ inviteCode: team.inviteCode });
+    return;
+  }
+
+  const inviteCode = crypto.randomBytes(12).toString('hex');
+  await prisma.team.update({ where: { id: req.params.id }, data: { inviteCode } });
+  res.json({ inviteCode });
+}
+
+// ─── Get team by invite code (public) ───
+export async function getTeamByInviteCode(req: Request, res: Response) {
+  const team = await prisma.team.findUnique({
+    where: { inviteCode: req.params.inviteCode },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      _count: { select: { members: true } },
+    },
+  });
+
+  if (!team) {
+    res.status(404).json({ error: 'Lien d\'invitation invalide' });
+    return;
+  }
+
+  res.json({ team: { ...team, memberCount: team._count.members } });
+}
+
+// ─── Join team by invite code (authenticated) ───
+export async function joinTeamByCode(req: AuthRequest, res: Response) {
+  const team = await prisma.team.findUnique({
+    where: { inviteCode: req.params.inviteCode },
+  });
+
+  if (!team) {
+    res.status(404).json({ error: 'Lien d\'invitation invalide' });
+    return;
+  }
+
+  // Already a member?
+  const existing = await prisma.teamMember.findUnique({
+    where: { teamId_userId: { teamId: team.id, userId: req.userId! } },
+  });
+  if (existing) {
+    res.json({ alreadyMember: true, teamId: team.id });
+    return;
+  }
+
+  await prisma.teamMember.create({
+    data: { teamId: team.id, userId: req.userId!, role: 'MEMBER' },
+  });
+
+  res.status(201).json({ joined: true, teamId: team.id });
 }
 
 // ─── Search users (for invite autocomplete) ───

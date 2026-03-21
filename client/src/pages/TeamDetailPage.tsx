@@ -5,7 +5,9 @@ import {
   getTeam, updateTeam, deleteTeam,
   inviteMember, cancelInvite,
   updateMemberRole, removeMember, searchUsers,
+  generateInviteCode,
 } from '../api/team.api.js';
+import { getQrCodeUrl } from '../lib/qrcode.js';
 import type { Team, TeamMember, TeamInvite, TeamRole } from '@lorcana/shared';
 
 const ROLE_LABELS: Record<string, string> = { OWNER: 'Propriétaire', ADMIN: 'Admin', MEMBER: 'Membre' };
@@ -45,6 +47,9 @@ export function TeamDetailPage() {
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
       <TeamHeader team={team} isOwner={isOwner} isAdmin={isAdmin} onUpdated={load} onDeleted={() => navigate('/teams')} />
+
+      {/* QR Invite link */}
+      {isAdmin && <InviteLink teamId={team.id} />}
 
       {/* Invite section */}
       {isAdmin && <InviteSection teamId={team.id} onInvited={load} />}
@@ -146,6 +151,103 @@ function TeamHeader({ team, isOwner, isAdmin, onUpdated, onDeleted }: {
         )}
       </div>
     </div>
+  );
+}
+
+// ─── Invite Link (QR Code) ───
+function InviteLink({ teamId }: { teamId: string }) {
+  const [open, setOpen] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleOpen = async () => {
+    setOpen(true);
+    if (inviteUrl) return;
+    setLoading(true);
+    try {
+      const code = await generateInviteCode(teamId);
+      setInviteUrl(`${window.location.origin}/join/${code}`);
+    } catch {
+      // silently fail
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(inviteUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <>
+      <button
+        onClick={handleOpen}
+        className="ink-card p-4 sm:p-5 w-full flex items-center justify-center gap-2 text-sm font-medium text-ink-300 hover:text-gold-400 hover:border-gold-500/20 transition-colors"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+        </svg>
+        Lien d'invitation
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={() => setOpen(false)}>
+          <div className="ink-card p-5 sm:p-6 max-w-sm w-full space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-ink-200">Inviter via QR code</h3>
+              <button onClick={() => setOpen(false)} className="text-ink-500 hover:text-ink-300 transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold-400"></div>
+              </div>
+            ) : inviteUrl ? (
+              <>
+                <div className="flex justify-center">
+                  <img
+                    src={getQrCodeUrl(inviteUrl)}
+                    alt="QR code d'invitation"
+                    className="w-48 h-48 rounded-lg"
+                  />
+                </div>
+                <p className="text-xs text-ink-500 text-center">
+                  Scannez ce QR code pour rejoindre l'équipe
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={inviteUrl}
+                    className="ink-input text-xs flex-1"
+                    onClick={e => (e.target as HTMLInputElement).select()}
+                  />
+                  <button
+                    onClick={handleCopy}
+                    className={`shrink-0 text-xs font-medium px-3 py-2 rounded-lg transition-colors ${
+                      copied
+                        ? 'bg-green-500/15 text-green-400'
+                        : 'bg-ink-800/80 text-ink-300 hover:text-gold-400'
+                    }`}
+                  >
+                    {copied ? 'Copié !' : 'Copier'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-red-400 text-center py-4">Erreur lors de la génération du lien</p>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

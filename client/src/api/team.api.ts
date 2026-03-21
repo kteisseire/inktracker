@@ -55,6 +55,22 @@ export async function removeMember(teamId: string, memberId: string): Promise<vo
   await api.delete(`/teams/${teamId}/members/${memberId}`);
 }
 
+// Invite code (QR sharing)
+export async function generateInviteCode(teamId: string): Promise<string> {
+  const res = await api.post(`/teams/${teamId}/invite-code`);
+  return res.data.inviteCode;
+}
+
+export async function getTeamByInviteCode(inviteCode: string): Promise<{ id: string; name: string; description: string | null; memberCount: number }> {
+  const res = await api.get(`/teams/join/${inviteCode}`);
+  return res.data.team;
+}
+
+export async function joinTeamByCode(inviteCode: string): Promise<{ joined?: boolean; alreadyMember?: boolean; teamId: string }> {
+  const res = await api.post(`/teams/join/${inviteCode}`);
+  return res.data;
+}
+
 // User search
 export async function searchUsers(q: string): Promise<{ id: string; username: string }[]> {
   const res = await api.get('/teams/users/search', { params: { q } });

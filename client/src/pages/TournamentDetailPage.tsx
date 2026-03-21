@@ -735,18 +735,21 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
   const effectiveUsername = overrideUsername || username;
 
   // Build set of all team member usernames (lowercase) — always available for highlighting
+  // Exclude the current user so they don't appear as a "teammate" in their own tournament
   const allTeamMemberNames = useMemo(() => {
     if (teams.length === 0) return null;
+    const self = effectiveUsername?.toLowerCase();
     const names = new Set<string>();
     for (const t of teams) {
       if (t.members) {
         for (const m of t.members) {
-          names.add(m.user.username.toLowerCase());
+          const name = m.user.username.toLowerCase();
+          if (name !== self) names.add(name);
         }
       }
     }
     return names.size > 0 ? names : null;
-  }, [teams]);
+  }, [teams, effectiveUsername]);
 
   // When filter is active, use the same set for filtering; otherwise null (no filtering)
   const teamMemberNames = teamFilter ? allTeamMemberNames : null;

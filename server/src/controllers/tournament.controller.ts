@@ -43,7 +43,7 @@ export async function getTeamPresence(req: AuthRequest, res: Response) {
 
   const teamIds = memberships.map(m => m.teamId);
   const allMembers = await prisma.teamMember.findMany({
-    where: { teamId: { in: teamIds } },
+    where: { teamId: { in: teamIds }, userId: { not: req.userId! } },
     include: { user: { select: { username: true } } },
   });
   const teamUsernames = new Set(allMembers.map(m => m.user.username.toLowerCase()));
@@ -246,7 +246,7 @@ export async function shareTournament(req: AuthRequest, res: Response) {
   }
 
   // Generate a short unique ID (8 chars)
-  const shareId = crypto.randomBytes(4).toString('hex');
+  const shareId = crypto.randomBytes(12).toString('hex');
   await prisma.tournament.update({
     where: { id: tournament.id },
     data: { shareId },

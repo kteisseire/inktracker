@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, FormEvent } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom';
 import { createTournament, updateTournament, getTournament } from '../api/tournaments.api.js';
 import { listDecks, extractDeckColors } from '../api/deck.api.js';
 import { fetchEventInfo, extractEventId } from '../api/ravensburger.api.js';
@@ -32,6 +32,8 @@ export function NewTournamentPage() {
   const { id: editId } = useParams<{ id: string }>();
   const isEdit = !!editId;
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const fromShared = searchParams.get('from') === 'shared';
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState('');
@@ -82,6 +84,28 @@ export function NewTournamentPage() {
         setNotes(t.notes || '');
         if (t.deckId) {
           setSelectedDeckId(t.deckId);
+        }
+      } else if (fromShared) {
+        // Pre-fill from shared tournament query params
+        const sp = searchParams;
+        if (sp.get('name')) setName(sp.get('name')!);
+        if (sp.get('date')) setDate(sp.get('date')!);
+        if (sp.get('location')) setLocation(sp.get('location')!);
+        if (sp.get('playerCount')) {
+          setPlayerCount(sp.get('playerCount')!);
+          const count = parseInt(sp.get('playerCount')!);
+          if (count >= 2) setSwissRounds(String(getRecommendedSwissRounds(count)));
+        }
+        if (sp.get('swissRounds')) setSwissRounds(sp.get('swissRounds')!);
+        if (sp.get('topCut')) setTopCut(sp.get('topCut')!);
+        if (sp.get('format')) setFormat(sp.get('format')!);
+        if (sp.get('eventLink')) setEventLink(sp.get('eventLink')!);
+        // Still apply default deck
+        const defaultDeck = decks.find(d => d.isDefault);
+        if (defaultDeck) {
+          setSelectedDeckId(defaultDeck.id);
+          setMyDeckColors(defaultDeck.colors as InkColor[]);
+          setMyDeckLink(defaultDeck.link ?? '');
         }
       } else {
         const defaultDeck = decks.find(d => d.isDefault);

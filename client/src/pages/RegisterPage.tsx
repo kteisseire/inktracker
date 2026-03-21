@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.js';
 import { GoogleSignInButton } from '../components/GoogleSignInButton.js';
 import { DiscordSignInButton } from '../components/DiscordSignInButton.js';
@@ -8,6 +8,8 @@ import { LogoIcon } from '../components/ui/Logo.js';
 export function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect');
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -20,7 +22,7 @@ export function RegisterPage() {
     setLoading(true);
     try {
       await register(email, username, password);
-      navigate('/');
+      navigate(redirectTo || '/');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Erreur lors de l\'inscription');
     } finally {
@@ -62,7 +64,7 @@ export function RegisterPage() {
 
         <p className="text-center text-sm text-ink-400">
           Déjà un compte ?{' '}
-          <Link to="/login" className="text-gold-400 hover:text-gold-300 transition-colors font-medium">Se connecter</Link>
+          <Link to={redirectTo ? `/login?redirect=${encodeURIComponent(redirectTo)}` : '/login'} className="text-gold-400 hover:text-gold-300 transition-colors font-medium">Se connecter</Link>
         </p>
 
         <div className="flex items-center gap-3">

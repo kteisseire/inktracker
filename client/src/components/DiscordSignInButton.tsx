@@ -7,6 +7,10 @@ export function DiscordSignInButton() {
     const state = crypto.randomUUID();
     sessionStorage.setItem('discord_oauth_state', state);
 
+    // Preserve redirect URL for after Discord callback
+    const redirectParam = new URLSearchParams(window.location.search).get('redirect');
+    if (redirectParam) sessionStorage.setItem('auth_redirect', redirectParam);
+
     const redirectUri = `${window.location.origin}/auth/discord/callback`;
     const params = new URLSearchParams({
       client_id: DISCORD_CLIENT_ID,

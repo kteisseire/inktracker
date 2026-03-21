@@ -35,8 +35,11 @@ export function DiscordCallbackPage() {
       return;
     }
 
+    const authRedirect = sessionStorage.getItem('auth_redirect') || '/';
+    sessionStorage.removeItem('auth_redirect');
+
     loginWithDiscord(code)
-      .then(() => navigate('/'))
+      .then(() => navigate(authRedirect))
       .catch((err: any) => {
         setError(err.response?.data?.error || 'Erreur de connexion Discord');
       });

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext.js';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { safeRedirect } from '../lib/safeRedirect.js';
 
 export function GoogleSignInButton() {
   const { loginWithGoogle } = useAuth();
@@ -9,7 +10,7 @@ export function GoogleSignInButton() {
   const [error, setError] = useState('');
   const initialized = useRef(false);
   const btnRef = useRef<HTMLDivElement>(null);
-  const redirectRef = useRef(searchParams.get('redirect') || '/');
+  const redirectRef = useRef(safeRedirect(searchParams.get('redirect')));
 
   useEffect(() => {
     if (initialized.current) return;

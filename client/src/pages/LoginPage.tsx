@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.js';
 import { GoogleSignInButton } from '../components/GoogleSignInButton.js';
 import { DiscordSignInButton } from '../components/DiscordSignInButton.js';
 import { LogoIcon } from '../components/ui/Logo.js';
+import { safeRedirect } from '../lib/safeRedirect.js';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -21,7 +22,7 @@ export function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      navigate(redirectTo || '/');
+      navigate(safeRedirect(redirectTo));
     } catch (err: any) {
       setError(err.response?.data?.error || 'Erreur de connexion');
     } finally {

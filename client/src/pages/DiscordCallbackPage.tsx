@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.js';
+import { safeRedirect } from '../lib/safeRedirect.js';
 
 export function DiscordCallbackPage() {
   const { loginWithDiscord } = useAuth();
@@ -35,7 +36,7 @@ export function DiscordCallbackPage() {
       return;
     }
 
-    const authRedirect = sessionStorage.getItem('auth_redirect') || '/';
+    const authRedirect = safeRedirect(sessionStorage.getItem('auth_redirect'));
     sessionStorage.removeItem('auth_redirect');
 
     loginWithDiscord(code)

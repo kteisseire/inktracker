@@ -2,7 +2,7 @@ import { Request, Response, NextFunction, RequestHandler } from 'express';
 import { Prisma } from '@prisma/client';
 
 export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction) {
-  console.error(err);
+  console.error('[Error]', err.message);
 
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     const prismaErr = err as Prisma.PrismaClientKnownRequestError;

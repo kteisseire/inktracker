@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.js';
 import { GoogleSignInButton } from '../components/GoogleSignInButton.js';
 import { DiscordSignInButton } from '../components/DiscordSignInButton.js';
 import { LogoIcon } from '../components/ui/Logo.js';
+import { safeRedirect } from '../lib/safeRedirect.js';
 
 export function RegisterPage() {
   const { register } = useAuth();
@@ -22,7 +23,7 @@ export function RegisterPage() {
     setLoading(true);
     try {
       await register(email, username, password);
-      navigate(redirectTo || '/');
+      navigate(safeRedirect(redirectTo));
     } catch (err: any) {
       setError(err.response?.data?.error || 'Erreur lors de l\'inscription');
     } finally {

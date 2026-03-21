@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const registerSchema = z.object({
   email: z.string().email('Email invalide'),
   username: z.string().min(3, 'Minimum 3 caractères').max(30),
-  password: z.string().min(6, 'Minimum 6 caractères'),
+  password: z.string().min(8, 'Minimum 8 caractères'),
 });
 
 export const loginSchema = z.object({
@@ -25,5 +25,5 @@ export const forgotPasswordSchema = z.object({
 
 export const resetPasswordSchema = z.object({
   token: z.string().min(1, 'Token requis'),
-  password: z.string().min(6, 'Minimum 6 caractères'),
+  password: z.string().min(8, 'Minimum 8 caractères'),
 });

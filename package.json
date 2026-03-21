@@ -11,7 +11,7 @@
     "dev:client": "npm run dev --workspace=client",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "build": "npm run build --workspace=packages/shared && npm run build --workspace=server && npm run build --workspace=client",
-    "build:server": "cd server && npx prisma generate && npx prisma db push && cd .. && npm run build --workspace=packages/shared && npm run build --workspace=server"
+    "build:server": "cd server && npx prisma generate && npx prisma db push --accept-data-loss && cd .. && npm run build --workspace=packages/shared && npm run build --workspace=server"
   },
   "prisma": {
     "schema": "server/prisma/schema.prisma"

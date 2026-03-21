@@ -13,6 +13,7 @@ import { listMyTeams } from '../api/team.api.js';
 import { INK_COLORS, getRecommendedSwissRounds, getRecommendedTopCut } from '@lorcana/shared';
 import type { Tournament, Round, Game, MatchResult, ScoutReport, InkColor, Team, PotentialDeck } from '@lorcana/shared';
 import { HelpButton } from '../components/ui/HelpButton.js';
+import { exportTournamentImage } from '../lib/exportTournamentImage.js';
 
 const FORMAT_LABELS: Record<string, string> = { BO1: 'Bo1', BO3: 'Bo3', BO5: 'Bo5' };
 const TOPCUT_LABELS: Record<string, string> = { NONE: 'Aucun', TOP4: 'Top 4', TOP8: 'Top 8', TOP16: 'Top 16', TOP32: 'Top 32' };
@@ -226,6 +227,7 @@ export function TournamentDetailPage() {
           </div>
           <DropdownMenu
             items={[
+              { label: 'Exporter image', onClick: () => exportTournamentImage(tournament, user?.username || 'Joueur') },
               { label: 'Modifier', onClick: () => navigate(`/tournaments/${id}/edit`) },
               { label: 'Supprimer', onClick: handleDeleteTournament, danger: true },
             ]}
@@ -353,6 +355,11 @@ export function TournamentDetailPage() {
                 <RoundsList title="Top Cut" rounds={topCutRounds} tournamentId={id!} format={tournament.format} onDelete={handleDeleteRound} scoutMap={roundsScoutMap} possibleDecks={roundsPossibleDecks} />
               )}
             </>
+          )}
+
+          {/* Teammate rounds from Play Hub */}
+          {hasEventLink && (
+            <TeammateRounds eventLink={tournament.eventLink!} myUsername={user?.username || ''} />
           )}
         </div>
       )}
@@ -637,9 +644,9 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
 
   const effectiveUsername = overrideUsername || username;
 
-  // Build set of team member usernames (lowercase) for filtering
-  const teamMemberNames = useMemo(() => {
-    if (!teamFilter || teams.length === 0) return null;
+  // Build set of all team member usernames (lowercase) — always available for highlighting
+  const allTeamMemberNames = useMemo(() => {
+    if (teams.length === 0) return null;
     const names = new Set<string>();
     for (const t of teams) {
       if (t.members) {
@@ -648,8 +655,11 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
         }
       }
     }
-    return names;
-  }, [teamFilter, teams]);
+    return names.size > 0 ? names : null;
+  }, [teams]);
+
+  // When filter is active, use the same set for filtering; otherwise null (no filtering)
+  const teamMemberNames = teamFilter ? allTeamMemberNames : null;
 
   // Build a lookup map: playerName (lowercase) -> ScoutReport (certain decks only)
   const scoutMap = new Map<string, ScoutReport>();
@@ -991,9 +1001,9 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
       </div>
 
       {viewMode === 'standings' ? (
-        <StandingsView standings={currentRound.standings} roundNumber={currentRound.roundNumber} username={effectiveUsername} scoutMap={scoutMap} possibleDecks={possibleDecks} teams={teams} eventId={eventId} onScout={handleScout} teamMemberNames={teamMemberNames} />
+        <StandingsView standings={currentRound.standings} roundNumber={currentRound.roundNumber} username={effectiveUsername} scoutMap={scoutMap} possibleDecks={possibleDecks} teams={teams} eventId={eventId} onScout={handleScout} teamMemberNames={teamMemberNames} allTeamMemberNames={allTeamMemberNames} />
       ) : (
-        <MatchesView matches={currentRound.matches} roundNumber={currentRound.roundNumber} username={effectiveUsername} scoutMap={scoutMap} possibleDecks={possibleDecks} teams={teams} eventId={eventId} onScout={handleScout} onPotentialDecks={handlePotentialDecks} teamMemberNames={teamMemberNames} />
+        <MatchesView matches={currentRound.matches} roundNumber={currentRound.roundNumber} username={effectiveUsername} scoutMap={scoutMap} possibleDecks={possibleDecks} teams={teams} eventId={eventId} onScout={handleScout} onPotentialDecks={handlePotentialDecks} teamMemberNames={teamMemberNames} allTeamMemberNames={allTeamMemberNames} />
       )}
     </div>
   );
@@ -1051,7 +1061,7 @@ function Pagination({ page, totalPages, onPageChange }: { page: number; totalPag
 type ScoutHandler = (playerName: string, colors: InkColor[], teamId: string | null) => Promise<void>;
 type PotentialDecksHandler = (teamId: string | null, roundNumber: number, tableNumber: number, player1Name: string, player2Name: string, decks: InkColor[][]) => Promise<void>;
 
-function StandingsView({ standings, roundNumber, username, scoutMap, possibleDecks, teams, eventId, onScout, teamMemberNames }: { standings: EventStanding[]; roundNumber: number; username: string; scoutMap: Map<string, ScoutReport>; possibleDecks: Map<string, PotentialDeck[]>; teams: Team[]; eventId: string; onScout: ScoutHandler; teamMemberNames: Set<string> | null }) {
+function StandingsView({ standings, roundNumber, username, scoutMap, possibleDecks, teams, eventId, onScout, teamMemberNames, allTeamMemberNames }: { standings: EventStanding[]; roundNumber: number; username: string; scoutMap: Map<string, ScoutReport>; possibleDecks: Map<string, PotentialDeck[]>; teams: Team[]; eventId: string; onScout: ScoutHandler; teamMemberNames: Set<string> | null; allTeamMemberNames: Set<string> | null }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
@@ -1063,7 +1073,7 @@ function StandingsView({ standings, roundNumber, username, scoutMap, possibleDec
   }
 
   const isMe = (name: string) => username && name.toLowerCase() === username.toLowerCase();
-  const isTeammate = (name: string) => teamMemberNames ? teamMemberNames.has(name.toLowerCase()) : false;
+  const isTeammate = (name: string) => allTeamMemberNames ? allTeamMemberNames.has(name.toLowerCase()) : false;
   const getScout = (name: string) => scoutMap.get(name.toLowerCase());
 
   const query = search.toLowerCase().trim();
@@ -1165,7 +1175,7 @@ function StandingsView({ standings, roundNumber, username, scoutMap, possibleDec
   );
 }
 
-function MatchesView({ matches, roundNumber, username, scoutMap, possibleDecks, teams, eventId, onScout, onPotentialDecks, teamMemberNames }: { matches: EventMatch[]; roundNumber: number; username: string; scoutMap: Map<string, ScoutReport>; possibleDecks: Map<string, PotentialDeck[]>; teams: Team[]; eventId: string; onScout: ScoutHandler; onPotentialDecks: PotentialDecksHandler; teamMemberNames: Set<string> | null }) {
+function MatchesView({ matches, roundNumber, username, scoutMap, possibleDecks, teams, eventId, onScout, onPotentialDecks, teamMemberNames, allTeamMemberNames }: { matches: EventMatch[]; roundNumber: number; username: string; scoutMap: Map<string, ScoutReport>; possibleDecks: Map<string, PotentialDeck[]>; teams: Team[]; eventId: string; onScout: ScoutHandler; onPotentialDecks: PotentialDecksHandler; teamMemberNames: Set<string> | null; allTeamMemberNames: Set<string> | null }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [selectedMatch, setSelectedMatch] = useState<EventMatch | null>(null);
@@ -1177,7 +1187,7 @@ function MatchesView({ matches, roundNumber, username, scoutMap, possibleDecks, 
   }
 
   const isMe = (name: string) => username && name.toLowerCase() === username.toLowerCase();
-  const isTeammate = (name: string) => teamMemberNames ? teamMemberNames.has(name.toLowerCase()) : false;
+  const isTeammate = (name: string) => allTeamMemberNames ? allTeamMemberNames.has(name.toLowerCase()) : false;
   const getScout = (name: string) => scoutMap.get(name.toLowerCase());
 
   // Sort so the user's match appears first, then teammates
@@ -1709,6 +1719,177 @@ function DropdownMenu({ items }: { items: { label: string; onClick: () => void; 
               {item.label}
             </button>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Teammate Rounds ─── */
+function TeammateRounds({ eventLink, myUsername }: { eventLink: string; myUsername: string }) {
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [data, setData] = useState<EventRoundsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedMember, setSelectedMember] = useState<string | null>(null);
+
+  const eventId = extractEventId(eventLink);
+
+  useEffect(() => {
+    if (!eventId) return;
+    Promise.all([
+      listMyTeams().catch(() => [] as Team[]),
+      fetchEventRounds(eventId).catch(() => null),
+    ]).then(([myTeams, roundsData]) => {
+      setTeams(myTeams);
+      setData(roundsData);
+    }).finally(() => setLoading(false));
+  }, [eventId]);
+
+  // Gather all teammate usernames (excluding me)
+  const teammates = useMemo(() => {
+    const names = new Set<string>();
+    for (const t of teams) {
+      if (t.members) {
+        for (const m of t.members) {
+          if (m.user.username.toLowerCase() !== myUsername.toLowerCase()) {
+            names.add(m.user.username);
+          }
+        }
+      }
+    }
+    return [...names].sort();
+  }, [teams, myUsername]);
+
+  // Find which teammates are in this tournament
+  const allPlayerNames = useMemo(() => {
+    if (!data) return new Set<string>();
+    const names = new Set<string>();
+    for (const round of data.rounds) {
+      for (const m of round.matches) {
+        for (const p of m.players) names.add(p.playerName.toLowerCase());
+      }
+    }
+    return names;
+  }, [data]);
+
+  const presentTeammates = useMemo(() =>
+    teammates.filter(t => allPlayerNames.has(t.toLowerCase())),
+    [teammates, allPlayerNames]
+  );
+
+  if (loading) return null;
+  if (presentTeammates.length === 0) return null;
+
+  // Find matches for the selected teammate across all rounds
+  const teammateMatches = useMemo(() => {
+    if (!selectedMember || !data) return [];
+    const lowerName = selectedMember.toLowerCase();
+    return data.rounds
+      .filter(r => r.status === 'COMPLETED' || r.status === 'STARTED')
+      .map(round => {
+        const match = round.matches.find(m =>
+          m.players.some(p => p.playerName.toLowerCase() === lowerName)
+        );
+        if (!match) return null;
+        const me = match.players.find(p => p.playerName.toLowerCase() === lowerName)!;
+        const opp = match.players.find(p => p.playerName.toLowerCase() !== lowerName);
+
+        let result: 'WIN' | 'LOSS' | 'DRAW' | null = null;
+        if (match.isBye) result = 'WIN';
+        else if (match.isDraw) result = 'DRAW';
+        else if (match.winnerId != null) {
+          result = match.winnerId === me.playerId ? 'WIN' : 'LOSS';
+        }
+
+        return {
+          roundNumber: round.roundNumber,
+          roundType: round.roundType,
+          phaseName: round.phaseName,
+          table: match.table,
+          opponentName: match.isBye ? 'BYE' : (opp?.playerName || '—'),
+          result,
+          gamesWon: match.winnerId === me.playerId ? match.gamesWonByWinner : match.gamesWonByLoser,
+          gamesLost: match.winnerId === me.playerId ? match.gamesWonByLoser : match.gamesWonByWinner,
+        };
+      })
+      .filter(Boolean) as {
+        roundNumber: number;
+        roundType: string;
+        phaseName: string;
+        table: number;
+        opponentName: string;
+        result: 'WIN' | 'LOSS' | 'DRAW' | null;
+        gamesWon: number | null;
+        gamesLost: number | null;
+      }[];
+  }, [selectedMember, data]);
+
+  const wins = teammateMatches.filter(m => m.result === 'WIN').length;
+  const losses = teammateMatches.filter(m => m.result === 'LOSS').length;
+  const draws = teammateMatches.filter(m => m.result === 'DRAW').length;
+
+  return (
+    <div className="space-y-3">
+      <h2 className="ink-section-title flex items-center gap-2">
+        <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+        Rondes coéquipiers
+      </h2>
+
+      {/* Teammate selector */}
+      <div className="flex gap-2 flex-wrap">
+        {presentTeammates.map(name => (
+          <button
+            key={name}
+            onClick={() => setSelectedMember(selectedMember === name ? null : name)}
+            className={`px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+              selectedMember === name
+                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                : 'bg-ink-800/50 text-ink-400 border border-ink-700/30 hover:text-ink-200'
+            }`}
+          >
+            {name}
+          </button>
+        ))}
+      </div>
+
+      {/* Selected teammate matches */}
+      {selectedMember && (
+        <div className="space-y-2">
+          {/* Record summary */}
+          <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-ink-900/50 text-sm">
+            <span className="text-blue-400 font-medium">{selectedMember}</span>
+            <span className="text-ink-600">—</span>
+            <span className="text-green-400 font-bold">{wins}V</span>
+            <span className="text-red-400 font-bold">{losses}D</span>
+            {draws > 0 && <span className="text-ink-400 font-bold">{draws}N</span>}
+          </div>
+
+          {/* Match list */}
+          <div className="space-y-1.5">
+            {teammateMatches.map((m, i) => {
+              const r = m.result ? RESULT_STYLES[m.result] : null;
+              return (
+                <div key={i} className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-ink-900/30">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-xs text-ink-500 font-medium w-8 shrink-0 text-center">
+                      {m.roundType === 'SWISS' ? `R${m.roundNumber}` : `TC${m.roundNumber}`}
+                    </span>
+                    <span className="text-sm text-ink-200 truncate">{m.opponentName}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {m.gamesWon != null && m.gamesLost != null && (
+                      <span className="text-xs text-ink-500">{m.gamesWon}-{m.gamesLost}</span>
+                    )}
+                    {r ? (
+                      <span className={`text-xs font-bold px-2 py-1 rounded-md ${r.cls}`}>{r.label}</span>
+                    ) : (
+                      <span className="text-xs text-ink-600 px-2 py-1">—</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

@@ -1777,9 +1777,6 @@ function TeammateRounds({ eventLink, myUsername }: { eventLink: string; myUserna
     [teammates, allPlayerNames]
   );
 
-  if (loading) return null;
-  if (presentTeammates.length === 0) return null;
-
   // Find matches for the selected teammate across all rounds
   const teammateMatches = useMemo(() => {
     if (!selectedMember || !data) return [];
@@ -1827,6 +1824,8 @@ function TeammateRounds({ eventLink, myUsername }: { eventLink: string; myUserna
   const wins = teammateMatches.filter(m => m.result === 'WIN').length;
   const losses = teammateMatches.filter(m => m.result === 'LOSS').length;
   const draws = teammateMatches.filter(m => m.result === 'DRAW').length;
+
+  if (loading || presentTeammates.length === 0) return null;
 
   return (
     <div className="space-y-3">

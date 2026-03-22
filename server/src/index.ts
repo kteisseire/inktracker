@@ -9,7 +9,10 @@ import { errorHandler } from './middleware/errorHandler.js';
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001');
 
-app.use(helmet());
+app.use(helmet({
+  crossOriginOpenerPolicy: false,
+  contentSecurityPolicy: false,
+}));
 
 const corsOrigin = process.env.CLIENT_URL || (process.env.NODE_ENV === 'production' ? undefined : 'http://localhost:5173');
 app.use(cors({ origin: corsOrigin }));

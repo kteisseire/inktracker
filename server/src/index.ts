@@ -8,10 +8,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001');
 
-app.use(helmet({
-  crossOriginOpenerPolicy: false,
-  contentSecurityPolicy: false,
-}));
+app.use(helmet());
 app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
 app.use(express.json({ limit: '1mb' }));
 

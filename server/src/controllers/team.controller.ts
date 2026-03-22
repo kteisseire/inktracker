@@ -92,10 +92,7 @@ export async function updateTeam(req: AuthRequest, res: Response) {
 
   const team = await prisma.team.update({
     where: { id: req.params.id },
-    data: {
-      name: req.body.name,
-      description: req.body.description,
-    },
+    data: req.body,
   });
   res.json({ team });
 }
@@ -310,7 +307,7 @@ export async function generateInviteCode(req: AuthRequest, res: Response) {
     return;
   }
 
-  const inviteCode = crypto.randomBytes(12).toString('hex');
+  const inviteCode = crypto.randomBytes(4).toString('hex');
   await prisma.team.update({ where: { id: req.params.id }, data: { inviteCode } });
   res.json({ inviteCode });
 }

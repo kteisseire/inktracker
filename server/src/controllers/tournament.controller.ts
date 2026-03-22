@@ -246,7 +246,7 @@ export async function shareTournament(req: AuthRequest, res: Response) {
   }
 
   // Generate a short unique ID (8 chars)
-  const shareId = crypto.randomBytes(12).toString('hex');
+  const shareId = crypto.randomBytes(4).toString('hex');
   await prisma.tournament.update({
     where: { id: tournament.id },
     data: { shareId },

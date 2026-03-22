@@ -92,7 +92,10 @@ export async function updateTeam(req: AuthRequest, res: Response) {
 
   const team = await prisma.team.update({
     where: { id: req.params.id },
-    data: req.body,
+    data: {
+      name: req.body.name,
+      description: req.body.description,
+    },
   });
   res.json({ team });
 }

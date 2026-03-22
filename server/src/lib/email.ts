@@ -7,7 +7,6 @@ const FROM_EMAIL = process.env.EMAIL_FROM || 'InkTracker <onboarding@resend.dev>
 export async function sendPasswordResetEmail(to: string, resetUrl: string) {
   if (!resend) {
     console.warn('[Email] RESEND_API_KEY not set — password reset email not sent');
-    console.log('[Email] Reset URL:', resetUrl);
     return;
   }
 

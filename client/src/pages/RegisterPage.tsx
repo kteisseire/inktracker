@@ -10,7 +10,7 @@ export function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get('redirect');
+  const redirectTo = safeRedirect(searchParams.get('redirect'));
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -23,7 +23,7 @@ export function RegisterPage() {
     setLoading(true);
     try {
       await register(email, username, password);
-      navigate(safeRedirect(redirectTo));
+      navigate(redirectTo || '/');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Erreur lors de l\'inscription');
     } finally {

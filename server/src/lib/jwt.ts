@@ -3,6 +3,7 @@ import jwt, { type SignOptions } from 'jsonwebtoken';
 function getSecret(): string {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error('JWT_SECRET environment variable is required');
+  if (secret.length < 32) throw new Error('JWT_SECRET must be at least 32 characters');
   return secret;
 }
 const SECRET = getSecret();

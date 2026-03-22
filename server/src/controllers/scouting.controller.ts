@@ -281,10 +281,14 @@ export async function deleteScoutReport(req: AuthRequest, res: Response) {
   }
 
   // Personal report (no team) — only the reporter can delete
-  // Team report — only team members can delete
+  // Team report — reporter, admin, or owner can delete
   if (report.teamId) {
     const membership = await verifyTeamMembership(report.teamId, req.userId!);
     if (!membership) {
+      res.status(403).json({ error: 'Permission insuffisante' });
+      return;
+    }
+    if (report.reportedById !== req.userId && membership.role === 'MEMBER') {
       res.status(403).json({ error: 'Permission insuffisante' });
       return;
     }

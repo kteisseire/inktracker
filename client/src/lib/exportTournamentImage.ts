@@ -212,7 +212,7 @@ export function exportTournamentImage(tournament: Tournament, username: string) 
   ctx.fillStyle = 'rgba(212, 175, 55, 0.25)';
   ctx.font = '11px system-ui, -apple-system, sans-serif';
   ctx.textAlign = 'right';
-  ctx.fillText('InkTracker', W - PADDING, H - 16);
+  ctx.fillText('GlimmerLog', W - PADDING, H - 16);
   ctx.textAlign = 'left';
 
   // Share or download

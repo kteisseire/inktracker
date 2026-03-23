@@ -135,8 +135,8 @@ export function Header() {
         <Link to="/" className="flex items-center gap-2 group shrink-0">
           <LogoIcon className="w-7 h-7 sm:w-8 sm:h-8 transition-transform group-hover:scale-110" />
           <span className="font-display text-lg sm:text-xl tracking-wide">
-            <span className="text-gold-400 group-hover:text-gold-300 transition-colors">Ink</span>
-            <span className="text-ink-200">Tracker</span>
+            <span className="text-gold-400 group-hover:text-gold-300 transition-colors">Glimmer</span>
+            <span className="text-ink-200">Log</span>
           </span>
         </Link>
 

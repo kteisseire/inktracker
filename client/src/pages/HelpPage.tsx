@@ -275,7 +275,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
         question: "Qu'est-ce que la synchronisation Play Hub ?",
         answer: (
           <div className="space-y-3">
-            <p>Si votre tournoi est sur Ravensburger Play Hub, InkTracker peut récupérer automatiquement vos rondes et résultats. Une bannière de synchronisation apparaît en haut de l'arbre :</p>
+            <p>Si votre tournoi est sur Ravensburger Play Hub, GlimmerLog peut récupérer automatiquement vos rondes et résultats. Une bannière de synchronisation apparaît en haut de l'arbre :</p>
             <MockSyncBanner />
             <p>Cliquez sur <MockBtn gold small>Synchroniser</MockBtn> pour importer les rondes. Les scores (2-1, 2-0, etc.) sont fidèlement reproduits.</p>
           </div>
@@ -356,7 +356,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
         question: 'Comment fonctionne la déduction automatique ?',
         answer: (
           <div className="space-y-3">
-            <p>Quand vous qualifiez le deck d'un joueur de manière certaine, InkTracker vérifie toutes les tables où ce joueur avait des decks potentiels :</p>
+            <p>Quand vous qualifiez le deck d'un joueur de manière certaine, GlimmerLog vérifie toutes les tables où ce joueur avait des decks potentiels :</p>
             <MockDeduction />
             <p>Cette déduction se propage <strong className="text-ink-200">en cascade</strong> : si le deck déduit de Bob permet de résoudre d'autres tables où il apparaissait, elles sont également résolues automatiquement.</p>
           </div>
@@ -399,7 +399,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
         question: "L'import automatique des couleurs fonctionne comment ?",
         answer: (
           <div className="space-y-3">
-            <p>Quand vous collez un lien de deck, InkTracker analyse la page et détecte les couleurs. Sites supportés :</p>
+            <p>Quand vous collez un lien de deck, GlimmerLog analyse la page et détecte les couleurs. Sites supportés :</p>
             <div className="flex flex-wrap gap-2">
               {['dreamborn.ink', 'lorcanito.com', 'duels.ink', 'inkdecks.com'].map(s => (
                 <span key={s} className="px-2 py-0.5 rounded bg-ink-800/50 text-[11px] text-ink-300 font-mono">{s}</span>
@@ -469,7 +469,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: 'Comment inviter des membres ?',
         answer: (
-          <p>Depuis la fiche de votre équipe, entrez le nom d'utilisateur InkTracker du joueur dans le champ d'invitation. L'invité pourra accepter ou refuser depuis sa page "Équipes".</p>
+          <p>Depuis la fiche de votre équipe, entrez le nom d'utilisateur GlimmerLog du joueur dans le champ d'invitation. L'invité pourra accepter ou refuser depuis sa page "Équipes".</p>
         ),
       },
       {
@@ -602,7 +602,7 @@ export function HelpPage() {
     <div className="max-w-3xl mx-auto space-y-8 py-4">
       <div>
         <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Aide</h1>
-        <p className="text-sm text-ink-400 mt-1">Tout ce que vous devez savoir pour utiliser InkTracker.</p>
+        <p className="text-sm text-ink-400 mt-1">Tout ce que vous devez savoir pour utiliser GlimmerLog.</p>
       </div>
 
       {FAQ_SECTIONS.map(section => (
@@ -626,7 +626,7 @@ export function HelpPage() {
       <div className="text-center py-4">
         <p className="text-sm text-ink-500">
           Une question non couverte ?{' '}
-          <a href="https://github.com/kteisseire/inktracker/issues" target="_blank" rel="noopener noreferrer" className="text-gold-400 hover:text-gold-300 transition-colors">
+          <a href="https://github.com/kteisseire/glimmerlog/issues" target="_blank" rel="noopener noreferrer" className="text-gold-400 hover:text-gold-300 transition-colors">
             Ouvrir un ticket sur GitHub
           </a>
         </p>

@@ -57,7 +57,7 @@ export function DashboardPage() {
         <div className="ink-card p-5 sm:p-6 space-y-4">
           <div className="text-center">
             <div className="flex justify-center mb-2"><LogoIcon className="w-10 h-10" /></div>
-            <h2 className="font-display text-lg sm:text-xl font-bold text-ink-100 mt-2">Bienvenue sur InkTracker</h2>
+            <h2 className="font-display text-lg sm:text-xl font-bold text-ink-100 mt-2">Bienvenue sur GlimmerLog</h2>
             <p className="text-sm text-ink-400 mt-1">
               L'outil complet pour suivre vos performances en tournois Disney Lorcana.
             </p>

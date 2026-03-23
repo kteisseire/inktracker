@@ -13,8 +13,8 @@ export function LandingPage() {
           </div>
         </div>
         <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-wide leading-tight">
-          <span className="text-gold-400">Ink</span>
-          <span className="text-ink-100">Tracker</span>
+          <span className="text-gold-400">Glimmer</span>
+          <span className="text-ink-100">Log</span>
         </h1>
         <p className="mt-5 text-ink-200 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed">
           Votre compagnon de tournoi Lorcana.<br className="hidden sm:block" />
@@ -35,7 +35,7 @@ export function LandingPage() {
         <div className="text-center mb-10">
           <h2 className="text-2xl sm:text-3xl font-display text-ink-100 tracking-wide">Tout votre tournoi au m&ecirc;me endroit</h2>
           <p className="mt-3 text-ink-400 text-sm sm:text-base max-w-xl mx-auto">
-            Avant, pendant et apr&egrave;s le tournoi, InkTracker vous accompagne &agrave; chaque &eacute;tape.
+            Avant, pendant et apr&egrave;s le tournoi, GlimmerLog vous accompagne &agrave; chaque &eacute;tape.
           </p>
         </div>
 
@@ -101,7 +101,7 @@ export function LandingPage() {
               </div>
               <h3 className="text-xl sm:text-2xl font-display text-ink-100">Sachez ce que joue votre prochain adversaire</h3>
               <p className="text-sm text-ink-400 leading-relaxed">
-                Parcourez l'arbre de tournoi et qualifiez les decks que vous observez. Quand un deck est incertain, marquez les deux possibilit&eacute;s — InkTracker d&eacute;duit automatiquement le bon deck d&egrave;s qu'une info le confirme, en cascade sur toutes les tables li&eacute;es.
+                Parcourez l'arbre de tournoi et qualifiez les decks que vous observez. Quand un deck est incertain, marquez les deux possibilit&eacute;s — GlimmerLog d&eacute;duit automatiquement le bon deck d&egrave;s qu'une info le confirme, en cascade sur toutes les tables li&eacute;es.
               </p>
               <p className="text-sm text-ink-400 leading-relaxed">
                 En &eacute;quipe, toutes les observations sont mutualis&eacute;es. Plus votre &eacute;quipe scoute, plus la couverture est compl&egrave;te.
@@ -118,7 +118,7 @@ export function LandingPage() {
 
       {/* Other features */}
       <section className="max-w-4xl mx-auto px-2">
-        <h2 className="text-center text-xs font-semibold text-gold-500/60 uppercase tracking-[0.2em] mb-8">Aussi dans InkTracker</h2>
+        <h2 className="text-center text-xs font-semibold text-gold-500/60 uppercase tracking-[0.2em] mb-8">Aussi dans GlimmerLog</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <FeatureCard
             icon={<FeatureIcon d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />}
@@ -176,7 +176,7 @@ export function LandingPage() {
       {/* CTA */}
       <section className="text-center max-w-md mx-auto space-y-5 px-4">
         <p className="text-ink-300 text-base">
-          Rejoingnez les joueurs qui utilisent InkTracker pour progresser.
+          Rejoingnez les joueurs qui utilisent GlimmerLog pour progresser.
         </p>
         <Link to="/register" className="ink-btn-primary px-8 py-3.5 text-base font-semibold inline-block">
           Cr&eacute;er mon compte gratuitement

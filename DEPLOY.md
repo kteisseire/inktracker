@@ -1,4 +1,4 @@
-# Guide de deploiement InkTracker
+# Guide de deploiement GlimmerLog
 
 ## Architecture
 
@@ -7,6 +7,7 @@
 | Frontend (client) | Vercel | https://inktracker-client.vercel.app |
 | Backend (server) | Railway | https://lorcana-server-production.up.railway.app |
 | Base de donnees | Neon (PostgreSQL) | (voir dashboard Neon) |
+| Mailing | https://resend.com/|
 
 ---
 

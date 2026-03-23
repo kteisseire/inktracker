@@ -6,7 +6,7 @@ const RPH_API = 'https://api.ravensburgerplay.com/api/v2';
 
 const rphFetch = (path: string) =>
   fetch(`${RPH_API}${path}`, {
-    headers: { 'Accept': 'application/json', 'User-Agent': 'InkTracker/1.0' },
+    headers: { 'Accept': 'application/json', 'User-Agent': 'GlimmerLog/1.0' },
     signal: AbortSignal.timeout(15000),
   });
 

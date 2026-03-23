@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { listTournaments, getTeamPresence } from '../api/tournaments.api.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
 import { HelpButton } from '../components/ui/HelpButton.js';
@@ -46,16 +47,19 @@ function TeamBadge({ count, members }: { count: number; members: string[] }) {
 }
 
 export function TournamentsPage() {
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [presence, setPresence] = useState<Record<string, { count: number; members: string[] }>>({});
+  const { data: tournamentsData, isLoading } = useQuery({
+    queryKey: ['tournaments', 1, 50],
+    queryFn: () => listTournaments(1, 50),
+  });
 
-  useEffect(() => {
-    listTournaments(1, 50).then(r => setTournaments(r.tournaments)).finally(() => setLoading(false));
-    getTeamPresence().then(setPresence).catch(() => {});
-  }, []);
+  const { data: presence = {} } = useQuery({
+    queryKey: ['team-presence'],
+    queryFn: getTeamPresence,
+  });
 
-  if (loading) {
+  const tournaments = tournamentsData?.tournaments ?? [];
+
+  if (isLoading) {
     return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gold-400"></div></div>;
   }
 

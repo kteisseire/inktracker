@@ -1,5 +1,6 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext.js';
 import {
   getTeam, updateTeam, deleteTeam,
@@ -21,14 +22,15 @@ export function TeamDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [team, setTeam] = useState<Team | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const load = useCallback(() => {
-    getTeam(id!).then(setTeam).catch(() => navigate('/teams')).finally(() => setLoading(false));
-  }, [id, navigate]);
+  const { data: team = null, isLoading: loading } = useQuery({
+    queryKey: ['team', id],
+    queryFn: () => getTeam(id!),
+    enabled: !!id,
+  });
 
-  useEffect(() => { load(); }, [load]);
+  const reload = () => queryClient.invalidateQueries({ queryKey: ['team', id] });
 
   if (loading) {
     return (
@@ -46,17 +48,17 @@ export function TeamDetailPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
-      <TeamHeader team={team} isOwner={isOwner} isAdmin={isAdmin} onUpdated={load} onDeleted={() => navigate('/teams')} />
+      <TeamHeader team={team} isOwner={isOwner} isAdmin={isAdmin} onUpdated={reload} onDeleted={() => navigate('/teams')} />
 
       {/* QR Invite link */}
       {isAdmin && <InviteLink teamId={team.id} />}
 
       {/* Invite section */}
-      {isAdmin && <InviteSection teamId={team.id} onInvited={load} />}
+      {isAdmin && <InviteSection teamId={team.id} onInvited={reload} />}
 
       {/* Pending invites (visible to admin) */}
       {isAdmin && team.invites && team.invites.length > 0 && (
-        <PendingInvites invites={team.invites} teamId={team.id} onChanged={load} />
+        <PendingInvites invites={team.invites} teamId={team.id} onChanged={reload} />
       )}
 
       {/* Members */}
@@ -66,7 +68,7 @@ export function TeamDetailPage() {
         isOwner={isOwner}
         isAdmin={isAdmin}
         currentUserId={user?.id || ''}
-        onChanged={load}
+        onChanged={reload}
       />
     </div>
   );

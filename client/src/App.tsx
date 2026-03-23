@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { AuthProvider, useAuth } from './context/AuthContext.js';
 import { Header } from './components/layout/Header.js';
 import { ProtectedRoute } from './components/layout/ProtectedRoute.js';
@@ -26,8 +28,22 @@ import { HelpPage } from './pages/HelpPage.js';
 import { AdminPage } from './pages/AdminPage.js';
 import { SharedTournamentPage } from './pages/SharedTournamentPage.js';
 import { JoinTeamPage } from './pages/JoinTeamPage.js';
+import { OfflineBanner } from './components/ui/OfflineBanner.js';
+import { InstallBanner } from './components/ui/InstallBanner.js';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      gcTime: 1000 * 60 * 60 * 24, // 24h — keep cache for offline
+      staleTime: 1000 * 60 * 5, // 5min — refetch after 5min when online
+    },
+  },
+});
+
+const persister = createSyncStoragePersister({
+  storage: window.localStorage,
+  key: 'glimmerlog-query-cache',
+});
 
 function AppRoutes() {
   const { user, loading } = useAuth();
@@ -92,12 +108,14 @@ function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider client={queryClient} persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}>
       <BrowserRouter>
         <AuthProvider>
+          <OfflineBanner />
           <AppRoutes />
+          <InstallBanner />
         </AuthProvider>
       </BrowserRouter>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getTournament, deleteTournament, updateTournament, shareTournament } from '../api/tournaments.api.js';
 import { createRound, updateRound, deleteRound } from '../api/matches.api.js';
 import { fetchEventInfo, fetchEventRounds, extractEventId } from '../api/ravensburger.api.js';
@@ -61,8 +62,7 @@ export function TournamentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [tournament, setTournament] = useState<Tournament | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>('rounds');
   const [roundsScoutMap, setRoundsScoutMap] = useState<Map<string, ScoutReport>>(new Map());
   const [roundsPotentialDecks, setRoundsPotentialDecks] = useState<PotentialDeck[]>([]);
@@ -71,43 +71,46 @@ export function TournamentDetailPage() {
   const [shareLoading, setShareLoading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
 
-  const load = () => {
-    getTournament(id!).then(t => {
-      setTournament(t);
+  const { data: tournament = null, isLoading: loading } = useQuery({
+    queryKey: ['tournament', id],
+    queryFn: () => getTournament(id!),
+    enabled: !!id,
+  });
 
-      // Build scout map from local round data
-      const map = new Map<string, ScoutReport>();
-      for (const r of (t.rounds || [])) {
-        if (r.opponentName && r.opponentDeckColors && r.opponentDeckColors.length > 0) {
-          const key = r.opponentName.toLowerCase();
-          if (!map.has(key)) {
-            map.set(key, {
-              id: '', teamId: '', eventId: '', playerName: r.opponentName,
-              deckColors: r.opponentDeckColors as InkColor[],
-              reportedById: '', reportedBy: { id: '', username: 'moi' },
-              createdAt: r.createdAt, updatedAt: r.updatedAt,
-            });
-          }
+  const reload = () => queryClient.invalidateQueries({ queryKey: ['tournament', id] });
+
+  // Build scout map + load remote reports when tournament changes
+  useEffect(() => {
+    if (!tournament) return;
+
+    const map = new Map<string, ScoutReport>();
+    for (const r of (tournament.rounds || [])) {
+      if (r.opponentName && r.opponentDeckColors && r.opponentDeckColors.length > 0) {
+        const key = r.opponentName.toLowerCase();
+        if (!map.has(key)) {
+          map.set(key, {
+            id: '', teamId: '', eventId: '', playerName: r.opponentName,
+            deckColors: r.opponentDeckColors as InkColor[],
+            reportedById: '', reportedBy: { id: '', username: 'moi' },
+            createdAt: r.createdAt, updatedAt: r.updatedAt,
+          });
         }
       }
-      setRoundsScoutMap(map);
+    }
+    setRoundsScoutMap(map);
 
-      // Load remote scout reports + potential decks
-      if (t.eventLink) {
-        const eid = extractEventId(t.eventLink);
-        if (eid) {
-          getEventScoutReports(eid).then(({ reports, potentialDecks: pd }) => {
-            const merged = new Map(map);
-            for (const r of reports) merged.set(r.playerName.toLowerCase(), r);
-            setRoundsScoutMap(merged);
-            setRoundsPotentialDecks(pd);
-          }).catch(() => {});
-        }
+    if (tournament.eventLink) {
+      const eid = extractEventId(tournament.eventLink);
+      if (eid) {
+        getEventScoutReports(eid).then(({ reports, potentialDecks: pd }) => {
+          const merged = new Map(map);
+          for (const r of reports) merged.set(r.playerName.toLowerCase(), r);
+          setRoundsScoutMap(merged);
+          setRoundsPotentialDecks(pd);
+        }).catch(() => {});
       }
-    }).finally(() => setLoading(false));
-  };
-
-  useEffect(() => { load(); }, [id]);
+    }
+  }, [tournament]);
 
   // Auto-estimate placement from W/L record when no Play Hub link
   useEffect(() => {
@@ -124,7 +127,7 @@ export function TournamentDetailPage() {
     const maxPoints = totalPlayed * 3;
     const estimated = Math.max(1, Math.round(tournament.playerCount * (1 - myPoints / maxPoints) + 0.5));
     if (estimated !== tournament.placement) {
-      updateTournament(id!, { placement: estimated }).then(() => load()).catch(() => {});
+      updateTournament(id!, { placement: estimated }).then(() => reload()).catch(() => {});
     }
   }, [tournament]);
 
@@ -179,7 +182,7 @@ export function TournamentDetailPage() {
   const handleDeleteRound = async (roundId: string) => {
     if (!confirm('Supprimer cette ronde ?')) return;
     await deleteRound(id!, roundId);
-    load();
+    reload();
   };
 
   const [refreshing, setRefreshing] = useState(false);
@@ -216,7 +219,7 @@ export function TournamentDetailPage() {
     }
     if (Object.keys(updates).length > 0) {
       await updateTournament(id!, updates);
-      load();
+      reload();
     }
     setSyncData(null);
   };
@@ -399,12 +402,12 @@ export function TournamentDetailPage() {
             username={user?.username || ''}
             tournamentId={id!}
             existingRounds={rounds}
-            onRoundsChanged={load}
+            onRoundsChanged={reload}
             currentPlacement={tournament.placement}
             playerCount={tournament.playerCount}
           />
         ) : (
-          <LinkPlayHubPrompt tournamentId={id!} onLinked={load} />
+          <LinkPlayHubPrompt tournamentId={id!} onLinked={reload} />
         )
       )}
 
@@ -719,18 +722,40 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
   playerCount: number | null;
 }) {
   const eventId = extractEventId(eventLink)!;
-  const [data, setData] = useState<EventRoundsData | null>(null);
-  const [loadingPlayHub, setLoadingPlayHub] = useState(true);
-  const [loadingDb, setLoadingDb] = useState(true);
+  const bracketQueryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'standings' | 'matches'>('standings');
   const [scoutReports, setScoutReports] = useState<ScoutReport[]>([]);
   const [potentialDecks, setPotentialDecks] = useState<PotentialDeck[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
   const [overrideUsername, setOverrideUsername] = useState<string | null>(null);
   const [teamFilter, setTeamFilter] = useState(false);
+
+  const { data: data = null, isLoading: loadingPlayHub } = useQuery({
+    queryKey: ['event-rounds', eventId],
+    queryFn: () => fetchEventRounds(eventId),
+    enabled: !!eventId,
+  });
+
+  const { data: scoutData, isLoading: loadingDb } = useQuery({
+    queryKey: ['event-scouts', eventId],
+    queryFn: () => getEventScoutReports(eventId).catch(() => ({ reports: [] as ScoutReport[], potentialDecks: [] as PotentialDeck[] })),
+    enabled: !!eventId,
+  });
+
+  const { data: teams = [] } = useQuery({
+    queryKey: ['my-teams'],
+    queryFn: () => listMyTeams().catch(() => [] as Team[]),
+  });
+
+  // Sync scout data from query into local state (needed for optimistic updates)
+  useEffect(() => {
+    if (scoutData) {
+      setScoutReports(scoutData.reports);
+      setPotentialDecks(scoutData.potentialDecks);
+    }
+  }, [scoutData]);
 
   const effectiveUsername = overrideUsername || username;
 
@@ -797,27 +822,27 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
     return pd;
   }, [potentialDecks, scoutReports, existingRounds]);
 
-  const loadRounds = useCallback(async (refresh = false) => {
-    if (refresh) setRefreshing(true); else setLoadingPlayHub(true);
-    try {
-      const result = await fetchEventRounds(eventId, refresh);
-      setData(result);
-      if (result.rounds.length > 0) {
-        const completedRounds = result.rounds.filter(r => r.status === 'COMPLETE');
-        const defaultRound = completedRounds.length > 0
-          ? completedRounds[completedRounds.length - 1].roundNumber
-          : result.rounds[result.rounds.length - 1].roundNumber;
-        setSelectedRound(prev => prev ?? defaultRound);
-      }
-    } catch {
-      // silently fail
-    } finally {
-      setLoadingPlayHub(false);
-      setRefreshing(false);
-    }
-  }, [eventId]);
+  // Set default selected round when data loads
+  useEffect(() => {
+    if (!data || data.rounds.length === 0) return;
+    const completedRounds = data.rounds.filter(r => r.status === 'COMPLETE');
+    const defaultRound = completedRounds.length > 0
+      ? completedRounds[completedRounds.length - 1].roundNumber
+      : data.rounds[data.rounds.length - 1].roundNumber;
+    setSelectedRound(prev => prev ?? defaultRound);
+  }, [data]);
 
-  useEffect(() => { loadRounds(); }, [loadRounds]);
+  const loadRounds = useCallback(async (refresh = false) => {
+    if (refresh) {
+      setRefreshing(true);
+      try {
+        const result = await fetchEventRounds(eventId, true);
+        bracketQueryClient.setQueryData(['event-rounds', eventId], result);
+      } finally {
+        setRefreshing(false);
+      }
+    }
+  }, [eventId, bracketQueryClient]);
 
   // Auto-calculate placement from Play Hub standings
   useEffect(() => {
@@ -837,19 +862,6 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
       updateTournament(tournamentId, updates).then(() => onRoundsChanged()).catch(() => {});
     }
   }, [data, effectiveUsername, currentPlacement, playerCount, tournamentId, onRoundsChanged]);
-
-  // Load scout reports + potential decks + teams in parallel
-  useEffect(() => {
-    setLoadingDb(true);
-    Promise.all([
-      getEventScoutReports(eventId).catch(() => ({ reports: [] as ScoutReport[], potentialDecks: [] as PotentialDeck[] })),
-      listMyTeams().catch(() => [] as Team[]),
-    ]).then(([scoutData, myTeams]) => {
-      setScoutReports(scoutData.reports);
-      setPotentialDecks(scoutData.potentialDecks);
-      setTeams(myTeams);
-    }).finally(() => setLoadingDb(false));
-  }, [eventId]);
 
   const handleScout: ScoutHandler = async (playerName, colors, teamId) => {
     const { report, deduced } = await upsertScoutReport({ teamId, eventId, playerName, deckColors: colors });
@@ -1820,23 +1832,20 @@ function DropdownMenu({ items }: { items: { label: string; onClick: () => void; 
 
 /* ─── Teammate Rounds ─── */
 function TeammateRounds({ eventLink, myUsername }: { eventLink: string; myUsername: string }) {
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [data, setData] = useState<EventRoundsData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
 
   const eventId = extractEventId(eventLink);
 
-  useEffect(() => {
-    if (!eventId) return;
-    Promise.all([
-      listMyTeams().catch(() => [] as Team[]),
-      fetchEventRounds(eventId).catch(() => null),
-    ]).then(([myTeams, roundsData]) => {
-      setTeams(myTeams);
-      setData(roundsData);
-    }).finally(() => setLoading(false));
-  }, [eventId]);
+  const { data: teams = [] } = useQuery({
+    queryKey: ['my-teams'],
+    queryFn: () => listMyTeams().catch(() => [] as Team[]),
+  });
+
+  const { data: data = null, isLoading: loading } = useQuery({
+    queryKey: ['event-rounds', eventId],
+    queryFn: () => fetchEventRounds(eventId!).catch(() => null),
+    enabled: !!eventId,
+  });
 
   // Gather all teammate usernames (excluding me)
   const teammates = useMemo(() => {

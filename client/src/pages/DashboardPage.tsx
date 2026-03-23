@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { getOverview } from '../api/stats.api.js';
 import { listTournaments } from '../api/tournaments.api.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
@@ -8,19 +8,17 @@ import { HelpButton } from '../components/ui/HelpButton.js';
 import type { OverviewStats, Tournament } from '@lorcana/shared';
 
 export function DashboardPage() {
-  const [stats, setStats] = useState<OverviewStats | null>(null);
-  const [recentTournaments, setRecentTournaments] = useState<Tournament[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: stats = null } = useQuery<OverviewStats | null>({
+    queryKey: ['overview-stats'],
+    queryFn: () => getOverview(),
+  });
 
-  useEffect(() => {
-    Promise.all([
-      getOverview(),
-      listTournaments(1, 5),
-    ]).then(([s, t]) => {
-      setStats(s);
-      setRecentTournaments(t.tournaments);
-    }).finally(() => setLoading(false));
-  }, []);
+  const { data: tournamentsData, isLoading: loading } = useQuery({
+    queryKey: ['tournaments', 1, 5],
+    queryFn: () => listTournaments(1, 5),
+  });
+
+  const recentTournaments = tournamentsData?.tournaments ?? [];
 
   if (loading) {
     return (

@@ -1,5 +1,6 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { listDecks, createDeck, updateDeck, deleteDeck, setDefaultDeck, extractDeckColors } from '../api/deck.api.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
 import { InkColorPicker } from '../components/ui/InkColorPicker.js';
@@ -101,32 +102,35 @@ function DeckForm({ initial, onSubmit, onCancel, submitLabel }: {
 }
 
 export function DecksPage() {
-  const [decks, setDecks] = useState<Deck[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
 
-  const loadDecks = () => { listDecks().then(setDecks).finally(() => setLoading(false)); };
-  useEffect(() => { loadDecks(); }, []);
+  const { data: decks = [], isLoading: loading } = useQuery({
+    queryKey: ['decks'],
+    queryFn: listDecks,
+  });
+
+  const reloadDecks = () => queryClient.invalidateQueries({ queryKey: ['decks'] });
 
   const handleCreate = async (data: DeckFormData) => {
     const isFirst = decks.length === 0;
     await createDeck({ name: data.name, colors: data.colors, link: data.link || undefined, isDefault: isFirst });
-    setShowForm(false); loadDecks();
+    setShowForm(false); reloadDecks();
   };
 
   const handleUpdate = async (data: DeckFormData) => {
     if (!editingDeck) return;
     await updateDeck(editingDeck.id, { name: data.name, colors: data.colors, link: data.link || undefined });
-    setEditingDeck(null); loadDecks();
+    setEditingDeck(null); reloadDecks();
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Supprimer ce deck ?')) return;
-    await deleteDeck(id); loadDecks();
+    await deleteDeck(id); reloadDecks();
   };
 
-  const handleSetDefault = async (id: string) => { await setDefaultDeck(id); loadDecks(); };
+  const handleSetDefault = async (id: string) => { await setDefaultDeck(id); reloadDecks(); };
   const navigate = useNavigate();
 
   if (loading) {

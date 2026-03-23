@@ -3,6 +3,7 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api/v1',
   timeout: 30000,
+  adapter: 'fetch',
 });
 
 api.interceptors.request.use((config) => {
@@ -16,7 +17,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    if (err.response?.status === 401 && navigator.onLine) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }

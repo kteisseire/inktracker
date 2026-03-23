@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { getDeckStatsById } from '../api/stats.api.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
 import { DateFilterBar, useDateFilter } from '../components/ui/DateFilterBar.js';
@@ -14,31 +14,20 @@ interface TournamentHistoryEntry {
 
 export function DeckStatsPage() {
   const { deckId } = useParams<{ deckId: string }>();
-  const [deck, setDeck] = useState<Deck | null>(null);
-  const [overview, setOverview] = useState<OverviewStats | null>(null);
-  const [matchups, setMatchups] = useState<MatchupStat[]>([]);
-  const [goingFirst, setGoingFirst] = useState<GoingFirstStats | null>(null);
-  const [history, setHistory] = useState<TournamentHistoryEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-
   const dateFilter = useDateFilter();
+  const filter = dateFilter.getDateFilter();
 
-  const fetchStats = useCallback(() => {
-    if (!deckId) return;
-    setLoading(true);
-    const filter = dateFilter.getDateFilter();
-    getDeckStatsById(deckId, filter).then(data => {
-      setDeck(data.deck);
-      setOverview(data.overview);
-      setMatchups(data.matchups);
-      setGoingFirst(data.goingFirst);
-      setHistory(data.history);
-    }).finally(() => setLoading(false));
-  }, [deckId, dateFilter.getDateFilter]);
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ['deck-stats', deckId, filter?.from, filter?.to],
+    queryFn: () => getDeckStatsById(deckId!, filter),
+    enabled: !!deckId,
+  });
 
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+  const deck = data?.deck ?? null;
+  const overview = data?.overview ?? null;
+  const matchups = data?.matchups ?? [];
+  const goingFirst = data?.goingFirst ?? null;
+  const history: TournamentHistoryEntry[] = (data as any)?.history ?? [];
 
   if (loading && !deck) {
     return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gold-400"></div></div>;

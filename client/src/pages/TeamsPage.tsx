@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { listMyTeams, createTeam, listMyInvites, respondToInvite } from '../api/team.api.js';
 import { HelpButton } from '../components/ui/HelpButton.js';
 import type { Team, TeamInvite } from '@lorcana/shared';
@@ -7,22 +8,25 @@ import type { Team, TeamInvite } from '@lorcana/shared';
 const ROLE_LABELS: Record<string, string> = { OWNER: 'Propriétaire', ADMIN: 'Admin', MEMBER: 'Membre' };
 
 export function TeamsPage() {
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [invites, setInvites] = useState<TeamInvite[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
 
-  const load = async () => {
-    try {
-      const [t, i] = await Promise.all([listMyTeams(), listMyInvites()]);
-      setTeams(t);
-      setInvites(i);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: teams = [], isLoading: loadingTeams } = useQuery({
+    queryKey: ['my-teams'],
+    queryFn: listMyTeams,
+  });
 
-  useEffect(() => { load(); }, []);
+  const { data: invites = [], isLoading: loadingInvites } = useQuery({
+    queryKey: ['my-invites'],
+    queryFn: listMyInvites,
+  });
+
+  const loading = loadingTeams || loadingInvites;
+
+  const reload = () => {
+    queryClient.invalidateQueries({ queryKey: ['my-teams'] });
+    queryClient.invalidateQueries({ queryKey: ['my-invites'] });
+  };
 
   if (loading) {
     return (
@@ -51,7 +55,7 @@ export function TeamsPage() {
         <div className="space-y-2">
           <h2 className="text-sm font-semibold text-ink-400 uppercase tracking-wide">Invitations en attente</h2>
           {invites.map(inv => (
-            <InviteCard key={inv.id} invite={inv} onRespond={load} />
+            <InviteCard key={inv.id} invite={inv} onRespond={reload} />
           ))}
         </div>
       )}
@@ -59,7 +63,7 @@ export function TeamsPage() {
       {/* Create form */}
       {showForm && (
         <CreateTeamForm
-          onCreated={() => { setShowForm(false); load(); }}
+          onCreated={() => { setShowForm(false); reload(); }}
           onCancel={() => setShowForm(false)}
         />
       )}

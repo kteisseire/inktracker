@@ -310,7 +310,7 @@ export async function generateInviteCode(req: AuthRequest, res: Response) {
     return;
   }
 
-  const inviteCode = crypto.randomBytes(4).toString('hex');
+  const inviteCode = crypto.randomBytes(12).toString('hex');
   await prisma.team.update({ where: { id: req.params.id }, data: { inviteCode } });
   res.json({ inviteCode });
 }

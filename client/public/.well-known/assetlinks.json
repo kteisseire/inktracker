@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.glimmerlog.twa",
+    "sha256_cert_fingerprints": ["8A:2B:B6:7C:6B:AA:C5:D2:8E:66:F8:0E:0E:F0:EF:9F:5B:8B:92:A8:35:7B:7D:3A:44:A3:18:74:AE:BC:8A:6D"]
+  }
+}]

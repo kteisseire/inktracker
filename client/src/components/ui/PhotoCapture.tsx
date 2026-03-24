@@ -5,12 +5,19 @@ interface PhotoCaptureProps {
   onChange: (base64: string | null) => void;
 }
 
-function compressImage(file: Blob, maxWidth = 1200, quality = 0.7): Promise<string> {
+function readFileAsDataURL(file: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('Erreur de lecture'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function compressImage(dataUrl: string, maxWidth = 1200, quality = 0.7): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    const url = URL.createObjectURL(file);
     img.onload = () => {
-      URL.revokeObjectURL(url);
       const canvas = document.createElement('canvas');
       let { width, height } = img;
       if (width > maxWidth) {
@@ -23,13 +30,14 @@ function compressImage(file: Blob, maxWidth = 1200, quality = 0.7): Promise<stri
       ctx.drawImage(img, 0, 0, width, height);
       resolve(canvas.toDataURL('image/jpeg', quality));
     };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Impossible de charger l\'image')); };
-    img.src = url;
+    img.onerror = () => reject(new Error('Impossible de charger l\'image'));
+    img.src = dataUrl;
   });
 }
 
 export function PhotoCapture({ value, onChange }: PhotoCaptureProps) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -37,11 +45,13 @@ export function PhotoCapture({ value, onChange }: PhotoCaptureProps) {
     const file = e.target.files?.[0];
     if (!file) return;
     setLoading(true);
+    setError('');
     try {
-      const compressed = await compressImage(file);
+      const dataUrl = await readFileAsDataURL(file);
+      const compressed = await compressImage(dataUrl);
       onChange(compressed);
-    } catch {
-      // ignore
+    } catch (err: any) {
+      setError(err.message || 'Erreur lors du traitement de la photo');
     } finally {
       setLoading(false);
     }
@@ -75,6 +85,7 @@ export function PhotoCapture({ value, onChange }: PhotoCaptureProps) {
           Compression...
         </div>
       )}
+      {error && <p className="text-xs text-red-400">{error}</p>}
       <div className="flex gap-3">
         <button
           type="button"

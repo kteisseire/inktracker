@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef } from 'react';
 
 interface PhotoCaptureProps {
   value: string | null;
@@ -29,98 +29,24 @@ function compressImage(file: Blob, maxWidth = 1200, quality = 0.7): Promise<stri
 }
 
 export function PhotoCapture({ value, onChange }: PhotoCaptureProps) {
-  const [showCamera, setShowCamera] = useState(false);
-  const [cameraError, setCameraError] = useState('');
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const stopCamera = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
-    }
-    setShowCamera(false);
-  }, []);
-
-  const startCamera = async () => {
-    setCameraError('');
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } },
-      });
-      streamRef.current = stream;
-      setShowCamera(true);
-      // Wait for video element to be in DOM
-      requestAnimationFrame(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      });
-    } catch {
-      setCameraError('Accès à la caméra refusé. Vérifiez les permissions.');
-    }
-  };
-
-  const takePhoto = async () => {
-    if (!videoRef.current) return;
-    const video = videoRef.current;
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d')!;
-    ctx.drawImage(video, 0, 0);
-    stopCamera();
-
-    canvas.toBlob(async (blob) => {
-      if (!blob) return;
-      const compressed = await compressImage(blob);
-      onChange(compressed);
-    }, 'image/jpeg', 0.9);
-  };
+  const [loading, setLoading] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setLoading(true);
     try {
       const compressed = await compressImage(file);
       onChange(compressed);
     } catch {
       // ignore
+    } finally {
+      setLoading(false);
     }
     e.target.value = '';
   };
-
-  if (showCamera) {
-    return (
-      <div className="space-y-3">
-        <div className="relative rounded-xl overflow-hidden bg-black aspect-[4/3]">
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="w-full h-full object-cover"
-          />
-        </div>
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={takePhoto}
-            className="flex-1 ink-btn-primary flex items-center justify-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <circle cx="12" cy="12" r="10" />
-            </svg>
-            Prendre la photo
-          </button>
-          <button type="button" onClick={stopCamera} className="ink-btn-secondary">
-            Annuler
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   if (value) {
     return (
@@ -143,11 +69,16 @@ export function PhotoCapture({ value, onChange }: PhotoCaptureProps) {
 
   return (
     <div className="space-y-2">
-      {cameraError && <p className="text-xs text-red-400">{cameraError}</p>}
+      {loading && (
+        <div className="flex items-center gap-2 text-xs text-ink-400">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gold-400"></div>
+          Compression...
+        </div>
+      )}
       <div className="flex gap-3">
         <button
           type="button"
-          onClick={startCamera}
+          onClick={() => cameraInputRef.current?.click()}
           className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all border-2 border-ink-700/50 text-ink-400 hover:border-gold-500/30 hover:text-gold-400"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -158,7 +89,7 @@ export function PhotoCapture({ value, onChange }: PhotoCaptureProps) {
         </button>
         <button
           type="button"
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => galleryInputRef.current?.click()}
           className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all border-2 border-ink-700/50 text-ink-400 hover:border-gold-500/30 hover:text-gold-400"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -167,8 +98,18 @@ export function PhotoCapture({ value, onChange }: PhotoCaptureProps) {
           Galerie
         </button>
       </div>
+      {/* Camera: capture="environment" opens native camera app directly */}
       <input
-        ref={fileInputRef}
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+      {/* Gallery: no capture attribute = opens file picker / gallery */}
+      <input
+        ref={galleryInputRef}
         type="file"
         accept="image/*"
         onChange={handleFileChange}

@@ -60,6 +60,24 @@ export async function getEventInfo(req: Request, res: Response) {
         if (phase.round_type === 'SWISS' && Array.isArray(phase.rounds)) {
           result.swissRounds = phase.rounds.length;
         }
+        if (phase.round_type === 'SINGLE_ELIMINATION' && Array.isArray(phase.rounds) && phase.rounds.length > 0) {
+          // The number of matches in the first elimination round tells us the top cut size
+          // e.g. 4 matches = Top 8, 2 matches = Top 4, 8 matches = Top 16, 16 matches = Top 32
+          const firstRound = phase.rounds[0];
+          if (firstRound?.id) {
+            const matchCount = phase.rounds.length; // number of rounds = log2(topCut)
+            // Top cut = 2^(number of elimination rounds) × first round match count...
+            // Simpler: first elimination round has topCut/2 matches
+            // But we don't have match counts here, so use the number of elimination rounds
+            // 1 round = Top 2 (not a thing), 2 rounds = Top 4, 3 rounds = Top 8, 4 rounds = Top 16, 5 rounds = Top 32
+            const elimRounds = phase.rounds.length;
+            const topCutSize = Math.pow(2, elimRounds);
+            if (topCutSize === 4) result.topCut = 'TOP4';
+            else if (topCutSize === 8) result.topCut = 'TOP8';
+            else if (topCutSize === 16) result.topCut = 'TOP16';
+            else if (topCutSize === 32) result.topCut = 'TOP32';
+          }
+        }
       }
     }
 

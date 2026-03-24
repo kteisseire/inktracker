@@ -9,6 +9,7 @@ export interface RavensburgerEventInfo {
   eventType: string | null;
   status: string | null;
   swissRounds?: number;
+  topCut?: string;
 }
 
 export interface EventStanding {

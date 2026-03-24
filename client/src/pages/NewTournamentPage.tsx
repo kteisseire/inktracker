@@ -172,6 +172,9 @@ export function NewTournamentPage() {
       if (info.swissRounds) {
         setSwissRounds(String(info.swissRounds));
       }
+      if (info.topCut) {
+        setTopCut(info.topCut as any);
+      }
       if (info.format && format === 'BO3') {
         setFormat(info.format);
       }
@@ -198,6 +201,9 @@ export function NewTournamentPage() {
       }
       if (info.swissRounds) {
         setSwissRounds(String(info.swissRounds));
+      }
+      if (info.topCut) {
+        setTopCut(info.topCut as any);
       }
       setEventFetchStatus('success');
     } catch {

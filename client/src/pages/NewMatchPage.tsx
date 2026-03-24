@@ -8,6 +8,7 @@ import { listMyTeams } from '../api/team.api.js';
 import { InkColorPicker } from '../components/ui/InkColorPicker.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
 import { LoreCounter } from '../components/LoreCounter.js';
+import { PhotoCapture } from '../components/ui/PhotoCapture.js';
 import type { LoreResult, LoreState } from '../components/LoreCounter.js';
 import type { InkColor, MatchResult, Format, Round, ScoutReport, Team } from '@lorcana/shared';
 
@@ -64,6 +65,7 @@ export function NewMatchPage() {
   const [opponentName, setOpponentName] = useState('');
   const [opponentDeckColors, setOpponentDeckColors] = useState<InkColor[]>([]);
   const [notes, setNotes] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [tossWinner, setTossWinner] = useState<boolean | null>(null);
   const [games, setGames] = useState<GameInput[]>([]);
   const [loreCounterGameIndex, setLoreCounterGameIndex] = useState<number | null>(null);
@@ -113,6 +115,7 @@ export function NewMatchPage() {
           setOpponentName(round.opponentName || '');
           setOpponentDeckColors(round.opponentDeckColors as InkColor[]);
           setNotes(round.notes || '');
+          setPhotoUrl(round.photoUrl || null);
           // Detect format override from game count
           const gameCount = (round.games || []).length;
           const editFmt = gameCount > 3 ? 'BO5' : gameCount > 1 ? 'BO3' : fmt;
@@ -236,6 +239,7 @@ export function NewMatchPage() {
       opponentDeckColors: opponentDeckColors.length > 0 ? opponentDeckColors : undefined,
       result: playedGames.length > 0 ? computeRoundResult() : 'DRAW' as MatchResult,
       notes: notes || undefined,
+      photoUrl: photoUrl ?? undefined,
       games: playedGames.length > 0 ? playedGames.map((g) => {
         const actualIndex = games.indexOf(g);
         const wentFirst = getWentFirst(actualIndex);
@@ -517,6 +521,11 @@ export function NewMatchPage() {
           <label className="ink-label">Notes</label>
           <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
             placeholder="Notes sur la ronde..." className="ink-input resize-none" />
+        </div>
+
+        <div>
+          <label className="ink-label mb-2">Photo</label>
+          <PhotoCapture value={photoUrl} onChange={setPhotoUrl} />
         </div>
 
         <div className="flex gap-3 pt-2">

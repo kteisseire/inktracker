@@ -22,6 +22,7 @@ export interface Round {
   opponentDeckColors: InkColor[];
   result: MatchResult;
   notes: string | null;
+  photoUrl: string | null;
   createdAt: string;
   updatedAt: string;
   games?: Game[];
@@ -34,6 +35,7 @@ export interface CreateRoundRequest {
   opponentDeckColors?: InkColor[];
   result: MatchResult;
   notes?: string;
+  photoUrl?: string;
   games?: CreateGameInput[];
 }
 
@@ -46,6 +48,7 @@ export interface CreateGameInput {
   notes?: string;
 }
 
-export interface UpdateRoundRequest extends Partial<Omit<CreateRoundRequest, 'games'>> {
+export interface UpdateRoundRequest extends Partial<Omit<CreateRoundRequest, 'games' | 'photoUrl'>> {
   games?: CreateGameInput[];
+  photoUrl?: string | null;
 }

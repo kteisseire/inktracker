@@ -31,10 +31,11 @@ export async function createRound(req: AuthRequest, res: Response) {
   }
 
   const { games = [], ...roundData } = req.body;
+  const { roundNumber, isTopCut, opponentName, opponentDeckColors, result, notes, photoUrl } = roundData;
 
   const round = await prisma.round.create({
     data: {
-      ...roundData,
+      roundNumber, isTopCut, opponentName, opponentDeckColors, result, notes, photoUrl,
       tournamentId: req.params.tournamentId,
       ...(games.length > 0 && { games: { create: games } }),
     },
@@ -59,11 +60,18 @@ export async function updateRound(req: AuthRequest, res: Response) {
   }
 
   const { games, ...roundData } = req.body;
+  const { roundNumber: rn, isTopCut: tc, opponentName: on, opponentDeckColors: odc, result: rs, notes: nt, photoUrl: pu } = roundData;
 
   const round = await prisma.round.update({
     where: { id: req.params.id },
     data: {
-      ...roundData,
+      ...(rn !== undefined && { roundNumber: rn }),
+      ...(tc !== undefined && { isTopCut: tc }),
+      ...(on !== undefined && { opponentName: on }),
+      ...(odc !== undefined && { opponentDeckColors: odc }),
+      ...(rs !== undefined && { result: rs }),
+      ...(nt !== undefined && { notes: nt }),
+      ...(pu !== undefined && { photoUrl: pu }),
       ...(games && {
         games: {
           deleteMany: {},

@@ -19,6 +19,7 @@ export const createRoundSchema = z.object({
   opponentDeckColors: z.array(inkColorEnum).max(3).default([]),
   result: resultEnum,
   notes: z.string().optional(),
+  photoUrl: z.string().max(5_000_000).optional(),
   games: z.array(gameInputSchema).default([]),
 });
 
@@ -29,5 +30,6 @@ export const updateRoundSchema = z.object({
   opponentDeckColors: z.array(inkColorEnum).max(3).optional(),
   result: resultEnum.optional(),
   notes: z.string().optional(),
+  photoUrl: z.string().max(5_000_000).nullable().optional(),
   games: z.array(gameInputSchema).optional(),
 });

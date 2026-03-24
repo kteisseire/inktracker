@@ -2161,7 +2161,38 @@ function RoundCard({ round, tournamentId, format, onDelete, scoutMap, possibleDe
         </div>
       )}
       {round.notes && <div className="px-3 sm:px-4 py-2 text-xs text-ink-500 border-t border-ink-800/50">{round.notes}</div>}
+      {round.photoUrl && <RoundPhoto photoUrl={round.photoUrl} />}
     </div>
+  );
+}
+
+function RoundPhoto({ photoUrl }: { photoUrl: string }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <>
+      <div
+        className="px-3 sm:px-4 py-2 border-t border-ink-800/50 cursor-pointer"
+        onClick={(e) => { e.stopPropagation(); setExpanded(true); }}
+      >
+        <img src={photoUrl} alt="Photo de ronde" className="w-16 h-16 object-cover rounded-lg hover:opacity-80 transition-opacity" />
+      </div>
+      {expanded && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={(e) => { e.stopPropagation(); setExpanded(false); }}
+        >
+          <img src={photoUrl} alt="Photo de ronde" className="max-w-full max-h-full object-contain rounded-xl" />
+          <button
+            className="absolute top-4 right-4 p-2 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+            onClick={(e) => { e.stopPropagation(); setExpanded(false); }}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 

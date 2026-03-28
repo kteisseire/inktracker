@@ -118,7 +118,11 @@ export async function getEventRounds(req: Request, res: Response) {
       try {
         const cached = await prisma.eventCache.findUnique({ where: { eventId } });
         if (cached) {
-          return res.json(cached.data);
+          const cachedData = cached.data as any;
+          // Don't serve empty cache — re-fetch if rounds were not yet available when cached
+          if (Array.isArray(cachedData?.rounds) && cachedData.rounds.length > 0) {
+            return res.json(cached.data);
+          }
         }
       } catch (cacheErr) {
         console.warn('Cache read failed (table may not exist):', (cacheErr as any).message);
@@ -188,8 +192,8 @@ export async function getEventRounds(req: Request, res: Response) {
 
     const payload = { eventId, rounds: roundsData };
 
-    // Save to cache (graceful — skip if table doesn't exist)
-    try {
+    // Save to cache only if we got actual data (graceful — skip if table doesn't exist)
+    if (roundsData.length > 0) try {
       await prisma.eventCache.upsert({
         where: { eventId },
         update: { data: payload as any, updatedAt: new Date() },

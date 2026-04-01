@@ -59,7 +59,7 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Home: landing or dashboard */}
-      <Route path="/" element={user ? <Layout><DashboardPage /></Layout> : <Layout><LandingPage /></Layout>} />
+      <Route path="/" element={user ? <Navigate to="/tournaments" replace /> : <Layout><LandingPage /></Layout>} />
 
       {/* Auth pages (with header) */}
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Layout><LoginPage /></Layout>} />

@@ -292,6 +292,7 @@ interface LoreCounterProps {
 }
 
 const THEME_STORAGE_KEY = 'glimmerlog_lore_theme';
+const TIMER_SIDE_KEY = 'glimmerlog_timer_side';
 
 // ─── Composant principal ───────────────────────────────────────────────────
 export function LoreCounter({ onClose, initialState, timerState, onTimerChange }: LoreCounterProps) {
@@ -304,6 +305,7 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
   const [editingTimer, setEditingTimer] = useState(false);
   const [timerInput, setTimerInput] = useState('50:00');
   const [themeId, setThemeId] = useState(() => localStorage.getItem(THEME_STORAGE_KEY) ?? 'default');
+  const [timerSide, setTimerSide] = useState<'left' | 'right'>(() => (localStorage.getItem(TIMER_SIDE_KEY) as 'left' | 'right') ?? 'right');
   const [winner, setWinner] = useState<'me' | 'opponent' | null>(initialState?.winner ?? null);
   const winnerRef = useRef<'me' | 'opponent' | null>(initialState?.winner ?? null);
   const myLoreRef = useRef(initialState?.myLore ?? 0);
@@ -452,25 +454,46 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
               )}
             </button>
 
-            {/* Timer display — clic pour éditer quand en pause */}
+            <div className="w-px h-6 bg-white/10 mx-0.5" />
+
+            {/* Burger menu */}
+            <button onClick={() => setShowMenu(true)} className="p-3 text-white/30 hover:text-white/70 transition-colors hover:bg-white/5" aria-label="Menu">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Timer vertical — côté gauche ou droit, lisible par les deux joueurs */}
+        <div
+          className="absolute top-0 bottom-0 z-10 flex items-center justify-center pointer-events-none"
+          style={{ [timerSide]: 0, width: '2.5rem' }}
+        >
+          <div
+            className="flex flex-col items-center gap-2 pointer-events-auto"
+            style={{ transform: timerSide === 'left' ? 'rotate(180deg)' : 'none' }}
+          >
+            {/* Affichage du temps — clic pour éditer quand en pause */}
             {editingTimer ? (
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                const parts = timerInput.split(':');
-                const mins = parseInt(parts[0] ?? '0', 10);
-                const secs = parseInt(parts[1] ?? '0', 10);
-                const total = (isNaN(mins) ? 0 : mins) * 60 + (isNaN(secs) ? 0 : secs);
-                if (total > 0) { setTimerSeconds(total); setTimerRunning(false); }
-                setEditingTimer(false);
-              }} className="flex items-center px-2">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const parts = timerInput.split(':');
+                  const mins = parseInt(parts[0] ?? '0', 10);
+                  const secs = parseInt(parts[1] ?? '0', 10);
+                  const total = (isNaN(mins) ? 0 : mins) * 60 + (isNaN(secs) ? 0 : secs);
+                  if (total > 0) { setTimerSeconds(total); setTimerRunning(false); }
+                  setEditingTimer(false);
+                }}
+                style={{ writingMode: 'vertical-rl' }}
+              >
                 <input
                   autoFocus
                   type="text"
                   value={timerInput}
                   onChange={(e) => setTimerInput(e.target.value)}
                   onBlur={() => setEditingTimer(false)}
-                  className="font-mono text-base font-semibold tabular-nums bg-transparent text-center outline-none border-b border-white/30 w-16"
-                  style={{ color: timerColor }}
+                  className="font-mono font-bold tabular-nums bg-transparent text-center outline-none border-b border-white/30"
+                  style={{ color: timerColor, fontSize: '1rem', width: '4.5rem', writingMode: 'vertical-rl' }}
                   placeholder="mm:ss"
                 />
               </form>
@@ -484,25 +507,28 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
                     setTimerRunning(false);
                   }
                 }}
-                className="px-3 py-2 transition-colors hover:bg-white/5"
+                className="transition-colors"
                 aria-label="Modifier le timer"
+                style={{ writingMode: 'vertical-rl', letterSpacing: '0.05em' }}
               >
-                <span className="font-mono text-base font-semibold tabular-nums" style={{ color: timerColor, minWidth: '3.8rem', display: 'inline-block', textAlign: 'center' }}>{formatTimer(timerSeconds)}</span>
+                <span
+                  className="font-mono font-bold tabular-nums"
+                  style={{ color: timerColor, fontSize: 'clamp(0.85rem, 3vw, 1.1rem)' }}
+                >
+                  {formatTimer(timerSeconds)}
+                </span>
               </button>
             )}
-
+            {/* Reset timer si en pause et ≠ default */}
             {!timerRunning && !editingTimer && timerSeconds !== DEFAULT_TIMER && (
-              <button onClick={() => { setTimerSeconds(DEFAULT_TIMER); }} className="p-2 text-white/25 hover:text-white/60 transition-colors hover:bg-white/5" aria-label="Réinitialiser le timer">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              <button
+                onClick={() => setTimerSeconds(DEFAULT_TIMER)}
+                className="text-white/25 hover:text-white/60 transition-colors"
+                aria-label="Réinitialiser le timer"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
               </button>
             )}
-
-            <div className="w-px h-6 bg-white/10 mx-0.5" />
-
-            {/* Burger menu */}
-            <button onClick={() => setShowMenu(true)} className="p-3 text-white/30 hover:text-white/70 transition-colors hover:bg-white/5" aria-label="Menu">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-            </button>
           </div>
         </div>
 
@@ -544,6 +570,23 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
               <button onClick={() => { resetAll(); setShowMenu(false); }} className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all hover:bg-white/8 text-left" style={{ background: 'rgba(255,255,255,0.04)' }}>
                 <svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                 <p className="text-sm font-medium text-white/80">Réinitialiser le score</p>
+              </button>
+              {/* Côté du timer */}
+              <button
+                onClick={() => {
+                  const next = timerSide === 'right' ? 'left' : 'right';
+                  setTimerSide(next);
+                  localStorage.setItem(TIMER_SIDE_KEY, next);
+                  setShowMenu(false);
+                }}
+                className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all hover:bg-white/8 text-left"
+                style={{ background: 'rgba(255,255,255,0.04)' }}
+              >
+                <svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ transform: timerSide === 'right' ? 'scaleX(-1)' : 'none' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12M8 12h12M8 17h12M4 7h.01M4 12h.01M4 17h.01" /></svg>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-white/80">Timer — côté {timerSide === 'right' ? 'droit' : 'gauche'}</p>
+                  <p className="text-xs text-white/30">Basculer à {timerSide === 'right' ? 'gauche' : 'droite'}</p>
+                </div>
               </button>
             </div>
             <div className="h-6" />

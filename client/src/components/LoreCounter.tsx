@@ -291,6 +291,8 @@ interface LoreCounterProps {
   onTimerChange?: (state: TimerState) => void;
 }
 
+const THEME_STORAGE_KEY = 'glimmerlog_lore_theme';
+
 // ─── Composant principal ───────────────────────────────────────────────────
 export function LoreCounter({ onClose, initialState, timerState, onTimerChange }: LoreCounterProps) {
   const [myLore, setMyLore] = useState(initialState?.myLore ?? 0);
@@ -298,7 +300,10 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
   const [rawHistory, setRawHistory] = useState<RawLoreEntry[]>(initialState?.history ?? []);
   const [showHistory, setShowHistory] = useState(false);
   const [showThemes, setShowThemes] = useState(false);
-  const [themeId, setThemeId] = useState('default');
+  const [showMenu, setShowMenu] = useState(false);
+  const [editingTimer, setEditingTimer] = useState(false);
+  const [timerInput, setTimerInput] = useState('50:00');
+  const [themeId, setThemeId] = useState(() => localStorage.getItem(THEME_STORAGE_KEY) ?? 'default');
   const [winner, setWinner] = useState<'me' | 'opponent' | null>(initialState?.winner ?? null);
   const winnerRef = useRef<'me' | 'opponent' | null>(initialState?.winner ?? null);
   const myLoreRef = useRef(initialState?.myLore ?? 0);
@@ -425,51 +430,78 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
         </div>
 
         {/* Séparateur */}
-        <div className="relative flex items-center justify-center h-14 shrink-0">
+        <div className="relative flex items-center justify-center h-20 shrink-0">
           <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px" style={{ background: theme.separatorGlow }} />
           <div className="relative z-10 flex items-center gap-0 rounded-full overflow-hidden" style={{ background: theme.pill, border: `1px solid ${theme.pillBorder}` }}>
 
             {/* Fermer */}
-            <button onClick={handleClose} className="p-2.5 text-white/30 hover:text-white/70 transition-colors hover:bg-white/5" aria-label="Fermer">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-            {/* Historique */}
-            <button onClick={() => setShowHistory(!showHistory)} className="p-2.5 text-white/30 hover:text-white/70 transition-colors hover:bg-white/5" aria-label="Historique">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            </button>
-            {/* Thèmes */}
-            <button onClick={() => setShowThemes(!showThemes)} className="p-2.5 text-white/30 hover:text-white/70 transition-colors hover:bg-white/5" aria-label="Thème">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+            <button onClick={handleClose} className="p-3 text-white/30 hover:text-white/70 transition-colors hover:bg-white/5" aria-label="Fermer">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
 
-            <div className="w-px h-5 bg-white/10 mx-0.5" />
+            <div className="w-px h-6 bg-white/10 mx-0.5" />
 
-            {/* Timer */}
-            <button onClick={() => !timerExpired && setTimerRunning(r => !r)} className="flex items-center gap-1.5 px-2 py-1.5 transition-colors hover:bg-white/5" aria-label={timerRunning ? 'Pause' : 'Démarrer'}>
+            {/* Play/Pause */}
+            <button onClick={() => !timerExpired && setTimerRunning(r => !r)} className="p-3 transition-colors hover:bg-white/5" aria-label={timerRunning ? 'Pause' : 'Démarrer'}>
               {timerExpired ? (
-                <svg className="w-3.5 h-3.5" fill="none" stroke="#d85b5b" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <svg className="w-5 h-5" fill="none" stroke="#d85b5b" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               ) : timerRunning ? (
-                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
               ) : (
-                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M8 5v14l11-7z" /></svg>
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M8 5v14l11-7z" /></svg>
               )}
-              <span className="font-mono text-sm font-semibold tabular-nums" style={{ color: timerColor, minWidth: '3.5rem', textAlign: 'center' }}>{formatTimer(timerSeconds)}</span>
             </button>
-            {!timerRunning && timerSeconds !== DEFAULT_TIMER && (
-              <button onClick={() => { setTimerSeconds(DEFAULT_TIMER); setTimerRunning(false); }} className="p-2 text-white/30 hover:text-white/70 transition-colors hover:bg-white/5" aria-label="Réinitialiser le timer">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+
+            {/* Timer display — clic pour éditer quand en pause */}
+            {editingTimer ? (
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const parts = timerInput.split(':');
+                const mins = parseInt(parts[0] ?? '0', 10);
+                const secs = parseInt(parts[1] ?? '0', 10);
+                const total = (isNaN(mins) ? 0 : mins) * 60 + (isNaN(secs) ? 0 : secs);
+                if (total > 0) { setTimerSeconds(total); setTimerRunning(false); }
+                setEditingTimer(false);
+              }} className="flex items-center px-2">
+                <input
+                  autoFocus
+                  type="text"
+                  value={timerInput}
+                  onChange={(e) => setTimerInput(e.target.value)}
+                  onBlur={() => setEditingTimer(false)}
+                  className="font-mono text-base font-semibold tabular-nums bg-transparent text-center outline-none border-b border-white/30 w-16"
+                  style={{ color: timerColor }}
+                  placeholder="mm:ss"
+                />
+              </form>
+            ) : (
+              <button
+                onClick={() => {
+                  if (!timerRunning) {
+                    setTimerInput(formatTimer(timerSeconds));
+                    setEditingTimer(true);
+                  } else {
+                    setTimerRunning(false);
+                  }
+                }}
+                className="px-3 py-2 transition-colors hover:bg-white/5"
+                aria-label="Modifier le timer"
+              >
+                <span className="font-mono text-base font-semibold tabular-nums" style={{ color: timerColor, minWidth: '3.8rem', display: 'inline-block', textAlign: 'center' }}>{formatTimer(timerSeconds)}</span>
               </button>
             )}
 
-            <div className="w-px h-5 bg-white/10 mx-0.5" />
+            {!timerRunning && !editingTimer && timerSeconds !== DEFAULT_TIMER && (
+              <button onClick={() => { setTimerSeconds(DEFAULT_TIMER); }} className="p-2 text-white/25 hover:text-white/60 transition-colors hover:bg-white/5" aria-label="Réinitialiser le timer">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              </button>
+            )}
 
-            {/* Annuler */}
-            <button onClick={undoLast} disabled={rawHistory.length === 0} className="p-2.5 text-white/30 hover:text-white/70 transition-colors hover:bg-white/5 disabled:opacity-20" aria-label="Annuler">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a5 5 0 015 5v2M3 10l4-4m-4 4l4 4" /></svg>
-            </button>
-            {/* Reset score */}
-            <button onClick={resetAll} className="p-2.5 text-white/30 hover:text-white/70 transition-colors hover:bg-white/5" aria-label="Réinitialiser">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            <div className="w-px h-6 bg-white/10 mx-0.5" />
+
+            {/* Burger menu */}
+            <button onClick={() => setShowMenu(true)} className="p-3 text-white/30 hover:text-white/70 transition-colors hover:bg-white/5" aria-label="Menu">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
             </button>
           </div>
         </div>
@@ -478,6 +510,46 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
           <PlayerSide label="Moi" lore={myLore} accent={theme.meAccent} onChangeLore={(d) => changeLore('me', d)} disabled={!!winner} />
         </div>
       </div>
+
+      {/* Burger menu panel */}
+      {showMenu && (
+        <div className="absolute inset-0 z-30 flex flex-col justify-end" onClick={() => setShowMenu(false)} style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
+          <div className="rounded-t-2xl overflow-hidden" style={{ background: theme.pill, border: `1px solid ${theme.pillBorder}`, borderBottom: 'none' }} onClick={e => e.stopPropagation()}>
+            <div className="w-10 h-1 rounded-full bg-white/20 mx-auto mt-3 mb-1" />
+            <div className="px-4 py-3 space-y-1">
+              {/* Thème */}
+              <button onClick={() => { setShowMenu(false); setShowThemes(true); }} className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all hover:bg-white/8 text-left" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                <svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-white/80">Thème</p>
+                  <p className="text-xs text-white/30">{THEMES.find(t => t.id === themeId)?.name}</p>
+                </div>
+                <svg className="w-4 h-4 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </button>
+              {/* Historique */}
+              <button onClick={() => { setShowMenu(false); setShowHistory(true); }} className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all hover:bg-white/8 text-left" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                <svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-white/80">Historique</p>
+                  <p className="text-xs text-white/30">{rawHistory.length} action{rawHistory.length !== 1 ? 's' : ''}</p>
+                </div>
+                <svg className="w-4 h-4 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </button>
+              {/* Annuler dernière action */}
+              <button onClick={() => { undoLast(); setShowMenu(false); }} disabled={rawHistory.length === 0} className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all hover:bg-white/8 text-left disabled:opacity-30" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                <svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a5 5 0 015 5v2M3 10l4-4m-4 4l4 4" /></svg>
+                <p className="text-sm font-medium text-white/80">Annuler la dernière action</p>
+              </button>
+              {/* Réinitialiser le score */}
+              <button onClick={() => { resetAll(); setShowMenu(false); }} className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all hover:bg-white/8 text-left" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                <svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                <p className="text-sm font-medium text-white/80">Réinitialiser le score</p>
+              </button>
+            </div>
+            <div className="h-6" />
+          </div>
+        </div>
+      )}
 
       {/* Panneau thèmes */}
       {showThemes && (
@@ -493,7 +565,11 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
               {THEMES.map(t => (
                 <button
                   key={t.id}
-                  onClick={() => { setThemeId(t.id); setShowThemes(false); }}
+                  onClick={() => {
+                    setThemeId(t.id);
+                    localStorage.setItem(THEME_STORAGE_KEY, t.id);
+                    setShowThemes(false);
+                  }}
                   className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left"
                   style={{
                     background: themeId === t.id ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)',

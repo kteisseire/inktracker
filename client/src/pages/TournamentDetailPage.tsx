@@ -153,8 +153,12 @@ export function TournamentDetailPage() {
 
   const handleDeleteTournament = async () => {
     if (!confirm('Supprimer ce tournoi et toutes ses rondes ?')) return;
-    await deleteTournament(id!);
-    navigate('/tournaments');
+    try {
+      await deleteTournament(id!);
+      navigate('/tournaments');
+    } catch (err: any) {
+      alert(`Erreur lors de la suppression : ${err?.response?.data?.error || err?.message || 'Erreur inconnue'}`);
+    }
   };
 
   const handleShare = async () => {

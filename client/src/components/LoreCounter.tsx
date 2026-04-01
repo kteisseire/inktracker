@@ -323,19 +323,21 @@ function PlayerSide({
           >
             {lore}
           </span>
-          {/* Barre de progression ornementale */}
-          <div className="flex gap-1">
+          {/* Barre de progression — losanges Lorcana */}
+          <div className="flex gap-0.5 items-center flex-wrap justify-center max-w-[260px]">
             {Array.from({ length: MAX_LORE }).map((_, i) => (
-              <div
-                key={i}
-                className="rounded-full transition-all duration-200"
-                style={{
-                  width: 6,
-                  height: i < lore ? 8 : 4,
-                  background: i < lore ? accent : `${accent}25`,
-                  alignSelf: 'flex-end',
-                }}
-              />
+              <svg key={i} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25.83 32" className="transition-all duration-200" style={{ width: 10, height: 13 }}>
+                {i < lore ? (
+                  /* Losange actif : contour + remplissage intérieur */
+                  <>
+                    <path d="M12.91 0 0 16l12.91 16 12.91-16L12.91 0ZM1.28 16 12.91 1.59 24.54 16 12.91 30.41 1.28 16Z" fill={accent} />
+                    <path d="m21.99 16-9.08 11.25L3.83 16l9.08-11.25L21.99 16z" fill={accent} />
+                  </>
+                ) : (
+                  /* Losange inactif : silhouette */
+                  <path d="m12.91 0 12.91 16-12.91 16L0 16 12.91 0Z" fill={`${accent}25`} />
+                )}
+              </svg>
             ))}
           </div>
         </div>

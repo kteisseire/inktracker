@@ -156,7 +156,7 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
     setMyLore(0); setOpponentLore(0);
     myLoreRef.current = 0; opponentLoreRef.current = 0;
     setRawHistory([]); setWinner(null); winnerRef.current = null;
-    setTimerSeconds(DEFAULT_TIMER); setTimerRunning(false);
+    setTimerSeconds(DEFAULT_TIMER);
     setShowMenu(false);
   };
 

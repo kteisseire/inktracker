@@ -67,12 +67,19 @@ export interface LoreResult {
   state: LoreState;
 }
 
+export interface TimerState {
+  seconds: number;
+  running: boolean;
+}
+
 interface LoreCounterProps {
   onClose: (result: LoreResult) => void;
   initialState?: LoreState;
+  timerState?: TimerState;
+  onTimerChange?: (state: TimerState) => void;
 }
 
-export function LoreCounter({ onClose, initialState }: LoreCounterProps) {
+export function LoreCounter({ onClose, initialState, timerState, onTimerChange }: LoreCounterProps) {
   const [myLore, setMyLore] = useState(initialState?.myLore ?? 0);
   const [opponentLore, setOpponentLore] = useState(initialState?.opponentLore ?? 0);
   const [rawHistory, setRawHistory] = useState<RawLoreEntry[]>(initialState?.history ?? []);
@@ -83,17 +90,39 @@ export function LoreCounter({ onClose, initialState }: LoreCounterProps) {
   const myLoreRef = useRef(initialState?.myLore ?? 0);
   const opponentLoreRef = useRef(initialState?.opponentLore ?? 0);
 
-  const [timerSeconds, setTimerSeconds] = useState(DEFAULT_TIMER);
-  const [timerRunning, setTimerRunning] = useState(false);
+  // Timer géré par le parent si timerState/onTimerChange fournis, sinon local
+  const [localTimerSeconds, setLocalTimerSeconds] = useState(DEFAULT_TIMER);
+  const [localTimerRunning, setLocalTimerRunning] = useState(false);
+  const timerSeconds = timerState?.seconds ?? localTimerSeconds;
+  const timerRunning = timerState?.running ?? localTimerRunning;
+
+  const setTimerSeconds = (val: number | ((s: number) => number)) => {
+    const next = typeof val === 'function' ? val(timerSeconds) : val;
+    if (onTimerChange) onTimerChange({ seconds: next, running: timerRunning });
+    else setLocalTimerSeconds(next);
+  };
+  const setTimerRunning = (val: boolean | ((r: boolean) => boolean)) => {
+    const next = typeof val === 'function' ? val(timerRunning) : val;
+    if (onTimerChange) onTimerChange({ seconds: timerSeconds, running: next });
+    else setLocalTimerRunning(next);
+  };
+
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerSecondsRef = useRef(timerSeconds);
+  timerSecondsRef.current = timerSeconds;
 
   useEffect(() => {
     if (timerRunning) {
       timerRef.current = setInterval(() => {
-        setTimerSeconds(s => {
-          if (s <= 1) { setTimerRunning(false); return 0; }
-          return s - 1;
-        });
+        const newSeconds = timerSecondsRef.current - 1;
+        if (newSeconds <= 0) {
+          if (onTimerChange) onTimerChange({ seconds: 0, running: false });
+          else { setLocalTimerSeconds(0); setLocalTimerRunning(false); }
+          clearInterval(timerRef.current!);
+        } else {
+          if (onTimerChange) onTimerChange({ seconds: newSeconds, running: true });
+          else setLocalTimerSeconds(newSeconds);
+        }
       }, 1000);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);

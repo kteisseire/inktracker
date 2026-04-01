@@ -70,6 +70,7 @@ export function NewMatchPage() {
   const [games, setGames] = useState<GameInput[]>([]);
   const [loreCounterGameIndex, setLoreCounterGameIndex] = useState<number | null>(null);
   const [loreStates, setLoreStates] = useState<Record<number, LoreState>>({});
+  const [boTimer, setBoTimer] = useState<{ seconds: number; running: boolean }>({ seconds: 50 * 60, running: false });
 
   // Scouting
   const [eventId, setEventId] = useState<string | null>(null);
@@ -544,6 +545,8 @@ export function NewMatchPage() {
         <LoreCounter
           onClose={handleLoreResult}
           initialState={loreStates[loreCounterGameIndex]}
+          timerState={boTimer}
+          onTimerChange={setBoTimer}
         />
       )}
     </div>

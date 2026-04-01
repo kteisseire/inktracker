@@ -142,16 +142,6 @@ export function LoreCounter({ onClose, initialState }: LoreCounterProps) {
         ))}
       </div>
 
-      {/* Bouton fermer — coin haut gauche, discret */}
-      <button
-        onClick={handleClose}
-        className="absolute top-3 left-3 z-20 p-2 rounded-full bg-white/5 text-white/30 hover:text-white/60 hover:bg-white/10 transition-all"
-        aria-label="Fermer"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
 
       {/* Winner overlay */}
       {winner && (
@@ -185,10 +175,28 @@ export function LoreCounter({ onClose, initialState }: LoreCounterProps) {
           <PlayerSide label="Adversaire" lore={opponentLore} color="ruby" onChangeLore={(d) => changeLore('opponent', d)} disabled={!!winner} />
         </div>
 
-        {/* Séparateur central ornemental */}
-        <div className="relative flex items-center justify-center h-10 shrink-0" style={{ background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.08), transparent)' }}>
+        {/* Séparateur central — boutons d'action intégrés */}
+        <div className="relative flex items-center justify-center h-12 shrink-0" style={{ background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.08), transparent)' }}>
           <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.3) 30%, rgba(212,175,55,0.5) 50%, rgba(212,175,55,0.3) 70%, transparent 100%)' }} />
-          <span className="relative z-10 text-gold-500/60 text-sm px-3" style={{ background: 'radial-gradient(ellipse at 50% 50%, #1a1035 0%, #0c0a14 100%)' }}>✦</span>
+          <div className="relative z-10 flex items-center gap-1 px-2 py-1 rounded-full" style={{ background: '#0f0c1e', border: '1px solid rgba(212,175,55,0.2)' }}>
+            {/* Fermer */}
+            <button onClick={handleClose} className="p-2 text-white/30 hover:text-white/70 transition-colors rounded-full hover:bg-white/5" aria-label="Fermer">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <div className="w-px h-4 bg-white/10" />
+            {/* Historique */}
+            <button onClick={() => { setShowHistory(!showHistory); setShowMenu(false); }} className="p-2 text-white/30 hover:text-white/70 transition-colors rounded-full hover:bg-white/5" aria-label="Historique">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </button>
+            {/* Annuler */}
+            <button onClick={undoLast} disabled={rawHistory.length === 0} className="p-2 text-white/30 hover:text-white/70 transition-colors rounded-full hover:bg-white/5 disabled:opacity-20" aria-label="Annuler">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a5 5 0 015 5v2M3 10l4-4m-4 4l4 4" /></svg>
+            </button>
+            {/* Réinitialiser */}
+            <button onClick={resetAll} className="p-2 text-white/30 hover:text-white/70 transition-colors rounded-full hover:bg-white/5" aria-label="Réinitialiser">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            </button>
+          </div>
         </div>
 
         {/* Moi */}
@@ -197,49 +205,6 @@ export function LoreCounter({ onClose, initialState }: LoreCounterProps) {
         </div>
       </div>
 
-      {/* Barre d'actions flottante en bas — clairement séparée des zones de jeu */}
-      <div className="shrink-0 flex items-center justify-center gap-2 pb-4 pt-2 px-6" style={{ background: 'linear-gradient(to top, rgba(12,10,20,0.95) 70%, transparent)' }}>
-        <button
-          onClick={() => { setShowHistory(!showHistory); setShowMenu(false); }}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-white/40 hover:text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
-          aria-label="Historique"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Historique
-        </button>
-        <button
-          onClick={undoLast}
-          disabled={rawHistory.length === 0}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-white/40 hover:text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-all disabled:opacity-25"
-          aria-label="Annuler"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a5 5 0 015 5v2M3 10l4-4m-4 4l4 4" />
-          </svg>
-          Annuler
-        </button>
-        <button
-          onClick={() => { setShowMenu(!showMenu); setShowHistory(false); }}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-white/40 hover:text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
-          aria-label="Options"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          Options
-        </button>
-
-        {/* Menu options */}
-        {showMenu && (
-          <div className="absolute bottom-16 right-6 z-30 bg-ink-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden">
-            <button onClick={resetAll} className="w-full px-5 py-3.5 text-left text-sm text-ink-200 hover:bg-white/5 transition-colors">
-              Réinitialiser la partie
-            </button>
-          </div>
-        )}
-      </div>
 
       {/* Panneau historique */}
       {showHistory && (

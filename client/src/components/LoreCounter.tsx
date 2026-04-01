@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 
 const MAX_LORE = 20;
-const GROUP_DELAY_MS = 3000; // entries within 3s from the same player are grouped
+const GROUP_DELAY_MS = 3000;
 
 interface RawLoreEntry {
   player: 'me' | 'opponent';
@@ -31,13 +31,11 @@ function groupHistory(raw: RawLoreEntry[]): GroupedLoreEntry[] {
     timestamp: raw[0].timestamp,
     lastTimestamp: raw[0].timestamp,
   };
-
   for (let i = 1; i < raw.length; i++) {
     const entry = raw[i];
     const samePlayer = entry.player === current.player;
     const sameDirection = (entry.delta > 0) === (current.totalDelta > 0);
     const withinDelay = entry.timestamp - current.lastTimestamp < GROUP_DELAY_MS;
-
     if (samePlayer && sameDirection && withinDelay) {
       current.totalDelta += entry.delta;
       current.toValue = entry.newValue;
@@ -46,15 +44,7 @@ function groupHistory(raw: RawLoreEntry[]): GroupedLoreEntry[] {
     } else {
       const { lastTimestamp: _, ...group } = current;
       groups.push(group);
-      current = {
-        player: entry.player,
-        totalDelta: entry.delta,
-        fromValue: entry.newValue - entry.delta,
-        toValue: entry.newValue,
-        count: 1,
-        timestamp: entry.timestamp,
-        lastTimestamp: entry.timestamp,
-      };
+      current = { player: entry.player, totalDelta: entry.delta, fromValue: entry.newValue - entry.delta, toValue: entry.newValue, count: 1, timestamp: entry.timestamp, lastTimestamp: entry.timestamp };
     }
   }
   const { lastTimestamp: _, ...lastGroup } = current;
@@ -89,37 +79,26 @@ export function LoreCounter({ onClose, initialState }: LoreCounterProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [winner, setWinner] = useState<'me' | 'opponent' | null>(initialState?.winner ?? null);
   const winnerRef = useRef<'me' | 'opponent' | null>(initialState?.winner ?? null);
-
   const myLoreRef = useRef(initialState?.myLore ?? 0);
   const opponentLoreRef = useRef(initialState?.opponentLore ?? 0);
 
   const changeLore = useCallback((player: 'me' | 'opponent', delta: number) => {
     if (winnerRef.current) return;
-
     const ref = player === 'me' ? myLoreRef : opponentLoreRef;
     const setter = player === 'me' ? setMyLore : setOpponentLore;
     const prev = ref.current;
     const next = Math.max(0, Math.min(MAX_LORE, prev + delta));
     if (next === prev) return;
-
     ref.current = next;
     setter(next);
     setRawHistory(h => [...h, { player, delta: next - prev, newValue: next, timestamp: Date.now() }]);
-
-    if (next >= MAX_LORE) {
-      winnerRef.current = player;
-      setWinner(player);
-    }
+    if (next >= MAX_LORE) { winnerRef.current = player; setWinner(player); }
   }, []);
 
   const resetAll = () => {
-    setMyLore(0);
-    setOpponentLore(0);
-    myLoreRef.current = 0;
-    opponentLoreRef.current = 0;
-    setRawHistory([]);
-    setWinner(null);
-    winnerRef.current = null;
+    setMyLore(0); setOpponentLore(0);
+    myLoreRef.current = 0; opponentLoreRef.current = 0;
+    setRawHistory([]); setWinner(null); winnerRef.current = null;
     setShowMenu(false);
   };
 
@@ -132,77 +111,66 @@ export function LoreCounter({ onClose, initialState }: LoreCounterProps) {
     ref.current = restored;
     setter(restored);
     setRawHistory(h => h.slice(0, -1));
-    if (winner) {
-      setWinner(null);
-      winnerRef.current = null;
-    }
+    if (winner) { setWinner(null); winnerRef.current = null; }
   };
 
   const handleClose = () => {
-    onClose({
-      myScore: myLore,
-      opponentScore: opponentLore,
-      winner,
-      state: { myLore, opponentLore, history: rawHistory, winner },
-    });
+    onClose({ myScore: myLore, opponentScore: opponentLore, winner, state: { myLore, opponentLore, history: rawHistory, winner } });
   };
 
   const grouped = groupHistory(rawHistory);
 
   return (
-    <div className="fixed inset-0 z-[100] bg-ink-950 flex flex-col select-none" style={{ touchAction: 'manipulation' }}>
-      {/* Top bar */}
-      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-1 py-1 safe-area-top">
-        <button onClick={handleClose} className="text-ink-500 hover:text-ink-300 transition-colors p-3" aria-label="Fermer">
-          <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-        <div className="flex items-center gap-0.5">
-          <button onClick={() => { setShowHistory(!showHistory); setShowMenu(false); }} className="text-ink-500 hover:text-ink-300 transition-colors p-3" aria-label="Historique">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </button>
-          <button onClick={undoLast} disabled={rawHistory.length === 0} className="text-ink-500 hover:text-ink-300 transition-colors p-3 disabled:opacity-30" aria-label="Annuler">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a5 5 0 015 5v2M3 10l4-4m-4 4l4 4" />
-            </svg>
-          </button>
-          <button onClick={() => { setShowMenu(!showMenu); setShowHistory(false); }} className="text-ink-500 hover:text-ink-300 transition-colors p-3" aria-label="Options">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01" />
-            </svg>
-          </button>
-        </div>
+    <div
+      className="fixed inset-0 z-[100] flex flex-col select-none overflow-hidden"
+      style={{ touchAction: 'manipulation', background: 'radial-gradient(ellipse at 50% 50%, #1a1035 0%, #0c0a14 70%)' }}
+    >
+      {/* Étoiles décoratives */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden>
+        {[...Array(24)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full bg-white"
+            style={{
+              width: i % 4 === 0 ? 2 : 1,
+              height: i % 4 === 0 ? 2 : 1,
+              top: `${(i * 37 + 11) % 100}%`,
+              left: `${(i * 53 + 7) % 100}%`,
+              opacity: 0.15 + (i % 5) * 0.07,
+            }}
+          />
+        ))}
       </div>
 
-      {/* Menu dropdown */}
-      {showMenu && (
-        <div className="absolute top-14 right-3 z-20 bg-ink-900 border border-ink-700/50 rounded-xl shadow-lg overflow-hidden">
-          <button onClick={resetAll} className="w-full px-5 py-3.5 text-left text-sm text-ink-200 hover:bg-ink-800/50 transition-colors">
-            Réinitialiser
-          </button>
-        </div>
-      )}
+      {/* Bouton fermer — coin haut gauche, discret */}
+      <button
+        onClick={handleClose}
+        className="absolute top-3 left-3 z-20 p-2 rounded-full bg-white/5 text-white/30 hover:text-white/60 hover:bg-white/10 transition-all"
+        aria-label="Fermer"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
 
       {/* Winner overlay */}
       {winner && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-ink-950/80 backdrop-blur-sm">
-          <div className="text-center space-y-4 px-6">
-            <div className={`font-display text-3xl sm:text-4xl font-bold ${winner === 'me' ? 'text-lorcana-sapphire' : 'text-lorcana-ruby'}`}>
+        <div className="absolute inset-0 z-20 flex items-center justify-center backdrop-blur-sm" style={{ background: 'rgba(12,10,20,0.85)' }}>
+          <div className="text-center space-y-5 px-8">
+            <div className="text-6xl mb-2">{winner === 'me' ? '✨' : '💫'}</div>
+            <div className={`font-display text-4xl font-bold tracking-wide ${winner === 'me' ? 'text-gold-400' : 'text-ink-400'}`}>
               {winner === 'me' ? 'Victoire !' : 'Défaite'}
             </div>
-            <div className="text-ink-400 text-lg font-display">
-              <span className="text-lorcana-sapphire">{myLore}</span>
-              <span className="text-ink-600 mx-2">—</span>
-              <span className="text-lorcana-ruby">{opponentLore}</span>
+            <div className="text-ink-400 text-lg font-display tracking-widest">
+              <span className="text-[#5ba8d8]">{myLore}</span>
+              <span className="text-gold-600/50 mx-3">✦</span>
+              <span className="text-[#d85b5b]">{opponentLore}</span>
             </div>
             <div className="flex gap-3 justify-center pt-2">
-              <button onClick={handleClose} className="ink-btn-primary px-6 py-3 text-base">
+              <button onClick={handleClose} className="px-7 py-3 rounded-xl font-semibold text-ink-950 text-base" style={{ background: 'linear-gradient(135deg, #f5c842, #e8a800)' }}>
                 Valider
               </button>
-              <button onClick={() => { setWinner(null); winnerRef.current = null; }} className="ink-btn-secondary px-5 py-3 text-sm">
+              <button onClick={() => { setWinner(null); winnerRef.current = null; }} className="px-6 py-3 rounded-xl text-ink-300 text-sm bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
                 Continuer
               </button>
             </div>
@@ -210,29 +178,76 @@ export function LoreCounter({ onClose, initialState }: LoreCounterProps) {
         </div>
       )}
 
-      {/* Main counter area */}
+      {/* Zones de jeu */}
       <div className="flex-1 flex flex-col">
-        {/* Opponent side (rotated 180°) */}
+        {/* Adversaire — retourné */}
         <div className="flex-1 flex flex-col rotate-180">
           <PlayerSide label="Adversaire" lore={opponentLore} color="ruby" onChangeLore={(d) => changeLore('opponent', d)} disabled={!!winner} />
         </div>
 
-        {/* Center divider — fine separator only */}
-        <div className="h-px bg-gold-500/20" />
+        {/* Séparateur central ornemental */}
+        <div className="relative flex items-center justify-center h-10 shrink-0" style={{ background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.08), transparent)' }}>
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.3) 30%, rgba(212,175,55,0.5) 50%, rgba(212,175,55,0.3) 70%, transparent 100%)' }} />
+          <span className="relative z-10 text-gold-500/60 text-sm px-3" style={{ background: 'radial-gradient(ellipse at 50% 50%, #1a1035 0%, #0c0a14 100%)' }}>✦</span>
+        </div>
 
-        {/* My side */}
+        {/* Moi */}
         <div className="flex-1 flex flex-col">
           <PlayerSide label="Moi" lore={myLore} color="sapphire" onChangeLore={(d) => changeLore('me', d)} disabled={!!winner} />
         </div>
       </div>
 
-      {/* History panel */}
+      {/* Barre d'actions flottante en bas — clairement séparée des zones de jeu */}
+      <div className="shrink-0 flex items-center justify-center gap-2 pb-4 pt-2 px-6" style={{ background: 'linear-gradient(to top, rgba(12,10,20,0.95) 70%, transparent)' }}>
+        <button
+          onClick={() => { setShowHistory(!showHistory); setShowMenu(false); }}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-white/40 hover:text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
+          aria-label="Historique"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Historique
+        </button>
+        <button
+          onClick={undoLast}
+          disabled={rawHistory.length === 0}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-white/40 hover:text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-all disabled:opacity-25"
+          aria-label="Annuler"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a5 5 0 015 5v2M3 10l4-4m-4 4l4 4" />
+          </svg>
+          Annuler
+        </button>
+        <button
+          onClick={() => { setShowMenu(!showMenu); setShowHistory(false); }}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-white/40 hover:text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
+          aria-label="Options"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Options
+        </button>
+
+        {/* Menu options */}
+        {showMenu && (
+          <div className="absolute bottom-16 right-6 z-30 bg-ink-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden">
+            <button onClick={resetAll} className="w-full px-5 py-3.5 text-left text-sm text-ink-200 hover:bg-white/5 transition-colors">
+              Réinitialiser la partie
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Panneau historique */}
       {showHistory && (
-        <div className="absolute inset-0 z-30 bg-ink-950/95 backdrop-blur-sm flex flex-col">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-ink-800/50">
+        <div className="absolute inset-0 z-30 flex flex-col" style={{ background: 'rgba(12,10,20,0.97)', backdropFilter: 'blur(8px)' }}>
+          <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
             <h2 className="font-display font-bold text-ink-100 tracking-wide">Historique</h2>
-            <button onClick={() => setShowHistory(false)} className="text-ink-500 hover:text-ink-300 transition-colors p-2">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button onClick={() => setShowHistory(false)} className="p-2 text-white/40 hover:text-white/70 transition-colors">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -243,25 +258,19 @@ export function LoreCounter({ onClose, initialState }: LoreCounterProps) {
             ) : (
               <div className="space-y-1.5">
                 {[...grouped].reverse().map((entry, i) => (
-                  <div key={i} className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-ink-900/50">
+                  <div key={i} className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-white/5">
                     <div className="flex items-center gap-2">
                       <span className="text-[11px] text-ink-600 font-mono w-14 shrink-0">
                         {new Date(entry.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                       </span>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                        entry.player === 'me'
-                          ? 'bg-lorcana-sapphire/15 text-lorcana-sapphire'
-                          : 'bg-lorcana-ruby/15 text-lorcana-ruby'
-                      }`}>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${entry.player === 'me' ? 'bg-[#5ba8d8]/15 text-[#5ba8d8]' : 'bg-[#d85b5b]/15 text-[#d85b5b]'}`}>
                         {entry.player === 'me' ? 'Moi' : 'Adv.'}
                       </span>
-                      <span className={`text-sm font-bold ${entry.totalDelta > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      <span className={`text-sm font-bold ${entry.totalDelta > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                         {entry.totalDelta > 0 ? '+' : ''}{entry.totalDelta}
                       </span>
                     </div>
-                    <span className="text-sm text-ink-400 font-medium">
-                      {entry.fromValue} → {entry.toValue}
-                    </span>
+                    <span className="text-sm text-ink-400 font-medium">{entry.fromValue} → {entry.toValue}</span>
                   </div>
                 ))}
               </div>
@@ -282,73 +291,84 @@ function PlayerSide({
   onChangeLore: (delta: number) => void;
   disabled: boolean;
 }) {
-  const bgGradient = color === 'sapphire'
-    ? 'from-lorcana-sapphire/5 to-transparent'
-    : 'from-lorcana-ruby/5 to-transparent';
-
-  const textColor = color === 'sapphire' ? 'text-lorcana-sapphire' : 'text-lorcana-ruby';
-  const glowColor = color === 'sapphire'
-    ? 'drop-shadow-[0_0_25px_rgba(52,152,219,0.3)]'
-    : 'drop-shadow-[0_0_25px_rgba(231,76,60,0.3)]';
-
-  const halfBtn = 'relative flex-1 h-full flex flex-col items-center justify-center transition-all duration-150 active:opacity-60 disabled:opacity-20';
-  const minusColor = color === 'sapphire' ? 'text-lorcana-sapphire/40' : 'text-lorcana-ruby/40';
-  const plusColor  = color === 'sapphire' ? 'text-lorcana-sapphire/40' : 'text-lorcana-ruby/40';
-  const smallBtn = 'flex items-center justify-center rounded-xl font-bold transition-all duration-150 active:scale-95 disabled:opacity-30';
-  const btnMinus = color === 'sapphire'
-    ? 'bg-lorcana-sapphire/10 text-lorcana-sapphire border border-lorcana-sapphire/20 active:bg-lorcana-sapphire/25'
-    : 'bg-lorcana-ruby/10 text-lorcana-ruby border border-lorcana-ruby/20 active:bg-lorcana-ruby/25';
-  const btnPlus = color === 'sapphire'
-    ? 'bg-lorcana-sapphire/15 text-lorcana-sapphire border border-lorcana-sapphire/25 active:bg-lorcana-sapphire/30'
-    : 'bg-lorcana-ruby/15 text-lorcana-ruby border border-lorcana-ruby/25 active:bg-lorcana-ruby/30';
+  const accent = color === 'sapphire' ? '#5ba8d8' : '#d85b5b';
+  const accentDim = color === 'sapphire' ? 'rgba(91,168,216,0.12)' : 'rgba(216,91,91,0.12)';
+  const accentBorder = color === 'sapphire' ? 'rgba(91,168,216,0.2)' : 'rgba(216,91,91,0.2)';
+  const glow = color === 'sapphire' ? '0 0 40px rgba(91,168,216,0.25)' : '0 0 40px rgba(216,91,91,0.25)';
 
   return (
-    <div className={`flex-1 flex flex-col bg-gradient-to-b ${bgGradient}`}>
+    <div className="flex-1 flex flex-col" style={{ background: `radial-gradient(ellipse at 50% 50%, ${accentDim} 0%, transparent 70%)` }}>
       {/* Label */}
-      <div className="text-center pt-2">
-        <span className="text-xs text-ink-500 font-medium uppercase tracking-widest">{label}</span>
+      <div className="text-center pt-2 pb-1">
+        <span className="text-xs font-medium tracking-[0.2em] uppercase" style={{ color: `${accent}99` }}>{label}</span>
       </div>
 
-      {/* Main area : demi-écran gauche = −, demi-écran droit = + */}
+      {/* Zone principale — moitié gauche − / moitié droite + */}
       <div className="flex-1 flex relative">
-        {/* Zone − (moitié gauche) */}
+        {/* Zone − */}
         <button
-          className={`${halfBtn} ${minusColor}`}
+          className="flex-1 h-full flex items-center justify-start pl-6 transition-all duration-150 active:opacity-50 disabled:opacity-20"
           onClick={() => onChangeLore(-1)}
           disabled={disabled || lore === 0}
           aria-label="-1"
         >
-          <span className="text-5xl font-bold leading-none">−</span>
+          <span className="text-6xl font-thin leading-none" style={{ color: `${accent}50` }}>−</span>
         </button>
 
-        {/* Score central en overlay */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-2">
-          <div className={`font-display font-bold leading-none ${textColor} ${glowColor}`} style={{ fontSize: 'clamp(5rem, 22vw, 12rem)' }}>
+        {/* Score en overlay */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-3">
+          <span
+            className="font-display font-bold leading-none tabular-nums"
+            style={{ fontSize: 'clamp(5rem, 22vw, 11rem)', color: accent, textShadow: glow }}
+          >
             {lore}
-          </div>
-          <div className="w-28 h-1.5 rounded-full bg-ink-800/80 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-300 ${color === 'sapphire' ? 'bg-lorcana-sapphire' : 'bg-lorcana-ruby'}`}
-              style={{ width: `${(lore / MAX_LORE) * 100}%` }}
-            />
+          </span>
+          {/* Barre de progression ornementale */}
+          <div className="flex gap-1">
+            {Array.from({ length: MAX_LORE }).map((_, i) => (
+              <div
+                key={i}
+                className="rounded-full transition-all duration-200"
+                style={{
+                  width: 6,
+                  height: i < lore ? 8 : 4,
+                  background: i < lore ? accent : `${accent}25`,
+                  alignSelf: 'flex-end',
+                }}
+              />
+            ))}
           </div>
         </div>
 
-        {/* Zone + (moitié droite) */}
+        {/* Zone + */}
         <button
-          className={`${halfBtn} ${plusColor}`}
+          className="flex-1 h-full flex items-center justify-end pr-6 transition-all duration-150 active:opacity-50 disabled:opacity-20"
           onClick={() => onChangeLore(1)}
           disabled={disabled || lore >= MAX_LORE}
           aria-label="+1"
         >
-          <span className="text-5xl font-bold leading-none">+</span>
+          <span className="text-6xl font-thin leading-none" style={{ color: `${accent}50` }}>+</span>
         </button>
       </div>
 
       {/* ±5 secondaires */}
-      <div className="flex justify-between px-4 pb-3 gap-3">
-        <button onClick={() => onChangeLore(-5)} className={`${smallBtn} ${btnMinus} flex-1 h-9 text-sm`} disabled={disabled || lore === 0}>−5</button>
-        <button onClick={() => onChangeLore(5)}  className={`${smallBtn} ${btnPlus}  flex-1 h-9 text-sm`} disabled={disabled || lore >= MAX_LORE}>+5</button>
+      <div className="flex justify-between px-5 pb-2 gap-3">
+        <button
+          onClick={() => onChangeLore(-5)}
+          disabled={disabled || lore === 0}
+          className="flex-1 h-8 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-95 disabled:opacity-25"
+          style={{ background: accentDim, color: accent, border: `1px solid ${accentBorder}` }}
+        >
+          −5
+        </button>
+        <button
+          onClick={() => onChangeLore(5)}
+          disabled={disabled || lore >= MAX_LORE}
+          className="flex-1 h-8 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-95 disabled:opacity-25"
+          style={{ background: accentDim, color: accent, border: `1px solid ${accentBorder}` }}
+        >
+          +5
+        </button>
       </div>
     </div>
   );

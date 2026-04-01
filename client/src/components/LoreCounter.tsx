@@ -1,7 +1,8 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 const MAX_LORE = 20;
 const GROUP_DELAY_MS = 3000;
+const DEFAULT_TIMER = 50 * 60; // 50 minutes en secondes
 
 interface RawLoreEntry {
   player: 'me' | 'opponent';
@@ -82,6 +83,33 @@ export function LoreCounter({ onClose, initialState }: LoreCounterProps) {
   const myLoreRef = useRef(initialState?.myLore ?? 0);
   const opponentLoreRef = useRef(initialState?.opponentLore ?? 0);
 
+  const [timerSeconds, setTimerSeconds] = useState(DEFAULT_TIMER);
+  const [timerRunning, setTimerRunning] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (timerRunning) {
+      timerRef.current = setInterval(() => {
+        setTimerSeconds(s => {
+          if (s <= 1) { setTimerRunning(false); return 0; }
+          return s - 1;
+        });
+      }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [timerRunning]);
+
+  const formatTimer = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+  };
+
+  const timerExpired = timerSeconds === 0;
+  const timerColor = timerSeconds <= 60 ? '#d85b5b' : timerSeconds <= 5 * 60 ? '#f5c842' : 'rgba(255,255,255,0.5)';
+
   const changeLore = useCallback((player: 'me' | 'opponent', delta: number) => {
     if (winnerRef.current) return;
     const ref = player === 'me' ? myLoreRef : opponentLoreRef;
@@ -99,6 +127,7 @@ export function LoreCounter({ onClose, initialState }: LoreCounterProps) {
     setMyLore(0); setOpponentLore(0);
     myLoreRef.current = 0; opponentLoreRef.current = 0;
     setRawHistory([]); setWinner(null); winnerRef.current = null;
+    setTimerSeconds(DEFAULT_TIMER); setTimerRunning(false);
     setShowMenu(false);
   };
 
@@ -175,25 +204,51 @@ export function LoreCounter({ onClose, initialState }: LoreCounterProps) {
           <PlayerSide label="Adversaire" lore={opponentLore} color="ruby" onChangeLore={(d) => changeLore('opponent', d)} disabled={!!winner} />
         </div>
 
-        {/* Séparateur central — boutons d'action intégrés */}
-        <div className="relative flex items-center justify-center h-12 shrink-0" style={{ background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.08), transparent)' }}>
+        {/* Séparateur central */}
+        <div className="relative flex items-center justify-center h-14 shrink-0" style={{ background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.08), transparent)' }}>
           <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.3) 30%, rgba(212,175,55,0.5) 50%, rgba(212,175,55,0.3) 70%, transparent 100%)' }} />
-          <div className="relative z-10 flex items-center gap-1 px-2 py-1 rounded-full" style={{ background: '#0f0c1e', border: '1px solid rgba(212,175,55,0.2)' }}>
-            {/* Fermer */}
-            <button onClick={handleClose} className="p-2 text-white/30 hover:text-white/70 transition-colors rounded-full hover:bg-white/5" aria-label="Fermer">
+
+          <div className="relative z-10 flex items-center gap-0 rounded-full overflow-hidden" style={{ background: '#0f0c1e', border: '1px solid rgba(212,175,55,0.2)' }}>
+
+            {/* Groupe gauche : fermer + historique */}
+            <button onClick={handleClose} className="p-2.5 text-white/30 hover:text-white/70 transition-colors hover:bg-white/5" aria-label="Fermer">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
-            <div className="w-px h-4 bg-white/10" />
-            {/* Historique */}
-            <button onClick={() => { setShowHistory(!showHistory); setShowMenu(false); }} className="p-2 text-white/30 hover:text-white/70 transition-colors rounded-full hover:bg-white/5" aria-label="Historique">
+            <button onClick={() => { setShowHistory(!showHistory); }} className="p-2.5 text-white/30 hover:text-white/70 transition-colors hover:bg-white/5" aria-label="Historique">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </button>
-            {/* Annuler */}
-            <button onClick={undoLast} disabled={rawHistory.length === 0} className="p-2 text-white/30 hover:text-white/70 transition-colors rounded-full hover:bg-white/5 disabled:opacity-20" aria-label="Annuler">
+
+            <div className="w-px h-5 bg-white/10 mx-0.5" />
+
+            {/* Timer — centré, cliquable pour play/pause */}
+            <button
+              onClick={() => !timerExpired && setTimerRunning(r => !r)}
+              className="flex items-center gap-1.5 px-3 py-1.5 transition-colors hover:bg-white/5"
+              aria-label={timerRunning ? 'Pause' : 'Démarrer'}
+            >
+              {/* Icône play/pause/expired */}
+              {timerExpired ? (
+                <svg className="w-3.5 h-3.5" fill="none" stroke="#d85b5b" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              ) : timerRunning ? (
+                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+              ) : (
+                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M8 5v14l11-7z"/></svg>
+              )}
+              <span
+                className="font-mono text-sm font-semibold tabular-nums"
+                style={{ color: timerColor, minWidth: '3.5rem', textAlign: 'center' }}
+              >
+                {formatTimer(timerSeconds)}
+              </span>
+            </button>
+
+            <div className="w-px h-5 bg-white/10 mx-0.5" />
+
+            {/* Groupe droite : annuler + reset */}
+            <button onClick={undoLast} disabled={rawHistory.length === 0} className="p-2.5 text-white/30 hover:text-white/70 transition-colors hover:bg-white/5 disabled:opacity-20" aria-label="Annuler">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a5 5 0 015 5v2M3 10l4-4m-4 4l4 4" /></svg>
             </button>
-            {/* Réinitialiser */}
-            <button onClick={resetAll} className="p-2 text-white/30 hover:text-white/70 transition-colors rounded-full hover:bg-white/5" aria-label="Réinitialiser">
+            <button onClick={resetAll} className="p-2.5 text-white/30 hover:text-white/70 transition-colors hover:bg-white/5" aria-label="Réinitialiser">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
             </button>
           </div>

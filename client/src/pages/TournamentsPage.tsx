@@ -46,6 +46,82 @@ function TeamBadge({ count, members }: { count: number; members: string[] }) {
   );
 }
 
+function FeatureShowcase({ compact = false }: { compact?: boolean }) {
+  const features = [
+    {
+      icon: '📋',
+      title: 'Suivi des rondes',
+      desc: 'Enregistrez chaque ronde : adversaire, deck joué, résultat et score. Photo de la liste adverse en option.',
+    },
+    {
+      icon: '📊',
+      title: 'Statistiques détaillées',
+      desc: 'Win rate global, matchups par couleur d\'encre, performances par deck — tout est calculé automatiquement.',
+    },
+    {
+      icon: '🔗',
+      title: 'Sync Play Hub',
+      desc: 'Collez un lien Ravensburger Play Hub pour importer automatiquement les rondes, standings et l\'arbre de tournoi.',
+    },
+    {
+      icon: '🧭',
+      title: 'Scouting d\'équipe',
+      desc: 'Partagez les decks adverses avec votre équipe en temps réel pendant l\'événement.',
+    },
+    {
+      icon: '📸',
+      title: 'Photo de liste',
+      desc: 'Photographiez la liste adverse depuis votre téléphone directement dans l\'application.',
+    },
+    {
+      icon: '📤',
+      title: 'Partage & export',
+      desc: 'Partagez un récap de votre tournoi en un lien public ou exportez-le en image.',
+    },
+  ];
+
+  if (compact) {
+    return (
+      <div className="ink-card p-5 sm:p-6">
+        <h2 className="text-sm font-semibold text-ink-400 uppercase tracking-wider mb-4">Ce que vous pouvez faire</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {features.map(f => (
+            <div key={f.title} className="flex items-start gap-3 p-3 rounded-xl bg-ink-800/40">
+              <span className="text-xl shrink-0 mt-0.5">{f.icon}</span>
+              <div>
+                <p className="text-sm font-medium text-ink-200">{f.title}</p>
+                <p className="text-xs text-ink-500 mt-0.5 leading-relaxed">{f.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="ink-card p-5 sm:p-6">
+        <h2 className="text-base font-semibold text-ink-200 mb-1">Suivez votre progression en tournoi</h2>
+        <p className="text-sm text-ink-400 leading-relaxed">
+          GlimmerLog vous permet de garder une trace complète de vos tournois Disney Lorcana : rondes, adversaires, decks joués, classement final. Analysez vos performances pour progresser et préparez-vous à chaque événement.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {features.map(f => (
+          <div key={f.title} className="ink-card p-4 flex items-start gap-3">
+            <span className="text-2xl shrink-0 mt-0.5">{f.icon}</span>
+            <div>
+              <p className="text-sm font-semibold text-ink-200">{f.title}</p>
+              <p className="text-xs text-ink-500 mt-1 leading-relaxed">{f.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function TournamentsPage() {
   const { data: tournamentsData, isLoading } = useQuery({
     queryKey: ['tournaments', 1, 50],
@@ -74,9 +150,14 @@ export function TournamentsPage() {
       </div>
 
       {tournaments.length === 0 ? (
-        <div className="ink-card p-8 sm:p-12 text-center text-ink-400">
-          <p className="text-lg">Aucun tournoi enregistré</p>
-          <p className="mt-2 text-ink-500">Commencez par créer votre premier tournoi !</p>
+        <div className="space-y-6">
+          <div className="ink-card p-8 sm:p-12 text-center">
+            <div className="text-5xl mb-4">🏆</div>
+            <p className="text-lg font-semibold text-ink-100">Aucun tournoi enregistré</p>
+            <p className="mt-2 text-ink-400">Commencez par créer votre premier tournoi !</p>
+            <Link to="/tournaments/new" className="ink-btn-primary inline-block mt-6 px-6 py-2.5 text-sm">+ Créer un tournoi</Link>
+          </div>
+          <FeatureShowcase />
         </div>
       ) : (
         <>
@@ -134,7 +215,7 @@ export function TournamentsPage() {
 
           {/* Mobile card list */}
           <div className="md:hidden space-y-3">
-            {tournaments.map(t => {
+            {tournaments.map((t: Tournament) => {
               const wins = t.rounds?.filter(m => m.result === 'WIN').length || 0;
               const losses = t.rounds?.filter(m => m.result === 'LOSS').length || 0;
               const draws = t.rounds?.filter(m => m.result === 'DRAW').length || 0;
@@ -174,6 +255,8 @@ export function TournamentsPage() {
           </div>
         </>
       )}
+
+      <FeatureShowcase compact={tournaments.length > 0} />
     </div>
   );
 }

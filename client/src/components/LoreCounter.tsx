@@ -218,11 +218,11 @@ export function LoreCounter({ onClose, initialState }: LoreCounterProps) {
         </div>
 
         {/* Center divider */}
-        <div className="relative h-12 sm:h-14 flex items-center justify-center bg-ink-900/80 border-y border-gold-500/20">
-          <div className="flex items-center gap-4 text-xl font-display font-bold tracking-wider">
-            <span className="text-lorcana-sapphire">{myLore}</span>
-            <span className="text-gold-500/50">—</span>
-            <span className="text-lorcana-ruby">{opponentLore}</span>
+        <div className="relative h-14 flex items-center justify-center bg-ink-900/80 border-y border-gold-500/20">
+          <div className="flex items-center gap-5 font-display font-bold tracking-wider">
+            <span className="text-lorcana-ruby text-3xl">{opponentLore}</span>
+            <span className="text-gold-500/40 text-xl">—</span>
+            <span className="text-lorcana-sapphire text-3xl">{myLore}</span>
           </div>
         </div>
 
@@ -297,7 +297,7 @@ function PlayerSide({
     ? 'drop-shadow-[0_0_25px_rgba(52,152,219,0.3)]'
     : 'drop-shadow-[0_0_25px_rgba(231,76,60,0.3)]';
 
-  const btnBase = 'flex items-center justify-center rounded-2xl font-bold transition-all duration-150 active:scale-95 disabled:opacity-30 disabled:active:scale-100';
+  const btnBase = 'flex items-center justify-center rounded-2xl font-bold transition-all duration-150 active:scale-95 disabled:opacity-30 disabled:active:scale-100 w-full h-full';
   const btnMinus = color === 'sapphire'
     ? 'bg-lorcana-sapphire/10 text-lorcana-sapphire border-2 border-lorcana-sapphire/20 active:bg-lorcana-sapphire/25'
     : 'bg-lorcana-ruby/10 text-lorcana-ruby border-2 border-lorcana-ruby/20 active:bg-lorcana-ruby/25';
@@ -306,54 +306,27 @@ function PlayerSide({
     : 'bg-lorcana-ruby/20 text-lorcana-ruby border-2 border-lorcana-ruby/30 active:bg-lorcana-ruby/35';
 
   return (
-    <div className={`flex-1 flex flex-col items-center justify-center gap-1 bg-gradient-to-b ${bgGradient} px-4`}>
-      <span className="text-xs text-ink-500 font-medium uppercase tracking-widest">{label}</span>
-
-      {/* Lore display */}
-      <div className={`font-display font-bold leading-none ${textColor} ${glowColor}`} style={{ fontSize: 'clamp(5rem, 22vw, 12rem)' }}>
-        {lore}
+    <div className={`flex-1 flex flex-col bg-gradient-to-b ${bgGradient} p-3 gap-2`}>
+      {/* Label + score */}
+      <div className="flex items-center justify-between px-1">
+        <span className="text-xs text-ink-500 font-medium uppercase tracking-widest">{label}</span>
+        <div className={`font-display font-bold text-4xl leading-none ${textColor} ${glowColor}`}>{lore}</div>
       </div>
 
       {/* Progress bar */}
-      <div className="w-full max-w-[280px] sm:max-w-xs h-2 rounded-full bg-ink-800/80 overflow-hidden my-2">
+      <div className="w-full h-1.5 rounded-full bg-ink-800/80 overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all duration-300 ${
-            color === 'sapphire' ? 'bg-lorcana-sapphire' : 'bg-lorcana-ruby'
-          }`}
+          className={`h-full rounded-full transition-all duration-300 ${color === 'sapphire' ? 'bg-lorcana-sapphire' : 'bg-lorcana-ruby'}`}
           style={{ width: `${(lore / MAX_LORE) * 100}%` }}
         />
       </div>
 
-      {/* Controls — large touch targets */}
-      <div className="flex items-center gap-3 sm:gap-4 mt-1">
-        <button
-          onClick={() => onChangeLore(-5)}
-          className={`${btnBase} ${btnMinus} w-14 h-14 sm:w-16 sm:h-16 text-xl sm:text-2xl`}
-          disabled={disabled || lore === 0}
-        >
-          -5
-        </button>
-        <button
-          onClick={() => onChangeLore(-1)}
-          className={`${btnBase} ${btnMinus} w-[4.5rem] h-[4.5rem] sm:w-20 sm:h-20 text-3xl sm:text-4xl`}
-          disabled={disabled || lore === 0}
-        >
-          −
-        </button>
-        <button
-          onClick={() => onChangeLore(1)}
-          className={`${btnBase} ${btnPlus} w-[4.5rem] h-[4.5rem] sm:w-20 sm:h-20 text-3xl sm:text-4xl`}
-          disabled={disabled || lore >= MAX_LORE}
-        >
-          +
-        </button>
-        <button
-          onClick={() => onChangeLore(5)}
-          className={`${btnBase} ${btnPlus} w-14 h-14 sm:w-16 sm:h-16 text-xl sm:text-2xl`}
-          disabled={disabled || lore >= MAX_LORE}
-        >
-          +5
-        </button>
+      {/* Controls — 2×2 grid filling all available space */}
+      <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-2">
+        <button onClick={() => onChangeLore(1)} className={`${btnBase} ${btnPlus} text-4xl`} disabled={disabled || lore >= MAX_LORE}>+1</button>
+        <button onClick={() => onChangeLore(5)} className={`${btnBase} ${btnPlus} text-3xl`} disabled={disabled || lore >= MAX_LORE}>+5</button>
+        <button onClick={() => onChangeLore(-1)} className={`${btnBase} ${btnMinus} text-4xl`} disabled={disabled || lore === 0}>−1</button>
+        <button onClick={() => onChangeLore(-5)} className={`${btnBase} ${btnMinus} text-3xl`} disabled={disabled || lore === 0}>−5</button>
       </div>
     </div>
   );

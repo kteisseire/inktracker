@@ -839,105 +839,121 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
           </div>
         </div>
 
-        {/* Timer vertical — côté gauche ou droit, lisible par les deux joueurs */}
+        {/* Timer vertical — côté gauche ou droit */}
         <div
-          className="absolute top-0 bottom-0 z-10 flex items-center justify-center pointer-events-none"
-          style={{ [timerSide]: 0, width: '4.5rem' }}
+          className="absolute top-0 bottom-0 z-10 pointer-events-none"
+          style={{ [timerSide]: 0, width: '5rem' }}
         >
+          {/* Capsule graphique centrée */}
           <div
-            className="flex flex-col items-center gap-4 pointer-events-auto"
-            style={{ transform: timerSide === 'left' ? 'rotate(180deg)' : 'none' }}
-          >
-            {/* Play/Pause — tourné 90° pour pointer dans le sens vertical */}
-            <button
-              onClick={() => !timerExpired && setTimerRunning(r => !r)}
-              className="p-3 rounded-full transition-colors active:scale-90"
-              aria-label={timerRunning ? 'Pause' : 'Démarrer'}
-              style={{ transform: 'rotate(90deg)' }}
-            >
-              {timerExpired ? (
-                <svg className="w-7 h-7" fill="none" stroke="#d85b5b" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              ) : timerRunning ? (
-                <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
-              ) : (
-                <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M8 5v14l11-7z" /></svg>
-              )}
-            </button>
+            className="absolute pointer-events-none"
+            style={{
+              top: 'calc(50% - 7.5rem)',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '3.2rem',
+              height: '15rem',
+              background: theme.pill,
+              border: `1px solid ${theme.pillBorder}`,
+              borderRadius: '9999px',
+              boxShadow: `0 0 24px ${timerColor}18`,
+            }}
+          />
 
-            {/* Affichage du temps — clic pour éditer quand en pause */}
-            {editingTimer ? (
-              <div className="flex flex-col items-center gap-2" style={{ writingMode: 'vertical-rl' }}>
-                <input
-                  autoFocus
-                  type="text"
-                  value={timerInput}
-                  onChange={(e) => setTimerInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      const parts = timerInput.split(':');
-                      const mins = parseInt(parts[0] ?? '0', 10);
-                      const secs = parseInt(parts[1] ?? '0', 10);
-                      const total = (isNaN(mins) ? 0 : mins) * 60 + (isNaN(secs) ? 0 : secs);
-                      if (total > 0) { setTimerSeconds(total); }
-                      setEditingTimer(false);
-                    }
-                    if (e.key === 'Escape') setEditingTimer(false);
-                  }}
-                  className="font-mono font-bold tabular-nums bg-transparent text-center outline-none"
-                  style={{ color: timerColor, fontSize: 'clamp(1.3rem, 5vw, 1.8rem)', width: '4rem', borderBottom: `1px solid ${timerColor}44`, letterSpacing: '0.05em' }}
-                  placeholder="mm:ss"
-                />
-                {/* Bouton valider explicite pour mobile */}
-                <button
-                  onPointerDown={(e) => {
-                    e.preventDefault();
+          {/* Play/Pause — en haut de la capsule */}
+          <button
+            onClick={() => !timerExpired && setTimerRunning(r => !r)}
+            className="absolute p-2 rounded-full transition-colors active:scale-90 pointer-events-auto"
+            aria-label={timerRunning ? 'Pause' : 'Démarrer'}
+            style={{ top: 'calc(50% - 6.5rem)', left: '50%', transform: `translateX(-50%) rotate(${timerSide === 'left' ? '-90' : '90'}deg)` }}
+          >
+            {timerExpired ? (
+              <svg className="w-6 h-6" fill="none" stroke="#d85b5b" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            ) : timerRunning ? (
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+            ) : (
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M8 5v14l11-7z" /></svg>
+            )}
+          </button>
+
+          {/* Séparateur haut */}
+          <div className="absolute pointer-events-none" style={{ top: 'calc(50% - 4.2rem)', left: '50%', transform: 'translateX(-50%)', width: '2rem', height: '1px', background: `${timerColor}30` }} />
+
+          {/* Timer : centré exactement */}
+          <button
+            onClick={() => { if (!timerRunning) { setTimerInput(formatTimer(timerSeconds)); setEditingTimer(true); } }}
+            className="absolute pointer-events-auto transition-colors active:opacity-60"
+            aria-label="Modifier la durée"
+            style={{ top: '50%', left: '50%', transform: `translateX(-50%) translateY(-50%) rotate(${timerSide === 'left' ? '180' : '0'}deg)`, writingMode: 'vertical-rl', letterSpacing: '0.08em' }}
+          >
+            <span className="font-mono font-bold tabular-nums" style={{ color: timerColor, fontSize: 'clamp(1.6rem, 6.5vw, 2.2rem)', textShadow: timerSeconds <= 60 ? `0 0 20px ${timerColor}` : undefined }}>
+              {formatTimer(timerSeconds)}
+            </span>
+          </button>
+
+          {/* Séparateur bas */}
+          <div className="absolute pointer-events-none" style={{ top: 'calc(50% + 4.2rem)', left: '50%', transform: 'translateX(-50%)', width: '2rem', height: '1px', background: `${timerColor}30` }} />
+
+          {/* Reset — en bas de la capsule, symétrique */}
+          {!timerRunning && timerSeconds !== DEFAULT_TIMER ? (
+            <button
+              onClick={() => setTimerSeconds(DEFAULT_TIMER)}
+              className="absolute p-2 text-white/30 hover:text-white/70 transition-colors rounded-full pointer-events-auto"
+              aria-label="Réinitialiser le timer"
+              style={{ top: 'calc(50% + 5.5rem)', left: '50%', transform: 'translateX(-50%)' }}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            </button>
+          ) : (
+            /* Placeholder invisible pour garder la capsule symétrique */
+            <div className="absolute p-2" style={{ top: 'calc(50% + 5.5rem)', left: '50%', transform: 'translateX(-50%)', width: '2.25rem', height: '2.25rem' }} />
+          )}
+        </div>
+
+        {/* Popup édition timer */}
+        {editingTimer && (
+          <div className="absolute inset-0 z-40 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)' }} onClick={() => setEditingTimer(false)}>
+            <div className="rounded-2xl p-6 flex flex-col items-center gap-4 w-64" style={{ background: theme.pill, border: `1px solid ${theme.pillBorder}` }} onClick={e => e.stopPropagation()}>
+              <p className="text-sm font-medium text-white/60 tracking-widest uppercase">Durée du timer</p>
+              <input
+                autoFocus
+                type="text"
+                value={timerInput}
+                onChange={(e) => setTimerInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
                     const parts = timerInput.split(':');
                     const mins = parseInt(parts[0] ?? '0', 10);
                     const secs = parseInt(parts[1] ?? '0', 10);
                     const total = (isNaN(mins) ? 0 : mins) * 60 + (isNaN(secs) ? 0 : secs);
-                    if (total > 0) { setTimerSeconds(total); }
+                    if (total > 0) setTimerSeconds(total);
+                    setEditingTimer(false);
+                  }
+                  if (e.key === 'Escape') setEditingTimer(false);
+                }}
+                className="font-mono font-bold tabular-nums text-center text-3xl bg-transparent outline-none w-full"
+                style={{ color: timerColor, borderBottom: `2px solid ${timerColor}55`, letterSpacing: '0.1em', paddingBottom: '0.25rem' }}
+                placeholder="mm:ss"
+              />
+              <p className="text-xs text-white/30">Format mm:ss · ex: 50:00</p>
+              <div className="flex gap-3 w-full">
+                <button onClick={() => setEditingTimer(false)} className="flex-1 py-2.5 rounded-xl text-sm text-white/50 bg-white/5">Annuler</button>
+                <button
+                  onClick={() => {
+                    const parts = timerInput.split(':');
+                    const mins = parseInt(parts[0] ?? '0', 10);
+                    const secs = parseInt(parts[1] ?? '0', 10);
+                    const total = (isNaN(mins) ? 0 : mins) * 60 + (isNaN(secs) ? 0 : secs);
+                    if (total > 0) setTimerSeconds(total);
                     setEditingTimer(false);
                   }}
-                  className="rounded-full px-2 py-1 text-xs font-semibold"
-                  style={{ background: `${timerColor}30`, color: timerColor, border: `1px solid ${timerColor}50`, writingMode: 'horizontal-tb', transform: timerSide === 'left' ? 'rotate(180deg)' : 'none' }}
-                >
-                  OK
-                </button>
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+                  style={{ background: timerColor, color: '#000' }}
+                >Valider</button>
               </div>
-            ) : (
-              <button
-                onClick={() => {
-                  if (!timerRunning) {
-                    setTimerInput(formatTimer(timerSeconds));
-                    setEditingTimer(true);
-                  }
-                }}
-                className="transition-colors active:opacity-60"
-                aria-label="Modifier la durée"
-                style={{ writingMode: 'vertical-rl', letterSpacing: '0.08em' }}
-              >
-                <span
-                  className="font-mono font-bold tabular-nums"
-                  style={{ color: timerColor, fontSize: 'clamp(1.4rem, 5.5vw, 2rem)', textShadow: timerSeconds <= 60 ? `0 0 16px ${timerColor}` : undefined }}
-                >
-                  {formatTimer(timerSeconds)}
-                </span>
-              </button>
-            )}
-
-            {/* Reset timer si en pause et ≠ default */}
-            {!timerRunning && !editingTimer && timerSeconds !== DEFAULT_TIMER && (
-              <button
-                onClick={() => setTimerSeconds(DEFAULT_TIMER)}
-                className="p-2 text-white/25 hover:text-white/60 transition-colors rounded-full"
-                aria-label="Réinitialiser le timer"
-                style={{ transform: timerSide === 'left' ? 'rotate(180deg)' : 'none' }}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-              </button>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="flex-1 flex flex-col">
           <PlayerSide label="Moi" lore={myLore} accent={theme.meAccent} onChangeLore={(d) => changeLore('me', d)} disabled={!!winner} />

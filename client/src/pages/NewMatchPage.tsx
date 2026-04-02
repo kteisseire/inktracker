@@ -215,14 +215,8 @@ export function NewMatchPage() {
     setGames(prev => prev.map((g, i) => i === index ? { ...g, loserScore: score } : g));
   };
 
-  const handleLoreResult = (result: LoreResult) => {
-    if (loreCounterGameIndex === null) return;
-    const index = loreCounterGameIndex;
-    setLoreCounterGameIndex(null);
-
-    // Persist lore state for this game
+  const applyLoreResult = (index: number, result: LoreResult) => {
     setLoreStates(prev => ({ ...prev, [index]: result.state }));
-
     if (result.winner) {
       const matchResult: MatchResult = result.winner === 'me' ? 'WIN' : 'LOSS';
       const loserScore = result.winner === 'me' ? result.opponentScore : result.myScore;
@@ -230,6 +224,28 @@ export function NewMatchPage() {
       setLoserScore(index, String(loserScore));
     }
   };
+
+  const handleLoreResult = (result: LoreResult) => {
+    if (loreCounterGameIndex === null) return;
+    const index = loreCounterGameIndex;
+    setLoreCounterGameIndex(null);
+    applyLoreResult(index, result);
+  };
+
+  const handleNextGame = (result: LoreResult) => {
+    if (loreCounterGameIndex === null) return;
+    const index = loreCounterGameIndex;
+    applyLoreResult(index, result);
+    // Ouvre automatiquement la partie suivante
+    setLoreCounterGameIndex(index + 1);
+  };
+
+  function nextGameAvailable(): boolean {
+    if (loreCounterGameIndex === null) return false;
+    const nextIndex = loreCounterGameIndex + 1;
+    if (nextIndex >= maxGames(format)) return false;
+    return !isRoundDecided(nextIndex);
+  }
 
   const buildPayload = () => {
     const playedGames = games.filter(g => g.result !== null);
@@ -544,6 +560,7 @@ export function NewMatchPage() {
       {loreCounterGameIndex !== null && (
         <LoreCounter
           onClose={handleLoreResult}
+          onNextGame={nextGameAvailable() ? handleNextGame : undefined}
           initialState={loreStates[loreCounterGameIndex]}
           timerState={boTimer}
           onTimerChange={setBoTimer}

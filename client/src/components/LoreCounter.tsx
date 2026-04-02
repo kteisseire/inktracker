@@ -665,6 +665,7 @@ export interface TimerState {
 
 interface LoreCounterProps {
   onClose: (result: LoreResult) => void;
+  onNextGame?: (result: LoreResult) => void;
   initialState?: LoreState;
   timerState?: TimerState;
   onTimerChange?: (state: TimerState) => void;
@@ -674,7 +675,7 @@ const THEME_STORAGE_KEY = 'glimmerlog_lore_theme';
 const TIMER_SIDE_KEY = 'glimmerlog_timer_side';
 
 // ─── Composant principal ───────────────────────────────────────────────────
-export function LoreCounter({ onClose, initialState, timerState, onTimerChange }: LoreCounterProps) {
+export function LoreCounter({ onClose, onNextGame, initialState, timerState, onTimerChange }: LoreCounterProps) {
   const [myLore, setMyLore] = useState(initialState?.myLore ?? 0);
   const [opponentLore, setOpponentLore] = useState(initialState?.opponentLore ?? 0);
   const [rawHistory, setRawHistory] = useState<RawLoreEntry[]>(initialState?.history ?? []);
@@ -687,6 +688,9 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
   const [timerSide, setTimerSide] = useState<'left' | 'right'>(() => (localStorage.getItem(TIMER_SIDE_KEY) as 'left' | 'right') ?? 'right');
   const [winner, setWinner] = useState<'me' | 'opponent' | null>(initialState?.winner ?? null);
   const winnerRef = useRef<'me' | 'opponent' | null>(initialState?.winner ?? null);
+  const [obfuscateTarget, setObfuscateTarget] = useState<'me' | 'opponent' | null>(null);
+  const [showObfuscatePicker, setShowObfuscatePicker] = useState(false);
+  const [showObfuscateCancel, setShowObfuscateCancel] = useState(false);
   const myLoreRef = useRef(initialState?.myLore ?? 0);
   const opponentLoreRef = useRef(initialState?.opponentLore ?? 0);
 
@@ -741,17 +745,19 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
     const ref = player === 'me' ? myLoreRef : opponentLoreRef;
     const setter = player === 'me' ? setMyLore : setOpponentLore;
     const prev = ref.current;
-    const next = Math.max(0, Math.min(MAX_LORE, prev + delta));
+    const maxForPlayer = obfuscateTarget === player ? 25 : MAX_LORE;
+    const next = Math.max(0, Math.min(maxForPlayer, prev + delta));
     if (next === prev) return;
     ref.current = next; setter(next);
     setRawHistory(h => [...h, { player, delta: next - prev, newValue: next, timestamp: Date.now() }]);
-    if (next >= MAX_LORE) { winnerRef.current = player; setWinner(player); }
-  }, []);
+    if (next >= maxForPlayer) { winnerRef.current = player; setWinner(player); }
+  }, [obfuscateTarget]);
 
   const resetAll = () => {
     setMyLore(0); setOpponentLore(0);
     myLoreRef.current = 0; opponentLoreRef.current = 0;
     setRawHistory([]); setWinner(null); winnerRef.current = null;
+    setObfuscateTarget(null);
     if (!onTimerChange) setLocalTimerSeconds(DEFAULT_TIMER);
   };
 
@@ -797,118 +803,324 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
 
       {/* Winner overlay */}
       {winner && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center backdrop-blur-sm" style={{ background: 'rgba(0,0,0,0.85)' }}>
-          <div className="text-center space-y-5 px-8">
-            <div className="text-6xl mb-2">{winner === 'me' ? '✨' : '💫'}</div>
-            <div className="font-display text-4xl font-bold tracking-wide" style={{ color: winner === 'me' ? theme.meAccent : 'rgba(255,255,255,0.4)' }}>
-              {winner === 'me' ? 'Victoire !' : 'Défaite'}
+        <div
+          className="absolute inset-0 z-20 flex flex-col items-center justify-center"
+          style={{ background: `radial-gradient(ellipse at 50% 40%, ${winner === 'me' ? theme.meAccent : theme.oppAccent}22 0%, transparent 60%), ${theme.bg}`, backdropFilter: 'blur(8px)' }}
+        >
+          {/* Glow ring */}
+          <div
+            className="absolute rounded-full opacity-20 blur-3xl"
+            style={{
+              width: '18rem', height: '18rem',
+              background: winner === 'me' ? theme.meAccent : theme.oppAccent,
+              top: '50%', left: '50%', transform: 'translate(-50%, -60%)',
+            }}
+          />
+
+          <div className="relative flex flex-col items-center gap-6 px-10 w-full max-w-xs">
+            {/* Ligne décorative haut */}
+            <div className="w-full h-px" style={{ background: theme.separatorGlow }} />
+
+            {/* Résultat */}
+            <div className="flex flex-col items-center gap-1">
+              <span
+                className="text-xs font-semibold tracking-[0.3em] uppercase"
+                style={{ color: winner === 'me' ? theme.meAccent : theme.oppAccent }}
+              >
+                {winner === 'me' ? 'Partie terminée' : 'Partie terminée'}
+              </span>
+              <span
+                className="font-display text-5xl font-bold tracking-wide mt-1"
+                style={{
+                  color: winner === 'me' ? theme.meAccent : theme.oppAccent,
+                  textShadow: `0 0 32px ${winner === 'me' ? theme.meAccent : theme.oppAccent}88`,
+                }}
+              >
+                {winner === 'me' ? 'Victoire' : 'Défaite'}
+              </span>
             </div>
-            <div className="text-lg font-display tracking-widest" style={{ color: 'rgba(255,255,255,0.5)' }}>
-              <span style={{ color: theme.meAccent }}>{myLore}</span>
-              <span className="mx-3" style={{ color: theme.separator }}>✦</span>
-              <span style={{ color: theme.oppAccent }}>{opponentLore}</span>
+
+            {/* Score */}
+            <div
+              className="flex items-center gap-4 rounded-2xl px-6 py-4 w-full justify-center"
+              style={{ background: theme.pill, border: `1px solid ${theme.pillBorder}` }}
+            >
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-xs tracking-widest uppercase" style={{ color: theme.meAccent + '99' }}>Moi</span>
+                <span className="text-4xl font-bold font-display tabular-nums" style={{ color: theme.meAccent }}>{myLore}</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5 px-2">
+                <div className="w-px h-10" style={{ background: theme.pillBorder }} />
+              </div>
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-xs tracking-widest uppercase" style={{ color: theme.oppAccent + '99' }}>Adv.</span>
+                <span className="text-4xl font-bold font-display tabular-nums" style={{ color: theme.oppAccent }}>{opponentLore}</span>
+              </div>
             </div>
-            <div className="flex gap-3 justify-center pt-2">
-              <button onClick={handleClose} className="px-7 py-3 rounded-xl font-semibold text-black text-base" style={{ background: `linear-gradient(135deg, ${theme.meAccent}, ${theme.meAccent}cc)` }}>Valider</button>
-              <button onClick={() => { setWinner(null); winnerRef.current = null; }} className="px-6 py-3 rounded-xl text-white/60 text-sm bg-white/5 border border-white/10 hover:bg-white/10 transition-all">Continuer</button>
+
+            {/* Boutons */}
+            <div className="flex flex-col gap-2.5 w-full">
+              <button
+                onClick={handleClose}
+                className="w-full py-3.5 rounded-2xl font-semibold text-base tracking-wide transition-all active:scale-95"
+                style={{
+                  background: `linear-gradient(135deg, ${winner === 'me' ? theme.meAccent : theme.oppAccent}, ${winner === 'me' ? theme.meAccent : theme.oppAccent}bb)`,
+                  color: '#000',
+                  boxShadow: `0 0 20px ${winner === 'me' ? theme.meAccent : theme.oppAccent}44`,
+                }}
+              >
+                Terminer la partie
+              </button>
+              {onNextGame ? (
+                <button
+                  onClick={() => onNextGame({ myScore: myLore, opponentScore: opponentLore, winner, state: { myLore, opponentLore, history: rawHistory, winner } })}
+                  className="w-full py-3 rounded-2xl text-sm font-semibold transition-all active:scale-95"
+                  style={{ background: 'rgba(255,255,255,0.07)', border: `1px solid ${theme.pillBorder}`, color: 'rgba(255,255,255,0.65)' }}
+                >
+                  Partie suivante →
+                </button>
+              ) : (
+                <button
+                  onClick={() => { setWinner(null); winnerRef.current = null; }}
+                  className="w-full py-3 rounded-2xl text-sm transition-all active:scale-95"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid ${theme.pillBorder}`, color: 'rgba(255,255,255,0.5)' }}
+                >
+                  Continuer
+                </button>
+              )}
+
             </div>
+
+            {/* Ligne décorative bas */}
+            <div className="w-full h-px" style={{ background: theme.separatorGlow }} />
           </div>
+
+          {/* Obfuscate — positionné en bas à droite, hors du flux */}
+          <button
+            onClick={() => setShowObfuscatePicker(true)}
+            className="absolute overflow-hidden active:scale-95 transition-all"
+            style={{
+              bottom: '1.25rem',
+              right: '1.25rem',
+              height: '4rem',
+              background: 'linear-gradient(100deg, #120d2a 0%, #1e1245 50%, #130c28 100%)',
+              border: '1px solid rgba(160,100,240,0.4)',
+              boxShadow: '0 0 20px rgba(140,80,220,0.2)',
+              borderRadius: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0,
+            }}
+          >
+            <img
+              src="/donald-obfuscate.png"
+              alt=""
+              style={{ display: 'block', width: '4rem', height: '4rem', objectFit: 'contain', flexShrink: 0 }}
+            />
+            <div style={{ width: '1px', height: '1.75rem', background: 'rgba(160,100,240,0.3)', flexShrink: 0 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', padding: '0 0.875rem', gap: '0.2rem' }}>
+              <span style={{ color: 'rgba(215,175,255,0.95)', fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Obfuscate !</span>
+              <span style={{ color: 'rgba(175,135,220,0.5)', fontSize: '0.6rem', whiteSpace: 'nowrap' }}>
+                {obfuscateTarget ? `${obfuscateTarget === 'me' ? 'Moi' : 'Adversaire'} → 25 lore ✓` : 'Seuil de victoire → 25'}
+              </span>
+            </div>
+          </button>
         </div>
       )}
 
       {/* Zones de jeu */}
       <div className="flex-1 flex flex-col">
         <div className="flex-1 flex flex-col rotate-180">
-          <PlayerSide label="Adversaire" lore={opponentLore} accent={theme.oppAccent} onChangeLore={(d) => changeLore('opponent', d)} disabled={!!winner} />
+          <PlayerSide label="Adversaire" lore={opponentLore} accent={theme.oppAccent} onChangeLore={(d) => changeLore('opponent', d)} disabled={!!winner} obfuscated={obfuscateTarget === 'opponent'} onObfuscateClick={() => setShowObfuscateCancel(true)} />
         </div>
 
         {/* Séparateur */}
-        <div className="relative flex items-center h-20 shrink-0" style={{ justifyContent: timerSide === 'right' ? 'flex-start' : 'flex-end' }}>
+        <div className="relative flex items-center h-20 shrink-0">
           <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px" style={{ background: theme.separatorGlow }} />
-          {/* Pilule — côté opposé au timer */}
-          <div className="relative z-10 flex items-center gap-0 rounded-full overflow-hidden mx-5" style={{ background: theme.pill, border: `1px solid ${theme.pillBorder}` }}>
+        </div>
+
+        {/* Capsule close+menu — côté opposé au timer */}
+        <div
+          className="absolute top-0 bottom-0 z-20 flex items-center justify-center pointer-events-none"
+          style={{ [timerSide === 'right' ? 'left' : 'right']: 0, width: '5rem' }}
+        >
+          <div
+            className="relative flex flex-col items-center pointer-events-auto"
+            style={{
+              background: theme.pill,
+              border: `1px solid ${theme.pillBorder}`,
+              borderRadius: '9999px',
+              boxShadow: `0 0 16px ${theme.pillBorder}`,
+              padding: '0.5rem 0',
+              gap: 0,
+            }}
+          >
             {/* Fermer */}
-            <button onClick={handleClose} className="p-4 text-white/30 hover:text-white/70 transition-colors hover:bg-white/5 active:scale-90" aria-label="Fermer">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            <button
+              onClick={(e) => { e.stopPropagation(); handleClose(); }}
+              className="p-2.5 rounded-full transition-colors hover:bg-white/10 active:scale-90"
+              style={{ color: 'rgba(255,255,255,0.35)', pointerEvents: 'auto' }}
+              aria-label="Fermer"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
-            <div className="w-px h-7 bg-white/10 mx-0.5" />
+            <div className="h-px w-7 bg-white/10 my-0.5" />
             {/* Burger menu */}
-            <button onClick={() => setShowMenu(true)} className="p-4 text-white/30 hover:text-white/70 transition-colors hover:bg-white/5 active:scale-90" aria-label="Menu">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowMenu(true); }}
+              className="p-2.5 rounded-full transition-colors hover:bg-white/10 active:scale-90"
+              style={{ color: 'rgba(255,255,255,0.35)', pointerEvents: 'auto' }}
+              aria-label="Menu"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
             </button>
           </div>
         </div>
 
         {/* Timer vertical — côté gauche ou droit */}
         <div
-          className="absolute top-0 bottom-0 z-10 pointer-events-none"
+          className="absolute top-0 bottom-0 z-20 flex items-center justify-center pointer-events-none"
           style={{ [timerSide]: 0, width: '5rem' }}
         >
-          {/* Capsule graphique centrée */}
+          {/* Capsule : colonne flex centrée verticalement */}
           <div
-            className="absolute pointer-events-none"
+            className="relative flex flex-col items-center pointer-events-auto"
             style={{
-              top: 'calc(50% - 7.5rem)',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: '3.2rem',
-              height: '15rem',
               background: theme.pill,
               border: `1px solid ${theme.pillBorder}`,
               borderRadius: '9999px',
               boxShadow: `0 0 24px ${timerColor}18`,
+              padding: '0.5rem 0',
+              gap: 0,
             }}
-          />
-
-          {/* Play/Pause — en haut de la capsule */}
-          <button
-            onClick={() => !timerExpired && setTimerRunning(r => !r)}
-            className="absolute p-2 rounded-full transition-colors active:scale-90 pointer-events-auto"
-            aria-label={timerRunning ? 'Pause' : 'Démarrer'}
-            style={{ top: 'calc(50% - 6.5rem)', left: '50%', transform: `translateX(-50%) rotate(${timerSide === 'left' ? '-90' : '90'}deg)` }}
           >
-            {timerExpired ? (
-              <svg className="w-6 h-6" fill="none" stroke="#d85b5b" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            ) : timerRunning ? (
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
-            ) : (
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M8 5v14l11-7z" /></svg>
-            )}
-          </button>
-
-          {/* Séparateur haut */}
-          <div className="absolute pointer-events-none" style={{ top: 'calc(50% - 4.2rem)', left: '50%', transform: 'translateX(-50%)', width: '2rem', height: '1px', background: `${timerColor}30` }} />
-
-          {/* Timer : centré exactement */}
-          <button
-            onClick={() => { if (!timerRunning) { setTimerInput(formatTimer(timerSeconds)); setEditingTimer(true); } }}
-            className="absolute pointer-events-auto transition-colors active:opacity-60"
-            aria-label="Modifier la durée"
-            style={{ top: '50%', left: '50%', transform: `translateX(-50%) translateY(-50%) rotate(${timerSide === 'left' ? '180' : '0'}deg)`, writingMode: 'vertical-rl', letterSpacing: '0.08em' }}
-          >
-            <span className="font-mono font-bold tabular-nums" style={{ color: timerColor, fontSize: 'clamp(1.6rem, 6.5vw, 2.2rem)', textShadow: timerSeconds <= 60 ? `0 0 20px ${timerColor}` : undefined }}>
-              {formatTimer(timerSeconds)}
-            </span>
-          </button>
-
-          {/* Séparateur bas */}
-          <div className="absolute pointer-events-none" style={{ top: 'calc(50% + 4.2rem)', left: '50%', transform: 'translateX(-50%)', width: '2rem', height: '1px', background: `${timerColor}30` }} />
-
-          {/* Reset — en bas de la capsule, symétrique */}
-          {!timerRunning && timerSeconds !== DEFAULT_TIMER ? (
+            {/* Play/Pause */}
             <button
-              onClick={() => setTimerSeconds(DEFAULT_TIMER)}
-              className="absolute p-2 text-white/30 hover:text-white/70 transition-colors rounded-full pointer-events-auto"
-              aria-label="Réinitialiser le timer"
-              style={{ top: 'calc(50% + 5.5rem)', left: '50%', transform: 'translateX(-50%)' }}
+              onClick={(e) => { e.stopPropagation(); !timerExpired && setTimerRunning(r => !r); }}
+              className="p-2.5 rounded-full transition-colors active:scale-90 flex items-center justify-center"
+              aria-label={timerRunning ? 'Pause' : 'Démarrer'}
+              style={{ transform: `rotate(${timerSide === 'left' ? '-90' : '90'}deg)`, pointerEvents: 'auto' }}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              {timerExpired ? (
+                <svg className="w-6 h-6" fill="none" stroke="#d85b5b" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              ) : timerRunning ? (
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+              ) : (
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M8 5v14l11-7z" /></svg>
+              )}
             </button>
-          ) : (
-            /* Placeholder invisible pour garder la capsule symétrique */
-            <div className="absolute p-2" style={{ top: 'calc(50% + 5.5rem)', left: '50%', transform: 'translateX(-50%)', width: '2.25rem', height: '2.25rem' }} />
-          )}
+
+            {/* Séparateur */}
+            <div style={{ width: '1.8rem', height: '1px', background: `${timerColor}30`, margin: '0.25rem 0' }} />
+
+            {/* Timer */}
+            <button
+              onClick={(e) => { e.stopPropagation(); if (!timerRunning) { setTimerInput(formatTimer(timerSeconds)); setEditingTimer(true); } }}
+              className="flex items-center justify-center transition-colors active:opacity-60 py-1"
+              aria-label="Modifier la durée"
+              style={{ writingMode: 'vertical-rl', letterSpacing: '0.08em', transform: timerSide === 'left' ? 'rotate(180deg)' : 'none', pointerEvents: 'auto' }}
+            >
+              <span className="font-mono font-bold tabular-nums" style={{ color: timerColor, fontSize: 'clamp(1.6rem, 6.5vw, 2.2rem)', textShadow: timerSeconds <= 60 ? `0 0 20px ${timerColor}` : undefined }}>
+                {formatTimer(timerSeconds)}
+              </span>
+            </button>
+
+            {/* Séparateur */}
+            <div style={{ width: '1.8rem', height: '1px', background: `${timerColor}30`, margin: '0.25rem 0' }} />
+
+            {/* Reset — même taille que pause pour symétrie */}
+            {!timerRunning && timerSeconds !== DEFAULT_TIMER ? (
+              <button
+                onClick={(e) => { e.stopPropagation(); setTimerSeconds(DEFAULT_TIMER); }}
+                className="p-2.5 rounded-full transition-colors active:scale-90 flex items-center justify-center text-white/30 hover:text-white/70"
+                style={{ pointerEvents: 'auto' }}
+                aria-label="Réinitialiser le timer"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              </button>
+            ) : (
+              <div className="p-2.5" style={{ width: '2.75rem', height: '2.75rem' }} />
+            )}
+          </div>
         </div>
+
+        {/* Popup sélection cible Obfuscate */}
+        {showObfuscatePicker && (
+          <div className="absolute inset-0 z-40 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }} onClick={() => setShowObfuscatePicker(false)}>
+            <div className="rounded-2xl p-6 flex flex-col items-center gap-5 w-72" style={{ background: '#120d2a', border: '1px solid rgba(160,100,240,0.4)', boxShadow: '0 0 32px rgba(140,80,220,0.25)' }} onClick={e => e.stopPropagation()}>
+              <div className="flex items-center gap-2">
+                <span style={{ fontSize: '0.45rem', color: 'rgba(220,170,255,0.8)' }}>◆</span>
+                <p className="font-black tracking-widest uppercase text-sm" style={{ color: 'rgba(215,175,255,0.95)' }}>Obfuscate !</p>
+                <span style={{ fontSize: '0.45rem', color: 'rgba(220,170,255,0.8)' }}>◆</span>
+              </div>
+              <p className="text-xs text-center" style={{ color: 'rgba(175,135,220,0.6)', lineHeight: 1.5 }}>
+                Qui doit atteindre <strong style={{ color: 'rgba(215,175,255,0.9)' }}>25 lore</strong> pour gagner ?
+              </p>
+              <div className="flex gap-3 w-full">
+                {(['me', 'opponent'] as const).map(target => (
+                  <button
+                    key={target}
+                    onClick={() => { setObfuscateTarget(prev => prev === target ? null : target); setShowObfuscatePicker(false); setWinner(null); winnerRef.current = null; }}
+                    className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all active:scale-95"
+                    style={{
+                      background: obfuscateTarget === target ? 'rgba(160,100,240,0.3)' : 'rgba(255,255,255,0.05)',
+                      border: `1px solid ${obfuscateTarget === target ? 'rgba(160,100,240,0.7)' : 'rgba(160,100,240,0.25)'}`,
+                      color: obfuscateTarget === target ? 'rgba(220,180,255,0.95)' : 'rgba(175,135,220,0.6)',
+                    }}
+                  >
+                    {target === 'me' ? 'Moi' : 'Adversaire'}
+                  </button>
+                ))}
+              </div>
+              {obfuscateTarget && (
+                <button onClick={() => { setObfuscateTarget(null); setShowObfuscatePicker(false); }} className="text-xs" style={{ color: 'rgba(175,135,220,0.4)' }}>
+                  Annuler l'effet
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Popup confirmation désactivation Obfuscate */}
+        {showObfuscateCancel && obfuscateTarget && (
+          <div className="absolute inset-0 z-40 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }} onClick={() => setShowObfuscateCancel(false)}>
+            <div className="rounded-2xl p-6 flex flex-col items-center gap-4 w-72" style={{ background: '#120d2a', border: '1px solid rgba(160,100,240,0.4)', boxShadow: '0 0 32px rgba(140,80,220,0.25)' }} onClick={e => e.stopPropagation()}>
+              <div className="flex items-center gap-2">
+                <span style={{ fontSize: '0.45rem', color: 'rgba(220,170,255,0.8)' }}>◆</span>
+                <p className="font-black tracking-widest uppercase text-sm" style={{ color: 'rgba(215,175,255,0.95)' }}>Obfuscate !</p>
+                <span style={{ fontSize: '0.45rem', color: 'rgba(220,170,255,0.8)' }}>◆</span>
+              </div>
+              <p className="text-xs text-center" style={{ color: 'rgba(175,135,220,0.65)', lineHeight: 1.6 }}>
+                Désactiver l'effet ?<br />
+                <span style={{ color: 'rgba(215,175,255,0.5)' }}>
+                  {obfuscateTarget === 'me' ? 'Moi' : 'L\'adversaire'} reviendra à un seuil de victoire de <strong style={{ color: 'rgba(215,175,255,0.8)' }}>20 lore</strong>.
+                  {((obfuscateTarget === 'me' ? myLore : opponentLore) > MAX_LORE)
+                    ? ' La partie se terminera immédiatement.' : ''}
+                </span>
+              </p>
+              <div className="flex gap-3 w-full">
+                <button onClick={() => setShowObfuscateCancel(false)} className="flex-1 py-2.5 rounded-xl text-sm" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(160,100,240,0.2)', color: 'rgba(175,135,220,0.5)' }}>
+                  Annuler
+                </button>
+                <button
+                  onClick={() => {
+                    const currentLore = obfuscateTarget === 'me' ? myLoreRef.current : opponentLoreRef.current;
+                    setObfuscateTarget(null);
+                    setShowObfuscateCancel(false);
+                    if (currentLore >= MAX_LORE) {
+                      winnerRef.current = obfuscateTarget;
+                      setWinner(obfuscateTarget);
+                    }
+                  }}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+                  style={{ background: 'linear-gradient(135deg, rgba(160,100,240,0.6), rgba(120,70,200,0.6))', color: 'rgba(220,185,255,0.95)', border: '1px solid rgba(160,100,240,0.5)' }}
+                >
+                  Confirmer
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Popup édition timer */}
         {editingTimer && (
@@ -936,6 +1148,16 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
                 placeholder="mm:ss"
               />
               <p className="text-xs text-white/30">Format mm:ss · ex: 50:00</p>
+              <div className="flex gap-2 w-full">
+                {[{ label: '70 min', secs: 70 * 60 }, { label: '55 min', secs: 55 * 60 }, { label: '50 min', secs: 50 * 60 }].map(({ label, secs }) => (
+                  <button
+                    key={label}
+                    onClick={() => { setTimerSeconds(secs); setEditingTimer(false); }}
+                    className="flex-1 py-2 rounded-xl text-xs font-medium"
+                    style={{ background: 'rgba(255,255,255,0.07)', color: timerColor, border: `1px solid ${timerColor}44` }}
+                  >{label}</button>
+                ))}
+              </div>
               <div className="flex gap-3 w-full">
                 <button onClick={() => setEditingTimer(false)} className="flex-1 py-2.5 rounded-xl text-sm text-white/50 bg-white/5">Annuler</button>
                 <button
@@ -956,7 +1178,7 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
         )}
 
         <div className="flex-1 flex flex-col">
-          <PlayerSide label="Moi" lore={myLore} accent={theme.meAccent} onChangeLore={(d) => changeLore('me', d)} disabled={!!winner} />
+          <PlayerSide label="Moi" lore={myLore} accent={theme.meAccent} onChangeLore={(d) => changeLore('me', d)} disabled={!!winner} obfuscated={obfuscateTarget === 'me'} onObfuscateClick={() => setShowObfuscateCancel(true)} />
         </div>
       </div>
 
@@ -1134,9 +1356,11 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
 }
 
 // ─── PlayerSide ────────────────────────────────────────────────────────────
-function PlayerSide({ label, lore, accent, onChangeLore, disabled }: {
+function PlayerSide({ label, lore, accent, onChangeLore, disabled, obfuscated, onObfuscateClick }: {
   label: string; lore: number; accent: string; onChangeLore: (delta: number) => void; disabled: boolean;
+  obfuscated?: boolean; onObfuscateClick?: () => void;
 }) {
+  const maxLore = obfuscated ? 25 : MAX_LORE;
   const accentDim = `${accent}18`;
   const accentBorder = `${accent}30`;
   const glow = `0 0 40px ${accent}40`;
@@ -1151,7 +1375,7 @@ function PlayerSide({ label, lore, accent, onChangeLore, disabled }: {
           <span className="font-thin leading-none" style={{ fontSize: 'clamp(4rem, 18vw, 7rem)', color: `${accent}50` }}>−</span>
         </button>
         {/* Bouton + sur toute la hauteur, côté droit */}
-        <button className="absolute inset-y-0 right-0 w-1/2 flex items-center justify-end pr-8 transition-all duration-150 active:opacity-50 disabled:opacity-20 z-10" onClick={() => onChangeLore(1)} disabled={disabled || lore >= MAX_LORE} aria-label="+1">
+        <button className="absolute inset-y-0 right-0 w-1/2 flex items-center justify-end pr-8 transition-all duration-150 active:opacity-50 disabled:opacity-20 z-10" onClick={() => onChangeLore(1)} disabled={disabled || lore >= maxLore} aria-label="+1">
           <span className="font-thin leading-none" style={{ fontSize: 'clamp(4rem, 18vw, 7rem)', color: `${accent}50` }}>+</span>
         </button>
 
@@ -1161,14 +1385,27 @@ function PlayerSide({ label, lore, accent, onChangeLore, disabled }: {
           <span className="font-display font-bold leading-none tabular-nums" style={{ fontSize: 'clamp(5rem, 22vw, 11rem)', color: accent, textShadow: glow }}>
             {lore}
           </span>
+          {/* Badge Obfuscate */}
+          {obfuscated && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onObfuscateClick?.(); }}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full transition-all active:scale-95 z-10 pointer-events-auto"
+              style={{ background: 'rgba(120,60,200,0.25)', border: '1px solid rgba(160,100,240,0.5)', color: 'rgba(215,175,255,0.9)' }}
+            >
+              <span style={{ fontSize: '0.4rem' }}>◆</span>
+              <span style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Obfuscate — victoire à 25</span>
+              <span style={{ fontSize: '0.4rem' }}>◆</span>
+            </button>
+          )}
+
           {/* Losanges Lorcana */}
           <div className="flex gap-0.5 items-center flex-wrap justify-center max-w-[260px]">
-            {Array.from({ length: MAX_LORE }).map((_, i) => (
+            {Array.from({ length: maxLore }).map((_, i) => (
               <svg key={i} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25.83 32" className="transition-all duration-200" style={{ width: 10, height: 13 }}>
                 {i < lore ? (
                   <><path d="M12.91 0 0 16l12.91 16 12.91-16L12.91 0ZM1.28 16 12.91 1.59 24.54 16 12.91 30.41 1.28 16Z" fill={accent} /><path d="m21.99 16-9.08 11.25L3.83 16l9.08-11.25L21.99 16z" fill={accent} /></>
                 ) : (
-                  <path d="m12.91 0 12.91 16-12.91 16L0 16 12.91 0Z" fill={`${accent}25`} />
+                  <path d="m12.91 0 12.91 16-12.91 16L0 16 12.91 0Z" fill={i < MAX_LORE ? `${accent}25` : `${accent}12`} />
                 )}
               </svg>
             ))}
@@ -1179,7 +1416,7 @@ function PlayerSide({ label, lore, accent, onChangeLore, disabled }: {
       {/* Boutons ±5 en bas */}
       <div className="flex justify-between px-5 pb-3 gap-3">
         <button onClick={() => onChangeLore(-5)} disabled={disabled || lore === 0} className="flex-1 h-12 rounded-xl text-base font-semibold transition-all duration-150 active:scale-95 disabled:opacity-25" style={{ background: accentDim, color: accent, border: `1px solid ${accentBorder}` }}>−5</button>
-        <button onClick={() => onChangeLore(5)} disabled={disabled || lore >= MAX_LORE} className="flex-1 h-12 rounded-xl text-base font-semibold transition-all duration-150 active:scale-95 disabled:opacity-25" style={{ background: accentDim, color: accent, border: `1px solid ${accentBorder}` }}>+5</button>
+        <button onClick={() => onChangeLore(5)} disabled={disabled || lore >= maxLore} className="flex-1 h-12 rounded-xl text-base font-semibold transition-all duration-150 active:scale-95 disabled:opacity-25" style={{ background: accentDim, color: accent, border: `1px solid ${accentBorder}` }}>+5</button>
       </div>
     </div>
   );

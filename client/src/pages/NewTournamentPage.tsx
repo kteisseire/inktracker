@@ -307,43 +307,79 @@ export function NewTournamentPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <div className="ink-error">{error}</div>}
 
-        {/* ── Lien Ravensburger ── */}
-        <div className="ink-card p-4 space-y-1">
-          <label className="ink-label">Lien Ravensburger Play Hub</label>
-          <div className="relative">
-            <input
-              type="url" value={eventLink}
-              onChange={e => handleEventLinkChange(e.target.value)}
-              onPaste={e => {
-                const pasted = e.clipboardData.getData('text');
-                if (pasted && extractEventId(pasted)) { e.preventDefault(); setEventLink(pasted); fetchEventData(pasted); }
-              }}
-              placeholder="https://tcg.ravensburgerplay.com/events/..."
-              className="ink-input text-sm pr-10"
-            />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-              {eventFetching && <span className="text-gold-400 animate-spin text-sm">&#9696;</span>}
-              {eventFetchStatus === 'success' && <span className="text-green-400 text-lg">&#10003;</span>}
-              {eventFetchStatus === 'error' && <span className="text-red-400 text-lg">&#10007;</span>}
-              {extractEventId(eventLink) && !eventFetching && (
-                <button type="button" onClick={refreshEventData} className="p-1 text-ink-500 hover:text-gold-400 transition-colors" title="Rafraîchir">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                </button>
-              )}
-            </div>
+        {/* ── Bloc Tournoi ── */}
+        <div className="ink-card p-4 space-y-3">
+          <p className="text-xs font-semibold text-ink-500 uppercase tracking-wider">Tournoi</p>
+
+          {/* Nom */}
+          <div>
+            <label className="ink-label">Nom du tournoi *</label>
+            <input type="text" required value={name} onChange={e => setName(e.target.value)}
+              placeholder="Ex: Challenge Lorcana Paris" className="ink-input" />
           </div>
-          <p className="text-xs text-ink-600">Les infos du tournoi sont remplies automatiquement</p>
+
+          {/* Séparateur OU */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-ink-800/60" />
+            <span className="text-xs font-semibold text-ink-600 uppercase tracking-widest">ou</span>
+            <div className="flex-1 h-px bg-ink-800/60" />
+          </div>
+
+          {/* Lien Play Hub */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="ink-label mb-0 flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-ink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                Lien Ravensburger Play Hub
+              </label>
+              <a
+                href="https://tcg.ravensburgerplay.com/my-events"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-gold-400 hover:text-gold-300 transition-colors flex items-center gap-1"
+              >
+                Ouvrir Play Hub
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+              </a>
+            </div>
+            <div className="relative">
+              <input type="url" value={eventLink}
+                onChange={e => handleEventLinkChange(e.target.value)}
+                onPaste={e => {
+                  const pasted = e.clipboardData.getData('text');
+                  if (pasted && extractEventId(pasted)) { e.preventDefault(); setEventLink(pasted); fetchEventData(pasted); }
+                }}
+                placeholder="https://tcg.ravensburgerplay.com/events/..."
+                className="ink-input text-sm pr-10"
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                {eventFetching && <span className="text-gold-400 animate-spin text-sm">&#9696;</span>}
+                {eventFetchStatus === 'success' && <span className="text-green-400 text-lg">&#10003;</span>}
+                {eventFetchStatus === 'error' && <span className="text-red-400 text-lg">&#10007;</span>}
+                {extractEventId(eventLink) && !eventFetching && (
+                  <button type="button" onClick={refreshEventData} className="p-1 text-ink-500 hover:text-gold-400 transition-colors" title="Rafraîchir">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                  </button>
+                )}
+              </div>
+            </div>
+            <p className="text-xs text-ink-600 mt-1">Remplit automatiquement le nom, la date, le lieu et le format</p>
+          </div>
         </div>
 
-        {/* ── Mon deck ── */}
+        {/* ── Bloc Deck ── */}
         <div className="ink-card p-4 space-y-3">
-          <label className="ink-label">Mon deck *</label>
+          <p className="text-xs font-semibold text-ink-500 uppercase tracking-wider">Mon deck *</p>
+
+          {/* Decks sauvegardés */}
           {savedDecks.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {savedDecks.map(deck => (
                 <button key={deck.id} type="button" onClick={() => handleDeckSelect(deck.id)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition-all ${
-                    selectedDeckId === deck.id ? 'border-gold-500 bg-gold-500/10 ring-2 ring-gold-500/30' : 'border-ink-700/50 bg-ink-900/50 hover:border-ink-600/50'
+                    selectedDeckId === deck.id
+                      ? 'border-gold-500 bg-gold-500/10 ring-2 ring-gold-500/30'
+                      : 'border-ink-700/50 bg-ink-900/50 hover:border-ink-600/50'
                   }`}
                 >
                   <DeckBadges colors={deck.colors as any} />
@@ -352,25 +388,57 @@ export function NewTournamentPage() {
                 </button>
               ))}
               <button type="button" onClick={() => handleDeckSelect('')}
-                className={`px-3 py-2 rounded-xl border text-sm transition-all text-ink-400 ${selectedDeckId === '' ? 'border-gold-500 bg-gold-500/10 ring-2 ring-gold-500/30' : 'border-ink-700/50 bg-ink-900/50 hover:border-ink-600/50'}`}
+                className={`px-3 py-2 rounded-xl border text-sm transition-all text-ink-400 ${
+                  selectedDeckId === '' ? 'border-gold-500 bg-gold-500/10 ring-2 ring-gold-500/30' : 'border-ink-700/50 bg-ink-900/50 hover:border-ink-600/50'
+                }`}
               >Autre…</button>
             </div>
           )}
+
+          {/* Options si pas de deck sélectionné */}
           {(!selectedDeckId || savedDecks.length === 0) && (
             <div className="space-y-3">
-              <div className="relative">
-                <input type="url" value={myDeckLink}
-                  onChange={e => handleDeckLinkChange(e.target.value)}
-                  onPaste={e => { const p = e.clipboardData.getData('text'); if (p && isDeckUrl(p)) { e.preventDefault(); setMyDeckLink(p); fetchColors(p); } }}
-                  placeholder="dreamborn.ink, lorcanito.com…"
-                  className="ink-input pr-10 text-sm"
-                />
-                {deckLinkLoading && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gold-400 animate-spin text-sm">&#9696;</span>}
-                {deckLinkStatus === 'success' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-400 text-lg">&#10003;</span>}
-                {deckLinkStatus === 'error' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-red-400 text-lg">&#10007;</span>}
+              {savedDecks.length > 0 && (
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px bg-ink-800/60" />
+                  <span className="text-xs font-semibold text-ink-600 uppercase tracking-widest">ou</span>
+                  <div className="flex-1 h-px bg-ink-800/60" />
+                </div>
+              )}
+
+              {/* Lien deck */}
+              <div>
+                <label className="ink-label flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5 text-ink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                  Lien vers le deck
+                </label>
+                <div className="relative">
+                  <input type="url" value={myDeckLink}
+                    onChange={e => handleDeckLinkChange(e.target.value)}
+                    onPaste={e => { const p = e.clipboardData.getData('text'); if (p && isDeckUrl(p)) { e.preventDefault(); setMyDeckLink(p); fetchColors(p); } }}
+                    placeholder="dreamborn.ink, lorcanito.com…"
+                    className="ink-input pr-10 text-sm"
+                  />
+                  {deckLinkLoading && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gold-400 animate-spin text-sm">&#9696;</span>}
+                  {deckLinkStatus === 'success' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-400 text-lg">&#10003;</span>}
+                  {deckLinkStatus === 'error' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-red-400 text-lg">&#10007;</span>}
+                </div>
+                {deckLinkStatus === 'error' && deckLinkError && <p className="text-xs text-red-400 mt-1">{deckLinkError}</p>}
+                <p className="text-xs text-ink-600 mt-1">Détecte les couleurs automatiquement</p>
               </div>
-              {deckLinkStatus === 'error' && deckLinkError && <p className="text-xs text-red-400">{deckLinkError}</p>}
-              <InkColorPicker selected={myDeckColors} onChange={setMyDeckColors} />
+
+              {/* Séparateur OU */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-ink-800/60" />
+                <span className="text-xs font-semibold text-ink-600 uppercase tracking-widest">ou</span>
+                <div className="flex-1 h-px bg-ink-800/60" />
+              </div>
+
+              {/* Sélection manuelle des couleurs */}
+              <div>
+                <label className="ink-label">Couleurs d'encre</label>
+                <InkColorPicker selected={myDeckColors} onChange={setMyDeckColors} />
+              </div>
             </div>
           )}
         </div>
@@ -424,10 +492,6 @@ export function NewTournamentPage() {
 
         {showAdvanced && (
           <div className="ink-card p-4 space-y-4">
-            <div>
-              <label className="ink-label">Nom du tournoi *</label>
-              <input type="text" required value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Challenge Lorcana Paris" className="ink-input" />
-            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="ink-label">Date *</label>

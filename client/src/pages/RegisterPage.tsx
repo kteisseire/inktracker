@@ -10,7 +10,8 @@ export function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectTo = safeRedirect(searchParams.get('redirect'));
+  const raw = safeRedirect(searchParams.get('redirect'));
+  const redirectTo = (!raw || ['/profile', '/teams', '/admin'].some(p => raw.startsWith(p))) ? '/tournaments' : raw;
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');

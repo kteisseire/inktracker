@@ -21,7 +21,7 @@ function ResultBadge({ wins, losses, draws }: { wins: number; losses: number; dr
   );
 }
 
-function CardMenu({ tournament, onDeleted }: { tournament: Tournament; onDeleted: () => void }) {
+function CardMenu({ tournament, onDeleted }: { tournament: Tournament; onDeleted: (id: string) => void }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -61,7 +61,7 @@ function CardMenu({ tournament, onDeleted }: { tournament: Tournament; onDeleted
     if (!confirm(`Supprimer « ${tournament.name} » ?`)) return;
     try {
       await deleteTournament(tournament.id);
-      onDeleted();
+      onDeleted(tournament.id);
     } catch { alert('Erreur lors de la suppression'); }
   };
 
@@ -114,7 +114,7 @@ function CardMenu({ tournament, onDeleted }: { tournament: Tournament; onDeleted
 function TournamentCard({ tournament, presence, onDeleted }: {
   tournament: Tournament;
   presence?: { count: number; members: string[] };
-  onDeleted: () => void;
+  onDeleted: (id: string) => void;
 }) {
   const wins = tournament.rounds?.filter(r => r.result === 'WIN').length ?? 0;
   const losses = tournament.rounds?.filter(r => r.result === 'LOSS').length ?? 0;
@@ -184,8 +184,11 @@ export function TournamentsPage() {
 
   const tournaments = tournamentsData?.tournaments ?? [];
 
-  const handleDeleted = () => {
-    queryClient.invalidateQueries({ queryKey: ['tournaments'] });
+  const handleDeleted = (id: string) => {
+    queryClient.setQueryData(['tournaments', 1, 50], (old: any) => {
+      if (!old) return old;
+      return { ...old, tournaments: old.tournaments.filter((t: any) => t.id !== id) };
+    });
   };
 
   if (isLoading) {

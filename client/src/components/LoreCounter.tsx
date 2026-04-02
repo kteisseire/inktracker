@@ -34,167 +34,170 @@ const THEMES: Theme[] = [
     oppAccent: '#d85b5b',
     stars: true,
   },
+  // S1 — The First Chapter : Great Illuminary, six encres fondatrices, éclats d'encre colorée
   {
     id: 'set1',
     name: 'The First Chapter',
-    bg: 'linear-gradient(160deg, #1a0e2e 0%, #0d1a0e 50%, #1a0a0e 100%)',
-    separator: 'rgba(245,178,2,0.6)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(245,178,2,0.2) 20%, rgba(245,178,2,0.6) 50%, rgba(245,178,2,0.2) 80%, transparent 100%)',
+    bg: 'radial-gradient(ellipse at 50% 30%, #1c1030 0%, #100820 55%, #180810 100%)',
+    bgOverlay: 'radial-gradient(ellipse at 70% 80%, rgba(180,20,30,0.12) 0%, transparent 50%)',
+    separator: 'rgba(245,178,2,0.65)',
+    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(1,137,196,0.3) 20%, rgba(245,178,2,0.7) 50%, rgba(211,8,47,0.3) 80%, transparent 100%)',
     pill: '#110d20',
-    pillBorder: 'rgba(245,178,2,0.3)',
+    pillBorder: 'rgba(245,178,2,0.35)',
     meAccent: '#0189C4',
     oppAccent: '#D3082F',
     stars: true,
   },
+  // S2 — Rise of the Floodborn : inondation d'encre chaotique, tourbillons violets/sombres
   {
     id: 'set2',
     name: 'Rise of the Floodborn',
-    bg: 'radial-gradient(ellipse at 30% 70%, #1a0a2e 0%, #060412 60%, #0a0a1a 100%)',
-    separator: 'rgba(160,80,220,0.5)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(100,40,180,0.3) 20%, rgba(160,80,220,0.6) 50%, rgba(100,40,180,0.3) 80%, transparent 100%)',
+    bg: 'radial-gradient(ellipse at 40% 60%, #1e0a30 0%, #08041a 55%, #040210 100%)',
+    bgOverlay: 'radial-gradient(ellipse at 60% 30%, rgba(120,40,200,0.2) 0%, transparent 55%)',
+    separator: 'rgba(160,80,220,0.55)',
+    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(80,20,160,0.4) 20%, rgba(180,100,240,0.7) 50%, rgba(80,20,160,0.4) 80%, transparent 100%)',
     pill: '#0d0820',
     pillBorder: 'rgba(150,70,210,0.35)',
-    meAccent: '#7b4fd4',
-    oppAccent: '#c44fd4',
-    stars: true,
+    meAccent: '#9060e8',
+    oppAccent: '#e040b0',
+    stars: false,
     particles: 'bubbles',
   },
+  // S3 — Into the Inklands : exploration, montagnes, forêts, pierres anciennes
   {
     id: 'set3',
     name: 'Into the Inklands',
-    bg: 'linear-gradient(135deg, #0d1a10 0%, #0a1520 50%, #1a1205 100%)',
-    separator: 'rgba(42,137,52,0.5)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(42,137,52,0.2) 20%, rgba(80,180,90,0.6) 50%, rgba(42,137,52,0.2) 80%, transparent 100%)',
-    pill: '#091510',
-    pillBorder: 'rgba(42,137,52,0.35)',
-    meAccent: '#2A8934',
-    oppAccent: '#c8a020',
+    bg: 'linear-gradient(155deg, #0a1a0c 0%, #081520 45%, #0e1808 100%)',
+    bgOverlay: 'radial-gradient(ellipse at 30% 70%, rgba(30,90,20,0.25) 0%, transparent 55%)',
+    separator: 'rgba(60,180,90,0.55)',
+    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(30,120,50,0.3) 20%, rgba(80,200,100,0.65) 50%, rgba(30,120,50,0.3) 80%, transparent 100%)',
+    pill: '#071410',
+    pillBorder: 'rgba(40,140,60,0.35)',
+    meAccent: '#38b060',
+    oppAccent: '#d4a820',
     stars: false,
-    particles: 'none',
   },
+  // S4 — Ursula's Return : ténèbres, tentacules, palais opulent, fumée violette/cyan
   {
     id: 'set4',
     name: "Ursula's Return",
-    bg: 'radial-gradient(ellipse at 50% 80%, #0a0520 0%, #04060f 60%, #000408 100%)',
-    bgOverlay: 'radial-gradient(ellipse at 50% 100%, rgba(0,80,120,0.3) 0%, transparent 60%)',
-    separator: 'rgba(0,180,210,0.4)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(0,120,180,0.2) 20%, rgba(0,200,230,0.5) 50%, rgba(0,120,180,0.2) 80%, transparent 100%)',
-    pill: '#050510',
-    pillBorder: 'rgba(0,160,200,0.3)',
-    meAccent: '#00b4d8',
-    oppAccent: '#7b2fd4',
+    bg: 'radial-gradient(ellipse at 50% 90%, #080318 0%, #030208 65%, #000000 100%)',
+    bgOverlay: 'radial-gradient(ellipse at 30% 50%, rgba(100,0,160,0.18) 0%, transparent 50%)',
+    separator: 'rgba(180,0,220,0.5)',
+    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(80,0,160,0.3) 20%, rgba(200,0,240,0.6) 50%, rgba(0,160,200,0.3) 80%, transparent 100%)',
+    pill: '#040212',
+    pillBorder: 'rgba(160,0,200,0.3)',
+    meAccent: '#c000e8',
+    oppAccent: '#00c8e8',
     stars: true,
     particles: 'bubbles',
   },
+  // S5 — Shimmering Skies : festival, feux d'artifice, ciel nocturne festif
   {
     id: 'set5',
     name: 'Shimmering Skies',
-    bg: 'linear-gradient(135deg, #1a0a30 0%, #0a1040 40%, #200a20 100%)',
-    separator: 'rgba(255,200,50,0.6)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(255,100,150,0.3) 15%, rgba(255,200,50,0.7) 50%, rgba(100,150,255,0.3) 85%, transparent 100%)',
-    pill: '#120820',
-    pillBorder: 'rgba(255,180,50,0.35)',
-    meAccent: '#60b0ff',
-    oppAccent: '#ff6090',
+    bg: 'linear-gradient(170deg, #080520 0%, #0a0830 40%, #120530 100%)',
+    bgOverlay: 'radial-gradient(ellipse at 50% 20%, rgba(120,60,220,0.2) 0%, transparent 55%)',
+    separator: 'rgba(255,210,60,0.65)',
+    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(255,80,160,0.35) 15%, rgba(255,210,60,0.75) 50%, rgba(80,160,255,0.35) 85%, transparent 100%)',
+    pill: '#08051e',
+    pillBorder: 'rgba(255,190,50,0.35)',
+    meAccent: '#70c0ff',
+    oppAccent: '#ff5090',
     stars: true,
     particles: 'sparks',
   },
+  // S6 — Azurite Sea : haute mer, pirates, bleus profonds, or nautique
   {
     id: 'set6',
     name: 'Azurite Sea',
-    bg: 'linear-gradient(180deg, #040c1a 0%, #061428 50%, #081830 100%)',
-    bgOverlay: 'radial-gradient(ellipse at 50% 100%, rgba(0,60,120,0.4) 0%, transparent 60%)',
-    separator: 'rgba(30,140,200,0.5)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(20,80,160,0.3) 20%, rgba(40,160,220,0.6) 50%, rgba(20,80,160,0.3) 80%, transparent 100%)',
-    pill: '#040e20',
-    pillBorder: 'rgba(30,120,200,0.4)',
-    meAccent: '#1e8cc8',
-    oppAccent: '#6040c0',
+    bg: 'linear-gradient(185deg, #020c1e 0%, #040f28 45%, #030a18 100%)',
+    bgOverlay: 'radial-gradient(ellipse at 50% 100%, rgba(0,50,120,0.45) 0%, transparent 55%)',
+    separator: 'rgba(40,160,220,0.55)',
+    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(10,80,160,0.35) 20%, rgba(50,180,230,0.7) 50%, rgba(180,140,30,0.25) 80%, transparent 100%)',
+    pill: '#030c1e',
+    pillBorder: 'rgba(30,130,210,0.4)',
+    meAccent: '#28a8e0',
+    oppAccent: '#d4a830',
     stars: false,
     particles: 'bubbles',
   },
+  // S7 — Archazia's Island : mystère ancien, hibou, symboles dual-encre, jungle tropicale
   {
     id: 'set7',
     name: "Archazia's Island",
-    bg: 'linear-gradient(135deg, #1a0f08 0%, #0f1a08 50%, #08100a 100%)',
-    separator: 'rgba(180,130,30,0.5)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(120,80,20,0.3) 20%, rgba(200,150,40,0.6) 50%, rgba(120,80,20,0.3) 80%, transparent 100%)',
-    pill: '#120c06',
-    pillBorder: 'rgba(160,120,30,0.35)',
-    meAccent: '#c89020',
-    oppAccent: '#508030',
+    bg: 'linear-gradient(145deg, #0e100a 0%, #121808 45%, #0a0e10 100%)',
+    bgOverlay: 'radial-gradient(ellipse at 60% 40%, rgba(180,130,20,0.12) 0%, transparent 50%)',
+    separator: 'rgba(200,160,40,0.55)',
+    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(140,100,20,0.3) 20%, rgba(220,170,50,0.65) 50%, rgba(60,120,40,0.3) 80%, transparent 100%)',
+    pill: '#0c0e08',
+    pillBorder: 'rgba(170,130,30,0.35)',
+    meAccent: '#d4a828',
+    oppAccent: '#60a838',
     stars: false,
   },
+  // S8 — Reign of Jafar : désert, sablier surréaliste, palais de marbre/or, torches
   {
     id: 'set8',
     name: 'Reign of Jafar',
-    bg: 'radial-gradient(ellipse at 50% 30%, #1a0800 0%, #0a0400 60%, #000000 100%)',
-    bgOverlay: 'radial-gradient(ellipse at 50% 0%, rgba(180,60,0,0.2) 0%, transparent 50%)',
-    separator: 'rgba(200,80,0,0.5)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(150,40,0,0.3) 20%, rgba(220,100,0,0.6) 50%, rgba(150,40,0,0.3) 80%, transparent 100%)',
+    bg: 'radial-gradient(ellipse at 50% 20%, #1e0800 0%, #0c0400 55%, #000000 100%)',
+    bgOverlay: 'radial-gradient(ellipse at 50% 5%, rgba(220,80,0,0.22) 0%, transparent 45%)',
+    separator: 'rgba(220,100,10,0.6)',
+    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(160,50,0,0.35) 20%, rgba(240,120,10,0.7) 50%, rgba(200,170,30,0.3) 80%, transparent 100%)',
     pill: '#0f0400',
-    pillBorder: 'rgba(180,60,0,0.35)',
-    meAccent: '#e06010',
-    oppAccent: '#c0c0c0',
-    stars: true,
+    pillBorder: 'rgba(200,80,0,0.35)',
+    meAccent: '#e87010',
+    oppAccent: '#d4c030',
+    stars: false,
   },
+  // S9 — Fabled : Grand Illuminary, storybook classique, Mickey, dorure, nostalgie
   {
     id: 'set9',
     name: 'Fabled',
-    bg: 'linear-gradient(150deg, #1a1208 0%, #120e06 50%, #1a1508 100%)',
-    separator: 'rgba(210,170,80,0.6)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(180,130,40,0.3) 20%, rgba(220,180,80,0.7) 50%, rgba(180,130,40,0.3) 80%, transparent 100%)',
-    pill: '#130f06',
-    pillBorder: 'rgba(200,160,60,0.4)',
-    meAccent: '#d4aa50',
-    oppAccent: '#c87040',
-    stars: false,
+    bg: 'radial-gradient(ellipse at 50% 40%, #1e1608 0%, #120e04 60%, #0e0a02 100%)',
+    bgOverlay: 'radial-gradient(ellipse at 50% 0%, rgba(220,180,60,0.1) 0%, transparent 55%)',
+    separator: 'rgba(220,185,80,0.65)',
+    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(180,140,40,0.35) 20%, rgba(230,195,80,0.75) 50%, rgba(180,140,40,0.35) 80%, transparent 100%)',
+    pill: '#120e04',
+    pillBorder: 'rgba(210,170,60,0.4)',
+    meAccent: '#e8c050',
+    oppAccent: '#e07840',
+    stars: true,
   },
+  // S10 — Whispers in the Well : film noir, grotte, lumière unique, fantômes, puits mystique
   {
     id: 'set10',
     name: 'Whispers in the Well',
-    bg: 'radial-gradient(ellipse at 50% 40%, #0e0818 0%, #04020a 70%, #000000 100%)',
-    bgOverlay: 'radial-gradient(ellipse at 30% 60%, rgba(80,20,120,0.2) 0%, transparent 50%)',
-    separator: 'rgba(140,80,200,0.5)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(80,30,140,0.3) 15%, rgba(160,100,220,0.5) 35%, rgba(200,230,255,0.7) 50%, rgba(160,100,220,0.5) 65%, rgba(80,30,140,0.3) 85%, transparent 100%)',
-    pill: '#08040f',
-    pillBorder: 'rgba(140,80,200,0.35)',
-    meAccent: '#a060d8',
-    oppAccent: '#60c8d8',
-    stars: true,
+    bg: 'radial-gradient(ellipse at 40% 55%, #0a0614 0%, #040208 65%, #000000 100%)',
+    bgOverlay: 'radial-gradient(ellipse at 60% 40%, rgba(60,10,100,0.2) 0%, transparent 45%)',
+    separator: 'rgba(150,90,210,0.55)',
+    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(70,20,130,0.3) 15%, rgba(170,110,230,0.55) 38%, rgba(210,240,255,0.75) 50%, rgba(170,110,230,0.55) 62%, rgba(70,20,130,0.3) 85%, transparent 100%)',
+    pill: '#060310',
+    pillBorder: 'rgba(130,70,190,0.35)',
+    meAccent: '#b070e0',
+    oppAccent: '#50c8d8',
+    stars: false,
     particles: 'sparks',
   },
+  // S11 — Winterspell : hiver, flocons, cristaux de glace, Elsa, magie glacée
   {
     id: 'set11',
     name: 'Winterspell',
-    bg: 'linear-gradient(160deg, #060c18 0%, #08101e 50%, #040810 100%)',
-    bgOverlay: 'radial-gradient(ellipse at 50% 0%, rgba(160,210,255,0.08) 0%, transparent 60%)',
-    separator: 'rgba(140,200,255,0.5)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(100,160,220,0.3) 20%, rgba(180,220,255,0.7) 50%, rgba(100,160,220,0.3) 80%, transparent 100%)',
-    pill: '#05090f',
-    pillBorder: 'rgba(140,200,255,0.3)',
-    meAccent: '#80c8f0',
-    oppAccent: '#a0d8c8',
+    bg: 'linear-gradient(165deg, #04081a 0%, #060c20 50%, #030810 100%)',
+    bgOverlay: 'radial-gradient(ellipse at 50% 0%, rgba(140,200,255,0.1) 0%, transparent 55%)',
+    separator: 'rgba(160,215,255,0.55)',
+    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(100,170,230,0.35) 20%, rgba(190,230,255,0.75) 50%, rgba(100,170,230,0.35) 80%, transparent 100%)',
+    pill: '#040810',
+    pillBorder: 'rgba(140,205,255,0.3)',
+    meAccent: '#90d0f8',
+    oppAccent: '#a8e8d8',
     stars: true,
     particles: 'sparks',
   },
+  // S12 — Wilds Unknown : jungle nuit, lucioles, vignes, Pixar/Disney en territoire sauvage
   {
     id: 'set12',
     name: 'Wilds Unknown',
-    bg: 'linear-gradient(150deg, #061208 0%, #0a1a08 40%, #101408 100%)',
-    bgOverlay: 'radial-gradient(ellipse at 70% 80%, rgba(40,100,20,0.2) 0%, transparent 50%)',
-    separator: 'rgba(100,180,60,0.5)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(60,120,30,0.3) 20%, rgba(120,200,60,0.6) 50%, rgba(60,120,30,0.3) 80%, transparent 100%)',
-    pill: '#060e05',
-    pillBorder: 'rgba(80,160,40,0.35)',
-    meAccent: '#70c040',
-    oppAccent: '#c0a030',
-    stars: false,
-    particles: 'none',
-  },
-  {
-    id: 'set12_wilds',
-    name: 'Wilds Unknown — Jungle',
     bg: 'linear-gradient(170deg, #020a04 0%, #04120a 30%, #061508 60%, #030e05 100%)',
     bgOverlay: 'radial-gradient(ellipse at 50% 60%, rgba(20,80,10,0.35) 0%, transparent 65%)',
     separator: 'rgba(180,230,80,0.5)',
@@ -204,20 +207,336 @@ const THEMES: Theme[] = [
     meAccent: '#8de84a',
     oppAccent: '#e8b84a',
     stars: false,
-    particles: 'fireflies' as unknown as 'sparks',
   },
 ];
 
-// ─── Fond Wilds Unknown ───────────────────────────────────────────────────
-function WildsBackground() {
+// ─── Fonds décoratifs par set ─────────────────────────────────────────────
+
+// S1 — éclats d'encre en cercles colorés épars
+function Set1Background() {
+  const inks = ['#0189C4','#D3082F','#2A8934','#8B32A0','#C8940A','#708090'];
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
-      {/* Brume de fond */}
+      {inks.map((c, i) => (
+        <div key={i} className="absolute rounded-full" style={{
+          width: 60 + (i * 23) % 80, height: 60 + (i * 23) % 80,
+          left: `${(i * 57 + 8) % 85 + 5}%`, top: `${(i * 41 + 5) % 80 + 5}%`,
+          background: `radial-gradient(circle, ${c}18 0%, transparent 70%)`,
+          filter: 'blur(12px)',
+        }} />
+      ))}
+      {/* Éclaboussure centrale */}
+      <svg className="absolute" style={{ left: '50%', top: '45%', transform: 'translate(-50%,-50%)', opacity: 0.06 }} width="300" height="300" viewBox="0 0 100 100">
+        {[0,60,120,180,240,300].map((angle, i) => (
+          <line key={i} x1="50" y1="50" x2={50 + 45 * Math.cos(angle * Math.PI / 180)} y2={50 + 45 * Math.sin(angle * Math.PI / 180)} stroke={inks[i]} strokeWidth="2" strokeLinecap="round"/>
+        ))}
+        <circle cx="50" cy="50" r="8" fill="none" stroke="#f5b202" strokeWidth="1.5"/>
+      </svg>
+    </div>
+  );
+}
+
+// S2 — tourbillons d'encre, vagues de crue
+function Set2Background() {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 30% 70%, rgba(140,20,220,0.15) 0%, transparent 50%)' }} />
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 70% 30%, rgba(60,0,180,0.15) 0%, transparent 50%)' }} />
+      {/* Tourbillons SVG */}
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice" style={{ opacity: 0.07 }}>
+        <path d="M200 400 C240 340, 300 360, 290 420 C280 480, 220 490, 200 440 C180 390, 220 350, 260 370" stroke="#a050e0" strokeWidth="2" fill="none"/>
+        <path d="M120 200 C150 150, 200 160, 195 210 C190 260, 145 265, 130 230" stroke="#8040d0" strokeWidth="1.5" fill="none"/>
+        <path d="M280 600 C310 550, 360 570, 350 620 C340 670, 290 670, 275 640" stroke="#c060f0" strokeWidth="1.5" fill="none"/>
+      </svg>
+      {/* Particules encre */}
+      {Array.from({ length: 14 }).map((_, i) => (
+        <div key={i} className="absolute rounded-full" style={{
+          width: 2 + (i % 3), height: 2 + (i % 3),
+          left: `${(i * 61 + 7) % 90 + 5}%`, top: `${(i * 43 + 13) % 85 + 5}%`,
+          background: i % 2 === 0 ? '#a050e0' : '#e040c0',
+          opacity: 0.2 + (i % 4) * 0.05,
+          boxShadow: `0 0 6px 2px ${i % 2 === 0 ? '#8030c0' : '#c02090'}`,
+        }} />
+      ))}
+    </div>
+  );
+}
+
+// S3 — pierres runiques, montagnes, encre colorée dans les recoins
+function Set3Background() {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+      {/* Silhouette montagne */}
+      <svg className="absolute bottom-0 inset-x-0" width="100%" height="120" viewBox="0 0 400 120" preserveAspectRatio="none" style={{ opacity: 0.1 }}>
+        <path d="M0 120 L60 60 L100 85 L160 30 L220 70 L270 20 L330 65 L380 40 L400 55 L400 120 Z" fill="#2a6a30"/>
+      </svg>
+      {/* Pierre runique centrale */}
+      <svg className="absolute" style={{ left: '50%', top: '50%', transform: 'translate(-50%,-50%)', opacity: 0.05 }} width="120" height="160" viewBox="0 0 120 160">
+        <rect x="20" y="10" width="80" height="140" rx="8" fill="none" stroke="#38b060" strokeWidth="2"/>
+        <text x="60" y="55" textAnchor="middle" fontSize="22" fill="#38b060" fontFamily="serif">᚛</text>
+        <text x="60" y="90" textAnchor="middle" fontSize="22" fill="#d4a820" fontFamily="serif">᚜</text>
+        <line x1="30" y1="108" x2="90" y2="108" stroke="#38b060" strokeWidth="1"/>
+      </svg>
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 85%, rgba(30,90,20,0.2) 0%, transparent 50%)' }} />
+    </div>
+  );
+}
+
+// S4 — tentacules, fumée violet/cyan, palais sombre
+function Set4Background() {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 100%, rgba(80,0,140,0.25) 0%, transparent 55%)' }} />
+      {/* Tentacules SVG */}
+      <svg className="absolute bottom-0 left-0" width="200" height="300" viewBox="0 0 200 300" fill="none" style={{ opacity: 0.12 }}>
+        <path d="M20 300 C30 250, 10 220, 25 180 C40 140, 20 110, 40 70 C55 35, 45 15, 60 0" stroke="#a000d0" strokeWidth="3" strokeLinecap="round"/>
+        <path d="M60 300 C55 260, 75 235, 65 200 C55 165, 80 145, 70 110 C60 75, 80 55, 90 30" stroke="#800090" strokeWidth="2.5" strokeLinecap="round"/>
+        <path d="M40 180 C25 175, 5 165, 0 150" stroke="#a000d0" strokeWidth="1.5" strokeLinecap="round"/>
+        <path d="M25 180 C15 170, 5 160, -5 148" stroke="#700080" strokeWidth="1" strokeLinecap="round"/>
+      </svg>
+      <svg className="absolute bottom-0 right-0" width="200" height="300" viewBox="0 0 200 300" fill="none" style={{ opacity: 0.1, transform: 'scaleX(-1)' }}>
+        <path d="M20 300 C30 250, 10 220, 25 180 C40 140, 20 110, 40 70 C55 35, 45 15, 60 0" stroke="#00c0e0" strokeWidth="3" strokeLinecap="round"/>
+        <path d="M60 300 C55 260, 75 235, 65 200 C55 165, 80 145, 70 110 C60 75, 80 55, 90 30" stroke="#0090b0" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+      {/* Particules fumée */}
+      {Array.from({ length: 10 }).map((_, i) => (
+        <div key={i} className="absolute rounded-full" style={{
+          width: 3, height: 3,
+          left: `${(i * 67 + 5) % 88 + 6}%`, top: `${(i * 39 + 10) % 80 + 8}%`,
+          background: i % 2 === 0 ? '#c000e8' : '#00c8e8',
+          opacity: 0.15 + (i % 4) * 0.06,
+          boxShadow: `0 0 8px 2px ${i % 2 === 0 ? '#9000b0' : '#0090b0'}`,
+        }} />
+      ))}
+    </div>
+  );
+}
+
+// S5 — feux d'artifice, étoiles filantes, ciel de fête
+function Set5Background() {
+  const colors = ['#70c0ff','#ff5090','#ffe060','#c080ff','#60ffb0'];
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(100,50,200,0.15) 0%, transparent 55%)' }} />
+      {/* Feux d'artifice */}
+      {colors.map((c, fi) => {
+        const cx = 15 + fi * 18, cy = 10 + (fi % 3) * 15;
+        return (
+          <svg key={fi} className="absolute" style={{ left: `${cx}%`, top: `${cy}%`, opacity: 0.15 }} width="60" height="60" viewBox="-30 -30 60 60">
+            {Array.from({ length: 8 }).map((_, j) => {
+              const a = j * 45 * Math.PI / 180;
+              return <line key={j} x1="0" y1="0" x2={22 * Math.cos(a)} y2={22 * Math.sin(a)} stroke={c} strokeWidth="1.5" strokeLinecap="round"/>;
+            })}
+            <circle cx="0" cy="0" r="3" fill={c}/>
+          </svg>
+        );
+      })}
+      {/* Étoiles filantes */}
+      {Array.from({ length: 16 }).map((_, i) => (
+        <div key={i} className="absolute rounded-full" style={{
+          width: i % 4 === 0 ? 3 : 2, height: i % 4 === 0 ? 3 : 2,
+          left: `${(i * 59 + 9) % 90 + 5}%`, top: `${(i * 37 + 7) % 85 + 5}%`,
+          background: colors[i % colors.length],
+          opacity: 0.3 + (i % 5) * 0.08,
+          boxShadow: `0 0 ${4 + (i % 3) * 2}px 1px ${colors[i % colors.length]}`,
+        }} />
+      ))}
+    </div>
+  );
+}
+
+// S6 — vagues, ancre nautique, reflets sous-marins
+function Set6Background() {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 100%, rgba(0,60,130,0.4) 0%, transparent 55%)' }} />
+      {/* Vagues */}
+      <svg className="absolute bottom-0 inset-x-0" width="100%" height="100" viewBox="0 0 400 100" preserveAspectRatio="none" style={{ opacity: 0.1 }}>
+        <path d="M0 60 C40 40, 80 80, 120 55 C160 30, 200 70, 240 50 C280 30, 320 65, 360 45 C385 32, 400 50, 400 60 L400 100 L0 100 Z" fill="#1460a0"/>
+        <path d="M0 75 C50 58, 90 85, 140 68 C190 51, 230 78, 280 62 C320 48, 360 72, 400 60 L400 100 L0 100 Z" fill="#0d4880" opacity="0.7"/>
+      </svg>
+      {/* Ancre SVG centrale filigrane */}
+      <svg className="absolute" style={{ left: '50%', top: '50%', transform: 'translate(-50%,-50%)', opacity: 0.04 }} width="100" height="130" viewBox="0 0 100 130">
+        <circle cx="50" cy="20" r="14" fill="none" stroke="#28a8e0" strokeWidth="3"/>
+        <line x1="50" y1="34" x2="50" y2="110" stroke="#28a8e0" strokeWidth="3"/>
+        <path d="M50 110 C30 95, 15 85, 15 75" stroke="#28a8e0" strokeWidth="3" fill="none"/>
+        <path d="M50 110 C70 95, 85 85, 85 75" stroke="#28a8e0" strokeWidth="3" fill="none"/>
+        <line x1="28" y1="50" x2="72" y2="50" stroke="#28a8e0" strokeWidth="2.5"/>
+      </svg>
+      {/* Bulles */}
+      {Array.from({ length: 12 }).map((_, i) => (
+        <div key={i} className="absolute rounded-full border" style={{
+          width: 4 + (i % 4) * 3, height: 4 + (i % 4) * 3,
+          left: `${(i * 53 + 8) % 88 + 6}%`, top: `${(i * 41 + 12) % 82 + 8}%`,
+          borderColor: 'rgba(40,168,224,0.25)',
+          opacity: 0.3 + (i % 3) * 0.08,
+        }} />
+      ))}
+    </div>
+  );
+}
+
+// S7 — yeux de hibou, glyphes dual-encre, mystère forestier
+function Set7Background() {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 50%, rgba(160,120,10,0.08) 0%, transparent 60%)' }} />
+      {/* Yeux de chouette */}
+      <svg className="absolute" style={{ left: '50%', top: '50%', transform: 'translate(-50%,-50%)', opacity: 0.06 }} width="160" height="80" viewBox="0 0 160 80">
+        <ellipse cx="50" cy="40" rx="28" ry="30" fill="none" stroke="#d4a828" strokeWidth="2"/>
+        <circle cx="50" cy="40" r="14" fill="none" stroke="#60a838" strokeWidth="1.5"/>
+        <circle cx="50" cy="40" r="5" fill="#d4a828" opacity="0.5"/>
+        <ellipse cx="110" cy="40" rx="28" ry="30" fill="none" stroke="#60a838" strokeWidth="2"/>
+        <circle cx="110" cy="40" r="14" fill="none" stroke="#d4a828" strokeWidth="1.5"/>
+        <circle cx="110" cy="40" r="5" fill="#60a838" opacity="0.5"/>
+      </svg>
+      {/* Glyphes dans les coins */}
+      {['⚯','⚭','⚮','✦'].map((g, i) => (
+        <div key={i} className="absolute text-xl" style={{
+          left: i % 2 === 0 ? '8%' : '85%', top: i < 2 ? '12%' : '80%',
+          color: i % 2 === 0 ? '#d4a828' : '#60a838', opacity: 0.1,
+          fontSize: '2rem', transform: `rotate(${i * 45}deg)`,
+        }}>{g}</div>
+      ))}
+    </div>
+  );
+}
+
+// S8 — sablier, dunes de sable, flammes de torche
+function Set8Background() {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 10%, rgba(200,70,0,0.18) 0%, transparent 45%)' }} />
+      {/* Dunes */}
+      <svg className="absolute bottom-0 inset-x-0" width="100%" height="90" viewBox="0 0 400 90" preserveAspectRatio="none" style={{ opacity: 0.1 }}>
+        <path d="M0 90 C50 55, 100 75, 160 50 C220 25, 270 65, 330 45 C370 30, 400 50, 400 90 Z" fill="#a06010"/>
+      </svg>
+      {/* Sablier filigrane */}
+      <svg className="absolute" style={{ left: '50%', top: '48%', transform: 'translate(-50%,-50%)', opacity: 0.05 }} width="80" height="130" viewBox="0 0 80 130">
+        <path d="M10 5 L70 5 L45 65 L70 125 L10 125 L35 65 Z" fill="none" stroke="#e87010" strokeWidth="2.5" strokeLinejoin="round"/>
+        <line x1="10" y1="5" x2="70" y2="5" stroke="#d4c030" strokeWidth="2"/>
+        <line x1="10" y1="125" x2="70" y2="125" stroke="#d4c030" strokeWidth="2"/>
+        <ellipse cx="40" cy="75" rx="12" ry="6" fill="#e87010" opacity="0.4"/>
+      </svg>
+      {/* Flammes torche */}
+      {[15, 85].map((x, i) => (
+        <svg key={i} className="absolute" style={{ left: `${x}%`, top: '30%', opacity: 0.12 }} width="20" height="50" viewBox="0 0 20 50">
+          <path d="M10 48 C4 40, 2 30, 6 20 C8 14, 5 8, 10 2 C15 8, 12 14, 14 20 C18 30, 16 40, 10 48Z" fill="#e87010"/>
+          <path d="M10 45 C6 38, 5 30, 8 22 C9 17, 8 12, 10 8 C12 12, 11 17, 12 22 C15 30, 14 38, 10 45Z" fill="#d4c030" opacity="0.6"/>
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+// S9 — cadre de livre d'histoire, ornements classiques, couronne Mickey
+function Set9Background() {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(200,160,40,0.08) 0%, transparent 60%)' }} />
+      {/* Cadre de livre */}
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 800" preserveAspectRatio="none" style={{ opacity: 0.07 }}>
+        <rect x="15" y="15" width="370" height="770" rx="10" fill="none" stroke="#e8c050" strokeWidth="2" strokeDasharray="8 4"/>
+        <rect x="25" y="25" width="350" height="750" rx="8" fill="none" stroke="#e8c050" strokeWidth="1"/>
+        {/* Ornements coins */}
+        {[[25,25],[375,25],[25,775],[375,775]].map(([cx,cy], i) => (
+          <g key={i} transform={`translate(${cx},${cy}) rotate(${i*90})`}>
+            <path d="M0 0 L15 0 L0 15 Z" fill="#e8c050" opacity="0.5"/>
+          </g>
+        ))}
+      </svg>
+      {/* Étoiles nostalgiques */}
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="absolute" style={{
+          left: `${(i * 71 + 5) % 88 + 6}%`, top: `${(i * 53 + 8) % 82 + 8}%`,
+          color: '#e8c050', opacity: 0.1, fontSize: '1.2rem',
+        }}>★</div>
+      ))}
+    </div>
+  );
+}
+
+// S10 — puits mystique, braise, lumière unique dans la grotte
+function Set10Background() {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+      {/* Lumière unique depuis le centre-bas */}
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 90%, rgba(100,50,180,0.3) 0%, transparent 50%)' }} />
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 90%, rgba(200,220,255,0.06) 0%, transparent 35%)' }} />
+      {/* Puits */}
+      <svg className="absolute" style={{ left: '50%', bottom: '5%', transform: 'translateX(-50%)', opacity: 0.07 }} width="120" height="80" viewBox="0 0 120 80">
+        <rect x="10" y="30" width="100" height="50" rx="4" fill="none" stroke="#b070e0" strokeWidth="2"/>
+        <ellipse cx="60" cy="30" rx="50" ry="12" fill="none" stroke="#b070e0" strokeWidth="2"/>
+        <ellipse cx="60" cy="30" rx="30" ry="7" fill="rgba(100,50,200,0.2)"/>
+        <line x1="5" y1="15" x2="5" y2="35" stroke="#b070e0" strokeWidth="2"/>
+        <line x1="115" y1="15" x2="115" y2="35" stroke="#b070e0" strokeWidth="2"/>
+        <line x1="5" y1="15" x2="115" y2="15" stroke="#b070e0" strokeWidth="2"/>
+        <line x1="60" y1="8" x2="60" y2="15" stroke="#b070e0" strokeWidth="2"/>
+      </svg>
+      {/* Braises/wisps */}
+      {Array.from({ length: 10 }).map((_, i) => (
+        <div key={i} className="absolute rounded-full" style={{
+          width: 2, height: 2,
+          left: `${(i * 67 + 12) % 82 + 9}%`, top: `${(i * 43 + 15) % 75 + 10}%`,
+          background: i % 3 === 0 ? '#b070e0' : i % 3 === 1 ? '#50c8d8' : '#e0e8ff',
+          opacity: 0.25 + (i % 4) * 0.08,
+          boxShadow: `0 0 6px 2px ${i % 3 === 0 ? '#8040c0' : '#30a0b8'}`,
+        }} />
+      ))}
+    </div>
+  );
+}
+
+// S11 — flocons de neige, cristaux, givre, vent glacé
+function Set11Background() {
+  // Flocon SVG simplifié
+  const Snowflake = ({ x, y, size, op }: { x: string; y: string; size: number; op: number }) => (
+    <svg className="absolute" style={{ left: x, top: y, opacity: op }} width={size} height={size} viewBox="-10 -10 20 20">
+      {[0, 30, 60, 90, 120, 150].map((a, i) => {
+        const rad = a * Math.PI / 180;
+        return (
+          <g key={i}>
+            <line x1="0" y1="0" x2={9 * Math.cos(rad)} y2={9 * Math.sin(rad)} stroke="#b0d8f8" strokeWidth="1" strokeLinecap="round"/>
+            <line x1="0" y1="0" x2={-9 * Math.cos(rad)} y2={-9 * Math.sin(rad)} stroke="#b0d8f8" strokeWidth="1" strokeLinecap="round"/>
+          </g>
+        );
+      })}
+      <circle cx="0" cy="0" r="1.5" fill="#c8e8ff"/>
+    </svg>
+  );
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(140,200,255,0.12) 0%, transparent 55%)' }} />
+      <Snowflake x="10%" y="8%" size={36} op={0.15} />
+      <Snowflake x="78%" y="5%" size={28} op={0.12} />
+      <Snowflake x="5%" y="55%" size={22} op={0.1} />
+      <Snowflake x="85%" y="60%" size={30} op={0.13} />
+      <Snowflake x="45%" y="20%" size={18} op={0.1} />
+      <Snowflake x="60%" y="75%" size={24} op={0.11} />
+      {/* Cristaux en bas */}
+      <svg className="absolute bottom-0 inset-x-0" width="100%" height="70" viewBox="0 0 400 70" preserveAspectRatio="none" style={{ opacity: 0.1 }}>
+        {[20,60,100,150,200,240,290,340,380].map((x, i) => (
+          <polygon key={i} points={`${x},70 ${x - 8 - (i%3)*4},${40 - (i%4)*8} ${x + 8 + (i%3)*4},${40 - (i%4)*8}`} fill="#90d0f8"/>
+        ))}
+      </svg>
+      {/* Particules neige */}
+      {Array.from({ length: 14 }).map((_, i) => (
+        <div key={i} className="absolute rounded-full bg-white" style={{
+          width: 2, height: 2,
+          left: `${(i * 59 + 6) % 90 + 5}%`, top: `${(i * 43 + 10) % 82 + 6}%`,
+          opacity: 0.15 + (i % 5) * 0.06,
+        }} />
+      ))}
+    </div>
+  );
+}
+
+// S12 — vignes jungle, lucioles, canopée nocturne
+function Set12Background() {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
       <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 80%, rgba(10,60,5,0.5) 0%, transparent 60%)' }} />
       <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 20% 40%, rgba(5,40,2,0.4) 0%, transparent 45%)' }} />
-      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 80% 20%, rgba(5,30,2,0.3) 0%, transparent 40%)' }} />
-
-      {/* Vignes coin bas-gauche */}
       <svg className="absolute bottom-0 left-0" width="180" height="260" viewBox="0 0 180 260" fill="none" style={{ opacity: 0.18 }}>
         <path d="M10 260 C10 220, 30 200, 20 170 C10 140, 40 130, 35 100 C30 70, 55 60, 50 30" stroke="#4a9a20" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
         <path d="M25 260 C25 230, 50 210, 45 185 C40 160, 65 145, 60 115 C55 85, 75 75, 70 45" stroke="#3a7a18" strokeWidth="2" strokeLinecap="round" fill="none"/>
@@ -229,11 +548,7 @@ function WildsBackground() {
         <ellipse cx="-6" cy="142" rx="7" ry="5" transform="rotate(-20 -6 142)" fill="#2a6a10"/>
         <path d="M60 115 C60 115, 80 108, 90 95" stroke="#4a9a20" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
         <ellipse cx="93" cy="92" rx="8" ry="5" transform="rotate(10 93 92)" fill="#3a8a18"/>
-        <path d="M45 185 C45 185, 25 178, 15 165" stroke="#3a7a18" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-        <ellipse cx="13" cy="162" rx="7" ry="4" transform="rotate(-25 13 162)" fill="#2a6a10"/>
       </svg>
-
-      {/* Vignes coin haut-droit */}
       <svg className="absolute top-0 right-0" width="160" height="220" viewBox="0 0 160 220" fill="none" style={{ opacity: 0.15, transform: 'scaleX(-1)' }}>
         <path d="M10 0 C10 35, 30 55, 25 85 C20 115, 45 125, 40 155 C35 185, 60 195, 55 225" stroke="#4a9a20" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
         <path d="M25 0 C25 30, 45 50, 40 78 C35 106, 55 118, 50 148" stroke="#3a7a18" strokeWidth="2" strokeLinecap="round" fill="none"/>
@@ -241,27 +556,18 @@ function WildsBackground() {
         <ellipse cx="58" cy="62" rx="8" ry="5" transform="rotate(20 58 62)" fill="#3a8a18"/>
         <path d="M40 155 C40 155, 60 148, 72 135" stroke="#3a7a18" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
         <ellipse cx="75" cy="132" rx="8" ry="5" transform="rotate(15 75 132)" fill="#2a6a10"/>
-        <path d="M50 78 C50 78, 68 72, 78 58" stroke="#4a9a20" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-        <ellipse cx="81" cy="55" rx="7" ry="5" transform="rotate(10 81 55)" fill="#3a8a18"/>
       </svg>
-
-      {/* Silhouette feuillage bas (canopée) */}
       <svg className="absolute bottom-0 inset-x-0" width="100%" height="80" viewBox="0 0 400 80" preserveAspectRatio="none" fill="none" style={{ opacity: 0.12 }}>
         <path d="M0 80 C20 55, 40 70, 60 50 C80 30, 100 65, 130 45 C160 25, 180 60, 210 40 C240 20, 260 55, 290 38 C320 22, 345 58, 370 42 C390 30, 400 50, 400 80 Z" fill="#1a4a08"/>
       </svg>
-
-      {/* Lucioles */}
       {Array.from({ length: 18 }).map((_, i) => (
-        <div key={i} className="absolute rounded-full"
-          style={{
-            width: i % 3 === 0 ? 3 : 2,
-            height: i % 3 === 0 ? 3 : 2,
-            left: `${(i * 53 + 11) % 88 + 6}%`,
-            top: `${(i * 37 + 9) % 82 + 8}%`,
-            background: i % 4 === 0 ? '#e8d84a' : i % 4 === 1 ? '#8de84a' : i % 4 === 2 ? '#aae860' : '#f0e070',
-            opacity: 0.35 + (i % 5) * 0.1,
-            boxShadow: `0 0 ${4 + (i % 3) * 3}px 1px ${i % 2 === 0 ? '#c8d040' : '#80c030'}`,
-          }} />
+        <div key={i} className="absolute rounded-full" style={{
+          width: i % 3 === 0 ? 3 : 2, height: i % 3 === 0 ? 3 : 2,
+          left: `${(i * 53 + 11) % 88 + 6}%`, top: `${(i * 37 + 9) % 82 + 8}%`,
+          background: i % 4 === 0 ? '#e8d84a' : i % 4 === 1 ? '#8de84a' : i % 4 === 2 ? '#aae860' : '#f0e070',
+          opacity: 0.35 + (i % 5) * 0.1,
+          boxShadow: `0 0 ${4 + (i % 3) * 3}px 1px ${i % 2 === 0 ? '#c8d040' : '#80c030'}`,
+        }} />
       ))}
     </div>
   );
@@ -476,7 +782,18 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
         </div>
       )}
       {theme.particles && theme.particles !== 'none' && <Particles type={theme.particles} />}
-      {theme.id === 'set12_wilds' && <WildsBackground />}
+      {theme.id === 'set1' && <Set1Background />}
+      {theme.id === 'set2' && <Set2Background />}
+      {theme.id === 'set3' && <Set3Background />}
+      {theme.id === 'set4' && <Set4Background />}
+      {theme.id === 'set5' && <Set5Background />}
+      {theme.id === 'set6' && <Set6Background />}
+      {theme.id === 'set7' && <Set7Background />}
+      {theme.id === 'set8' && <Set8Background />}
+      {theme.id === 'set9' && <Set9Background />}
+      {theme.id === 'set10' && <Set10Background />}
+      {theme.id === 'set11' && <Set11Background />}
+      {theme.id === 'set12' && <Set12Background />}
 
       {/* Winner overlay */}
       {winner && (

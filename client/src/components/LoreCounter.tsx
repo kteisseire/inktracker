@@ -620,7 +620,7 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
             </button>
           </div>
           <div className="flex-1 overflow-y-auto px-4 py-4">
-            <div className="grid grid-cols-1 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {THEMES.map(t => (
                 <button
                   key={t.id}
@@ -629,23 +629,59 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
                     localStorage.setItem(THEME_STORAGE_KEY, t.id);
                     setShowThemes(false);
                   }}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left"
+                  className="relative rounded-2xl overflow-hidden transition-all active:scale-95 text-left"
                   style={{
-                    background: themeId === t.id ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${themeId === t.id ? t.pillBorder : 'rgba(255,255,255,0.08)'}`,
+                    height: '7rem',
+                    boxShadow: themeId === t.id
+                      ? `0 0 0 2px ${t.meAccent}, 0 0 20px ${t.meAccent}40`
+                      : '0 0 0 1px rgba(255,255,255,0.06)',
                   }}
                 >
-                  {/* Aperçu couleurs */}
-                  <div className="flex gap-1 shrink-0">
-                    <div className="w-4 h-4 rounded-full" style={{ background: t.meAccent }} />
-                    <div className="w-4 h-4 rounded-full" style={{ background: t.oppAccent }} />
+                  {/* Fond dégradé du thème */}
+                  <div className="absolute inset-0" style={{ background: t.bg }} />
+                  {t.bgOverlay && <div className="absolute inset-0" style={{ background: t.bgOverlay }} />}
+
+                  {/* Losange filigrane centré */}
+                  <div className="absolute inset-0 flex items-center justify-end pr-3 pointer-events-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25.83 32" style={{ width: 48, height: 60, opacity: 0.08 }}>
+                      <path d="M12.91 0 0 16l12.91 16 12.91-16L12.91 0ZM1.28 16 12.91 1.59 24.54 16 12.91 30.41 1.28 16Z" fill="white" />
+                      <path d="m21.99 16-9.08 11.25L3.83 16l9.08-11.25L21.99 16z" fill="white" />
+                    </svg>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-white/80">{t.name}</p>
+
+                  {/* Dégradé accent me → transparent depuis la gauche */}
+                  <div className="absolute inset-0 pointer-events-none" style={{
+                    background: `linear-gradient(105deg, ${t.meAccent}22 0%, transparent 55%)`,
+                  }} />
+                  {/* Dégradé accent opp → transparent depuis le bas-droit */}
+                  <div className="absolute inset-0 pointer-events-none" style={{
+                    background: `linear-gradient(285deg, ${t.oppAccent}18 0%, transparent 50%)`,
+                  }} />
+
+                  {/* Trait lumineux en haut */}
+                  <div className="absolute top-0 inset-x-4 h-px" style={{
+                    background: `linear-gradient(90deg, transparent, ${t.meAccent}60, ${t.oppAccent}60, transparent)`,
+                  }} />
+
+                  {/* Contenu */}
+                  <div className="absolute inset-0 flex flex-col justify-between p-3.5">
+                    <p className="text-[11px] font-bold tracking-widest uppercase text-white/40 leading-none">
+                      {t.id === 'default' ? '★' : t.id.replace('set', 'S')}
+                    </p>
+                    <div>
+                      <p className="text-sm font-semibold leading-tight" style={{ color: 'rgba(255,255,255,0.88)', textShadow: '0 1px 6px rgba(0,0,0,0.9)' }}>
+                        {t.name}
+                      </p>
+                      {/* Deux points couleur accent */}
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <div className="w-2 h-2 rounded-full" style={{ background: t.meAccent, boxShadow: `0 0 6px ${t.meAccent}` }} />
+                        <div className="w-2 h-2 rounded-full" style={{ background: t.oppAccent, boxShadow: `0 0 6px ${t.oppAccent}` }} />
+                        {themeId === t.id && (
+                          <span className="text-[10px] font-medium ml-auto" style={{ color: t.meAccent }}>Actif</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  {themeId === t.id && (
-                    <svg className="w-4 h-4 text-white/60 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  )}
                 </button>
               ))}
             </div>
@@ -700,16 +736,21 @@ function PlayerSide({ label, lore, accent, onChangeLore, disabled }: {
 
   return (
     <div className="flex-1 flex flex-col" style={{ background: `radial-gradient(ellipse at 50% 50%, ${accent}12 0%, transparent 70%)` }}>
-      <div className="text-center pt-2 pb-1">
-        <span className="text-xs font-medium tracking-[0.2em] uppercase" style={{ color: `${accent}99` }}>{label}</span>
-      </div>
 
+      {/* Zone principale : label + score centré verticalement + losanges */}
       <div className="flex-1 flex relative">
-        <button className="flex-1 h-full flex items-center justify-start pl-8 transition-all duration-150 active:opacity-50 disabled:opacity-20" onClick={() => onChangeLore(-1)} disabled={disabled || lore === 0} aria-label="-1">
+        {/* Bouton − sur toute la hauteur, côté gauche */}
+        <button className="absolute inset-y-0 left-0 w-1/2 flex items-center justify-start pl-8 transition-all duration-150 active:opacity-50 disabled:opacity-20 z-10" onClick={() => onChangeLore(-1)} disabled={disabled || lore === 0} aria-label="-1">
           <span className="font-thin leading-none" style={{ fontSize: 'clamp(4rem, 18vw, 7rem)', color: `${accent}50` }}>−</span>
         </button>
+        {/* Bouton + sur toute la hauteur, côté droit */}
+        <button className="absolute inset-y-0 right-0 w-1/2 flex items-center justify-end pr-8 transition-all duration-150 active:opacity-50 disabled:opacity-20 z-10" onClick={() => onChangeLore(1)} disabled={disabled || lore >= MAX_LORE} aria-label="+1">
+          <span className="font-thin leading-none" style={{ fontSize: 'clamp(4rem, 18vw, 7rem)', color: `${accent}50` }}>+</span>
+        </button>
 
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-3">
+        {/* Contenu centré : label + chiffre + losanges */}
+        <div className="flex-1 flex flex-col items-center justify-center pointer-events-none gap-2 py-3">
+          <span className="text-xs font-medium tracking-[0.2em] uppercase" style={{ color: `${accent}99` }}>{label}</span>
           <span className="font-display font-bold leading-none tabular-nums" style={{ fontSize: 'clamp(5rem, 22vw, 11rem)', color: accent, textShadow: glow }}>
             {lore}
           </span>
@@ -726,12 +767,9 @@ function PlayerSide({ label, lore, accent, onChangeLore, disabled }: {
             ))}
           </div>
         </div>
-
-        <button className="flex-1 h-full flex items-center justify-end pr-8 transition-all duration-150 active:opacity-50 disabled:opacity-20" onClick={() => onChangeLore(1)} disabled={disabled || lore >= MAX_LORE} aria-label="+1">
-          <span className="font-thin leading-none" style={{ fontSize: 'clamp(4rem, 18vw, 7rem)', color: `${accent}50` }}>+</span>
-        </button>
       </div>
 
+      {/* Boutons ±5 en bas */}
       <div className="flex justify-between px-5 pb-3 gap-3">
         <button onClick={() => onChangeLore(-5)} disabled={disabled || lore === 0} className="flex-1 h-12 rounded-xl text-base font-semibold transition-all duration-150 active:scale-95 disabled:opacity-25" style={{ background: accentDim, color: accent, border: `1px solid ${accentBorder}` }}>−5</button>
         <button onClick={() => onChangeLore(5)} disabled={disabled || lore >= MAX_LORE} className="flex-1 h-12 rounded-xl text-base font-semibold transition-all duration-150 active:scale-95 disabled:opacity-25" style={{ background: accentDim, color: accent, border: `1px solid ${accentBorder}` }}>+5</button>

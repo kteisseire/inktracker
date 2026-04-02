@@ -435,15 +435,15 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
         <div className="relative flex items-center h-20 shrink-0" style={{ justifyContent: timerSide === 'right' ? 'flex-start' : 'flex-end' }}>
           <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px" style={{ background: theme.separatorGlow }} />
           {/* Pilule — côté opposé au timer */}
-          <div className="relative z-10 flex items-center gap-0 rounded-full overflow-hidden mx-4" style={{ background: theme.pill, border: `1px solid ${theme.pillBorder}` }}>
+          <div className="relative z-10 flex items-center gap-0 rounded-full overflow-hidden mx-5" style={{ background: theme.pill, border: `1px solid ${theme.pillBorder}` }}>
             {/* Fermer */}
-            <button onClick={handleClose} className="p-3 text-white/30 hover:text-white/70 transition-colors hover:bg-white/5" aria-label="Fermer">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            <button onClick={handleClose} className="p-4 text-white/30 hover:text-white/70 transition-colors hover:bg-white/5 active:scale-90" aria-label="Fermer">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
-            <div className="w-px h-6 bg-white/10 mx-0.5" />
+            <div className="w-px h-7 bg-white/10 mx-0.5" />
             {/* Burger menu */}
-            <button onClick={() => setShowMenu(true)} className="p-3 text-white/30 hover:text-white/70 transition-colors hover:bg-white/5" aria-label="Menu">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+            <button onClick={() => setShowMenu(true)} className="p-4 text-white/30 hover:text-white/70 transition-colors hover:bg-white/5 active:scale-90" aria-label="Menu">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
             </button>
           </div>
         </div>
@@ -451,52 +451,68 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
         {/* Timer vertical — côté gauche ou droit, lisible par les deux joueurs */}
         <div
           className="absolute top-0 bottom-0 z-10 flex items-center justify-center pointer-events-none"
-          style={{ [timerSide]: 0, width: '3.5rem' }}
+          style={{ [timerSide]: 0, width: '4.5rem' }}
         >
           <div
-            className="flex flex-col items-center gap-3 pointer-events-auto"
+            className="flex flex-col items-center gap-4 pointer-events-auto"
             style={{ transform: timerSide === 'left' ? 'rotate(180deg)' : 'none' }}
           >
-            {/* Play/Pause */}
+            {/* Play/Pause — tourné 90° pour pointer dans le sens vertical */}
             <button
               onClick={() => !timerExpired && setTimerRunning(r => !r)}
-              className="p-2 rounded-full transition-colors hover:bg-white/10"
+              className="p-3 rounded-full transition-colors active:scale-90"
               aria-label={timerRunning ? 'Pause' : 'Démarrer'}
-              style={{ transform: timerSide === 'left' ? 'rotate(180deg)' : 'none' }}
+              style={{ transform: `rotate(${timerSide === 'left' ? '-90' : '90'}deg)` }}
             >
               {timerExpired ? (
-                <svg className="w-5 h-5" fill="none" stroke="#d85b5b" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <svg className="w-7 h-7" fill="none" stroke="#d85b5b" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               ) : timerRunning ? (
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+                <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
               ) : (
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M8 5v14l11-7z" /></svg>
+                <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M8 5v14l11-7z" /></svg>
               )}
             </button>
 
             {/* Affichage du temps — clic pour éditer quand en pause */}
             {editingTimer ? (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const parts = timerInput.split(':');
-                  const mins = parseInt(parts[0] ?? '0', 10);
-                  const secs = parseInt(parts[1] ?? '0', 10);
-                  const total = (isNaN(mins) ? 0 : mins) * 60 + (isNaN(secs) ? 0 : secs);
-                  if (total > 0) { setTimerSeconds(total); setTimerRunning(false); }
-                  setEditingTimer(false);
-                }}
-              >
+              <div className="flex flex-col items-center gap-2" style={{ writingMode: 'vertical-rl' }}>
                 <input
                   autoFocus
                   type="text"
                   value={timerInput}
                   onChange={(e) => setTimerInput(e.target.value)}
-                  onBlur={() => setEditingTimer(false)}
-                  className="font-mono font-bold tabular-nums bg-transparent text-center outline-none border-b border-white/30"
-                  style={{ color: timerColor, fontSize: '1.1rem', width: '3.2rem', writingMode: 'vertical-rl', letterSpacing: '0.05em' }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const parts = timerInput.split(':');
+                      const mins = parseInt(parts[0] ?? '0', 10);
+                      const secs = parseInt(parts[1] ?? '0', 10);
+                      const total = (isNaN(mins) ? 0 : mins) * 60 + (isNaN(secs) ? 0 : secs);
+                      if (total > 0) { setTimerSeconds(total); }
+                      setEditingTimer(false);
+                    }
+                    if (e.key === 'Escape') setEditingTimer(false);
+                  }}
+                  className="font-mono font-bold tabular-nums bg-transparent text-center outline-none"
+                  style={{ color: timerColor, fontSize: 'clamp(1.3rem, 5vw, 1.8rem)', width: '4rem', borderBottom: `1px solid ${timerColor}44`, letterSpacing: '0.05em' }}
                   placeholder="mm:ss"
                 />
-              </form>
+                {/* Bouton valider explicite pour mobile */}
+                <button
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    const parts = timerInput.split(':');
+                    const mins = parseInt(parts[0] ?? '0', 10);
+                    const secs = parseInt(parts[1] ?? '0', 10);
+                    const total = (isNaN(mins) ? 0 : mins) * 60 + (isNaN(secs) ? 0 : secs);
+                    if (total > 0) { setTimerSeconds(total); }
+                    setEditingTimer(false);
+                  }}
+                  className="rounded-full px-2 py-1 text-xs font-semibold"
+                  style={{ background: `${timerColor}30`, color: timerColor, border: `1px solid ${timerColor}50`, writingMode: 'horizontal-tb', transform: timerSide === 'left' ? 'rotate(180deg)' : 'none' }}
+                >
+                  OK
+                </button>
+              </div>
             ) : (
               <button
                 onClick={() => {
@@ -505,13 +521,13 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
                     setEditingTimer(true);
                   }
                 }}
-                className="transition-colors"
+                className="transition-colors active:opacity-60"
                 aria-label="Modifier la durée"
                 style={{ writingMode: 'vertical-rl', letterSpacing: '0.08em' }}
               >
                 <span
                   className="font-mono font-bold tabular-nums"
-                  style={{ color: timerColor, fontSize: 'clamp(1.2rem, 4.5vw, 1.6rem)', textShadow: timerSeconds <= 60 ? `0 0 12px ${timerColor}` : undefined }}
+                  style={{ color: timerColor, fontSize: 'clamp(1.4rem, 5.5vw, 2rem)', textShadow: timerSeconds <= 60 ? `0 0 16px ${timerColor}` : undefined }}
                 >
                   {formatTimer(timerSeconds)}
                 </span>
@@ -522,11 +538,11 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
             {!timerRunning && !editingTimer && timerSeconds !== DEFAULT_TIMER && (
               <button
                 onClick={() => setTimerSeconds(DEFAULT_TIMER)}
-                className="p-1 text-white/25 hover:text-white/60 transition-colors rounded-full hover:bg-white/10"
+                className="p-2 text-white/25 hover:text-white/60 transition-colors rounded-full"
                 aria-label="Réinitialiser le timer"
                 style={{ transform: timerSide === 'left' ? 'rotate(180deg)' : 'none' }}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
               </button>
             )}
           </div>
@@ -689,8 +705,8 @@ function PlayerSide({ label, lore, accent, onChangeLore, disabled }: {
       </div>
 
       <div className="flex-1 flex relative">
-        <button className="flex-1 h-full flex items-center justify-start pl-6 transition-all duration-150 active:opacity-50 disabled:opacity-20" onClick={() => onChangeLore(-1)} disabled={disabled || lore === 0} aria-label="-1">
-          <span className="text-6xl font-thin leading-none" style={{ color: `${accent}50` }}>−</span>
+        <button className="flex-1 h-full flex items-center justify-start pl-8 transition-all duration-150 active:opacity-50 disabled:opacity-20" onClick={() => onChangeLore(-1)} disabled={disabled || lore === 0} aria-label="-1">
+          <span className="font-thin leading-none" style={{ fontSize: 'clamp(4rem, 18vw, 7rem)', color: `${accent}50` }}>−</span>
         </button>
 
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-3">
@@ -711,14 +727,14 @@ function PlayerSide({ label, lore, accent, onChangeLore, disabled }: {
           </div>
         </div>
 
-        <button className="flex-1 h-full flex items-center justify-end pr-6 transition-all duration-150 active:opacity-50 disabled:opacity-20" onClick={() => onChangeLore(1)} disabled={disabled || lore >= MAX_LORE} aria-label="+1">
-          <span className="text-6xl font-thin leading-none" style={{ color: `${accent}50` }}>+</span>
+        <button className="flex-1 h-full flex items-center justify-end pr-8 transition-all duration-150 active:opacity-50 disabled:opacity-20" onClick={() => onChangeLore(1)} disabled={disabled || lore >= MAX_LORE} aria-label="+1">
+          <span className="font-thin leading-none" style={{ fontSize: 'clamp(4rem, 18vw, 7rem)', color: `${accent}50` }}>+</span>
         </button>
       </div>
 
-      <div className="flex justify-between px-5 pb-2 gap-3">
-        <button onClick={() => onChangeLore(-5)} disabled={disabled || lore === 0} className="flex-1 h-8 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-95 disabled:opacity-25" style={{ background: accentDim, color: accent, border: `1px solid ${accentBorder}` }}>−5</button>
-        <button onClick={() => onChangeLore(5)} disabled={disabled || lore >= MAX_LORE} className="flex-1 h-8 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-95 disabled:opacity-25" style={{ background: accentDim, color: accent, border: `1px solid ${accentBorder}` }}>+5</button>
+      <div className="flex justify-between px-5 pb-3 gap-3">
+        <button onClick={() => onChangeLore(-5)} disabled={disabled || lore === 0} className="flex-1 h-12 rounded-xl text-base font-semibold transition-all duration-150 active:scale-95 disabled:opacity-25" style={{ background: accentDim, color: accent, border: `1px solid ${accentBorder}` }}>−5</button>
+        <button onClick={() => onChangeLore(5)} disabled={disabled || lore >= MAX_LORE} className="flex-1 h-12 rounded-xl text-base font-semibold transition-all duration-150 active:scale-95 disabled:opacity-25" style={{ background: accentDim, color: accent, border: `1px solid ${accentBorder}` }}>+5</button>
       </div>
     </div>
   );

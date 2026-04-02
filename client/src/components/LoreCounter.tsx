@@ -462,7 +462,7 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
               onClick={() => !timerExpired && setTimerRunning(r => !r)}
               className="p-3 rounded-full transition-colors active:scale-90"
               aria-label={timerRunning ? 'Pause' : 'Démarrer'}
-              style={{ transform: `rotate(${timerSide === 'left' ? '-90' : '90'}deg)` }}
+              style={{ transform: 'rotate(90deg)' }}
             >
               {timerExpired ? (
                 <svg className="w-7 h-7" fill="none" stroke="#d85b5b" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>

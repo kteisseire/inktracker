@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { listUsers } from '../api/admin.api.js';
 import { listSuggestions, deleteSuggestion, type Suggestion } from '../api/suggestion.api.js';
+import { ProfileSubNav } from '../components/layout/ProfileSubNav.js';
 import type { AdminUserInfo } from '@lorcana/shared';
 
 function formatRelative(dateStr: string): string {
@@ -53,7 +54,9 @@ export function AdminPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div>
+      <ProfileSubNav />
+      <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Administration</h1>
       </div>
@@ -176,6 +179,7 @@ export function AdminPage() {
         ))}
       </div>
       </>}
+      </div>
     </div>
   );
 }

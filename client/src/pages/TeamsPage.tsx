@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { listMyTeams, createTeam, listMyInvites, respondToInvite } from '../api/team.api.js';
 import { HelpButton } from '../components/ui/HelpButton.js';
+import { ProfileSubNav } from '../components/layout/ProfileSubNav.js';
 import type { Team, TeamInvite } from '@lorcana/shared';
 
 const ROLE_LABELS: Record<string, string> = { OWNER: 'Propriétaire', ADMIN: 'Admin', MEMBER: 'Membre' };
@@ -37,7 +38,9 @@ export function TeamsPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto">
+      <ProfileSubNav />
+      <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Mes équipes</h1>
@@ -102,6 +105,7 @@ export function TeamsPage() {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

@@ -663,19 +663,27 @@ export interface TimerState {
   running: boolean;
 }
 
+interface MatchInfo {
+  gameNumber: number;   // numéro de la partie courante (1-based)
+  totalGames: number;   // max parties (3 ou 5)
+  myWins: number;
+  oppWins: number;
+}
+
 interface LoreCounterProps {
   onClose: (result: LoreResult) => void;
   onNextGame?: (result: LoreResult) => void;
   initialState?: LoreState;
   timerState?: TimerState;
   onTimerChange?: (state: TimerState) => void;
+  matchInfo?: MatchInfo;
 }
 
 const THEME_STORAGE_KEY = 'glimmerlog_lore_theme';
 const TIMER_SIDE_KEY = 'glimmerlog_timer_side';
 
 // ─── Composant principal ───────────────────────────────────────────────────
-export function LoreCounter({ onClose, onNextGame, initialState, timerState, onTimerChange }: LoreCounterProps) {
+export function LoreCounter({ onClose, onNextGame, initialState, timerState, onTimerChange, matchInfo }: LoreCounterProps) {
   const [myLore, setMyLore] = useState(initialState?.myLore ?? 0);
   const [opponentLore, setOpponentLore] = useState(initialState?.opponentLore ?? 0);
   const [rawHistory, setRawHistory] = useState<RawLoreEntry[]>(initialState?.history ?? []);
@@ -938,8 +946,21 @@ export function LoreCounter({ onClose, onNextGame, initialState, timerState, onT
         </div>
 
         {/* Séparateur */}
-        <div className="relative flex items-center h-20 shrink-0">
+        <div className="relative flex items-center justify-center h-20 shrink-0">
           <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px" style={{ background: theme.separatorGlow }} />
+          {matchInfo && (
+            <div
+              className="relative z-10 flex items-center gap-3 px-4 py-1.5 rounded-full"
+              style={{ background: theme.pill, border: `1px solid ${theme.pillBorder}` }}
+            >
+              <span className="tabular-nums font-bold text-base" style={{ color: theme.meAccent }}>{matchInfo.myWins}</span>
+              <div className="flex flex-col items-center gap-0.5">
+                <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase' }}>Partie {matchInfo.gameNumber}/{matchInfo.totalGames}</span>
+                <span style={{ color: theme.separator, fontSize: '0.5rem' }}>◆</span>
+              </div>
+              <span className="tabular-nums font-bold text-base" style={{ color: theme.oppAccent }}>{matchInfo.oppWins}</span>
+            </div>
+          )}
         </div>
 
         {/* Capsule close+menu — côté opposé au timer */}
@@ -1190,52 +1211,66 @@ export function LoreCounter({ onClose, onNextGame, initialState, timerState, onT
         <div className="absolute inset-0 z-30 flex flex-col justify-end" onClick={() => setShowMenu(false)} style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
           <div className="rounded-t-2xl overflow-hidden" style={{ background: theme.pill, border: `1px solid ${theme.pillBorder}`, borderBottom: 'none' }} onClick={e => e.stopPropagation()}>
             <div className="w-10 h-1 rounded-full bg-white/20 mx-auto mt-3 mb-1" />
-            <div className="px-4 py-3 space-y-1">
-              {/* Thème */}
-              <button onClick={() => { setShowMenu(false); setShowThemes(true); }} className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all hover:bg-white/8 text-left" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                <svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-white/80">Thème</p>
-                  <p className="text-xs text-white/30">{THEMES.find(t => t.id === themeId)?.name}</p>
-                </div>
-                <svg className="w-4 h-4 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-              </button>
-              {/* Historique */}
-              <button onClick={() => { setShowMenu(false); setShowHistory(true); }} className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all hover:bg-white/8 text-left" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                <svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-white/80">Historique</p>
-                  <p className="text-xs text-white/30">{rawHistory.length} action{rawHistory.length !== 1 ? 's' : ''}</p>
-                </div>
-                <svg className="w-4 h-4 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-              </button>
-              {/* Annuler dernière action */}
-              <button onClick={() => { undoLast(); setShowMenu(false); }} disabled={rawHistory.length === 0} className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all hover:bg-white/8 text-left disabled:opacity-30" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                <svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a5 5 0 015 5v2M3 10l4-4m-4 4l4 4" /></svg>
-                <p className="text-sm font-medium text-white/80">Annuler la dernière action</p>
-              </button>
-              {/* Réinitialiser le score */}
-              <button onClick={() => { resetAll(); setShowMenu(false); }} className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all hover:bg-white/8 text-left" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                <svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                <p className="text-sm font-medium text-white/80">Réinitialiser le score</p>
-              </button>
-              {/* Côté du timer */}
-              <button
-                onClick={() => {
-                  const next = timerSide === 'right' ? 'left' : 'right';
-                  setTimerSide(next);
-                  localStorage.setItem(TIMER_SIDE_KEY, next);
-                  setShowMenu(false);
-                }}
-                className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all hover:bg-white/8 text-left"
-                style={{ background: 'rgba(255,255,255,0.04)' }}
-              >
-                <svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ transform: timerSide === 'right' ? 'scaleX(-1)' : 'none' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12M8 12h12M8 17h12M4 7h.01M4 12h.01M4 17h.01" /></svg>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-white/80">Timer — côté {timerSide === 'right' ? 'droit' : 'gauche'}</p>
-                  <p className="text-xs text-white/30">Basculer à {timerSide === 'right' ? 'gauche' : 'droite'}</p>
-                </div>
-              </button>
+            <div className="px-4 py-3 space-y-3">
+
+              {/* Groupe 1 : Préférences */}
+              <div className="space-y-1">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-white/25 px-1 pb-0.5">Préférences</p>
+                {/* Thème */}
+                <button onClick={() => { setShowMenu(false); setShowThemes(true); }} className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all hover:bg-white/8 text-left" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                  <svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-white/80">Thème</p>
+                    <p className="text-xs text-white/30">{THEMES.find(t => t.id === themeId)?.name}</p>
+                  </div>
+                  <svg className="w-4 h-4 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </button>
+                {/* Côté du timer */}
+                <button
+                  onClick={() => {
+                    const next = timerSide === 'right' ? 'left' : 'right';
+                    setTimerSide(next);
+                    localStorage.setItem(TIMER_SIDE_KEY, next);
+                    setShowMenu(false);
+                  }}
+                  className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all hover:bg-white/8 text-left"
+                  style={{ background: 'rgba(255,255,255,0.04)' }}
+                >
+                  <svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ transform: timerSide === 'right' ? 'scaleX(-1)' : 'none' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12M8 12h12M8 17h12M4 7h.01M4 12h.01M4 17h.01" /></svg>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-white/80">Timer — côté {timerSide === 'right' ? 'droit' : 'gauche'}</p>
+                    <p className="text-xs text-white/30">Basculer à {timerSide === 'right' ? 'gauche' : 'droite'}</p>
+                  </div>
+                </button>
+              </div>
+
+              {/* Séparateur */}
+              <div style={{ height: '1px', background: 'rgba(255,255,255,0.07)' }} />
+
+              {/* Groupe 2 : Actions */}
+              <div className="space-y-1">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-white/25 px-1 pb-0.5">Actions</p>
+                {/* Historique */}
+                <button onClick={() => { setShowMenu(false); setShowHistory(true); }} className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all hover:bg-white/8 text-left" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                  <svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-white/80">Historique</p>
+                    <p className="text-xs text-white/30">{rawHistory.length} action{rawHistory.length !== 1 ? 's' : ''}</p>
+                  </div>
+                  <svg className="w-4 h-4 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </button>
+                {/* Annuler dernière action */}
+                <button onClick={() => { undoLast(); setShowMenu(false); }} disabled={rawHistory.length === 0} className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all hover:bg-white/8 text-left disabled:opacity-30" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                  <svg className="w-5 h-5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a5 5 0 015 5v2M3 10l4-4m-4 4l4 4" /></svg>
+                  <p className="text-sm font-medium text-white/80">Annuler la dernière action</p>
+                </button>
+                {/* Réinitialiser le score */}
+                <button onClick={() => { resetAll(); setShowMenu(false); }} className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all text-left" style={{ background: 'rgba(220,50,50,0.07)' }}>
+                  <svg className="w-5 h-5 shrink-0" style={{ color: 'rgba(220,80,80,0.7)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                  <p className="text-sm font-medium" style={{ color: 'rgba(220,100,100,0.85)' }}>Réinitialiser le score</p>
+                </button>
+              </div>
+
             </div>
             <div className="h-6" />
           </div>

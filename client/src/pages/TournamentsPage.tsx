@@ -1,128 +1,177 @@
-import { useEffect, useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { listTournaments, getTeamPresence } from '../api/tournaments.api.js';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { createPortal } from 'react-dom';
+import { listTournaments, getTeamPresence, deleteTournament, shareTournament } from '../api/tournaments.api.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
 import { HelpButton } from '../components/ui/HelpButton.js';
 import type { Tournament } from '@lorcana/shared';
 
 const FORMAT_LABELS: Record<string, string> = { BO1: 'Bo1', BO3: 'Bo3', BO5: 'Bo5' };
-const TOPCUT_LABELS: Record<string, string> = { NONE: '—', TOP4: 'Top 4', TOP8: 'Top 8', TOP16: 'Top 16', TOP32: 'Top 32' };
 
-function TeamBadge({ count, members }: { count: number; members: string[] }) {
+function ResultBadge({ wins, losses, draws }: { wins: number; losses: number; draws: number }) {
+  if (wins === 0 && losses === 0 && draws === 0) return <span className="text-xs text-ink-600">—</span>;
+  return (
+    <span className="text-sm font-semibold tabular-nums">
+      <span className="text-green-400">{wins}</span>
+      <span className="text-ink-600">–</span>
+      <span className="text-red-400">{losses}</span>
+      {draws > 0 && <><span className="text-ink-600">–</span><span className="text-ink-400">{draws}</span></>}
+    </span>
+  );
+}
+
+function CardMenu({ tournament, onDeleted }: { tournament: Tournament; onDeleted: () => void }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!open) return;
     const handle = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (btnRef.current && !btnRef.current.contains(target)) setOpen(false);
     };
     document.addEventListener('mousedown', handle);
     return () => document.removeEventListener('mousedown', handle);
   }, [open]);
 
+  const handleOpen = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = btnRef.current!.getBoundingClientRect();
+    setPos({ top: rect.bottom + 4, left: rect.right - 160 });
+    setOpen(v => !v);
+  };
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpen(false);
+    try {
+      const shareId = await shareTournament(tournament.id);
+      await navigator.clipboard.writeText(`${window.location.origin}/t/${shareId}`);
+      alert('Lien copié !');
+    } catch { alert('Erreur lors du partage'); }
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpen(false);
+    if (!confirm(`Supprimer « ${tournament.name} » ?`)) return;
+    try {
+      await deleteTournament(tournament.id);
+      onDeleted();
+    } catch { alert('Erreur lors de la suppression'); }
+  };
+
   return (
-    <div className="relative inline-block" ref={ref}>
+    <>
       <button
-        onClick={e => { e.preventDefault(); e.stopPropagation(); setOpen(!open); }}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 transition-colors"
-        title={`${count} coéquipier${count > 1 ? 's' : ''}`}
+        ref={btnRef}
+        onClick={handleOpen}
+        className="p-1.5 rounded-lg text-ink-500 hover:text-ink-200 hover:bg-ink-700/50 transition-colors"
+        aria-label="Actions"
       >
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" />
         </svg>
-        {count}
       </button>
-      {open && (
-        <div className="absolute top-full left-0 mt-1 bg-ink-900 border border-ink-700/50 rounded-lg shadow-xl z-50 py-1.5 min-w-[140px]">
-          <p className="px-3 py-1.5 text-xs text-ink-500 uppercase tracking-wider font-medium">Équipe</p>
-          {members.map(name => (
-            <div key={name} className="px-3 py-2 text-sm text-ink-200">{name}</div>
-          ))}
-        </div>
+      {open && createPortal(
+        <div
+          className="fixed bg-ink-900 border border-ink-700/50 rounded-xl shadow-xl shadow-ink-950/50 py-1 z-[200]"
+          style={{ top: pos.top, left: pos.left, width: 160 }}
+        >
+          <button onClick={e => { e.stopPropagation(); navigate(`/tournaments/${tournament.id}/edit`); setOpen(false); }}
+            className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-ink-300 hover:text-ink-100 hover:bg-ink-800/50 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828 15.828a2 2 0 01-1.414.586H9v-1.414a2 2 0 01.586-1.414z" />
+            </svg>
+            Modifier
+          </button>
+          <button onClick={handleShare}
+            className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-ink-300 hover:text-ink-100 hover:bg-ink-800/50 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            Partager
+          </button>
+          <div className="my-1 border-t border-ink-800/50" />
+          <button onClick={handleDelete}
+            className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/5 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            Supprimer
+          </button>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }
 
-function FeatureShowcase({ compact = false }: { compact?: boolean }) {
-  const features = [
-    {
-      icon: '📋',
-      title: 'Suivi des rondes',
-      desc: 'Enregistrez chaque ronde : adversaire, deck joué, résultat et score. Photo de la liste adverse en option.',
-    },
-    {
-      icon: '📊',
-      title: 'Statistiques détaillées',
-      desc: 'Win rate global, matchups par couleur d\'encre, performances par deck — tout est calculé automatiquement.',
-    },
-    {
-      icon: '🔗',
-      title: 'Sync Play Hub',
-      desc: 'Collez un lien Ravensburger Play Hub pour importer automatiquement les rondes, standings et l\'arbre de tournoi.',
-    },
-    {
-      icon: '🧭',
-      title: 'Scouting d\'équipe',
-      desc: 'Partagez les decks adverses avec votre équipe en temps réel pendant l\'événement.',
-    },
-    {
-      icon: '📸',
-      title: 'Photo de liste',
-      desc: 'Photographiez la liste adverse depuis votre téléphone directement dans l\'application.',
-    },
-    {
-      icon: '📤',
-      title: 'Partage & export',
-      desc: 'Partagez un récap de votre tournoi en un lien public ou exportez-le en image.',
-    },
-  ];
-
-  if (compact) {
-    return (
-      <div className="ink-card p-5 sm:p-6">
-        <h2 className="text-sm font-semibold text-ink-400 uppercase tracking-wider mb-4">Ce que vous pouvez faire</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {features.map(f => (
-            <div key={f.title} className="flex items-start gap-3 p-3 rounded-xl bg-ink-800/40">
-              <span className="text-xl shrink-0 mt-0.5">{f.icon}</span>
-              <div>
-                <p className="text-sm font-medium text-ink-200">{f.title}</p>
-                <p className="text-xs text-ink-500 mt-0.5 leading-relaxed">{f.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
+function TournamentCard({ tournament, presence, onDeleted }: {
+  tournament: Tournament;
+  presence?: { count: number; members: string[] };
+  onDeleted: () => void;
+}) {
+  const wins = tournament.rounds?.filter(r => r.result === 'WIN').length ?? 0;
+  const losses = tournament.rounds?.filter(r => r.result === 'LOSS').length ?? 0;
+  const draws = tournament.rounds?.filter(r => r.result === 'DRAW').length ?? 0;
+  const total = wins + losses + draws;
+  const date = new Date(tournament.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 
   return (
-    <div className="space-y-4">
-      <div className="ink-card p-5 sm:p-6">
-        <h2 className="text-base font-semibold text-ink-200 mb-1">Suivez votre progression en tournoi</h2>
-        <p className="text-sm text-ink-400 leading-relaxed">
-          GlimmerLog vous permet de garder une trace complète de vos tournois Disney Lorcana : rondes, adversaires, decks joués, classement final. Analysez vos performances pour progresser et préparez-vous à chaque événement.
-        </p>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {features.map(f => (
-          <div key={f.title} className="ink-card p-4 flex items-start gap-3">
-            <span className="text-2xl shrink-0 mt-0.5">{f.icon}</span>
-            <div>
-              <p className="text-sm font-semibold text-ink-200">{f.title}</p>
-              <p className="text-xs text-ink-500 mt-1 leading-relaxed">{f.desc}</p>
-            </div>
+    <div className="ink-card overflow-hidden hover:border-gold-500/20 transition-colors group">
+      <div className="p-4">
+        {/* Ligne 1 : nom + menu */}
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <Link to={`/tournaments/${tournament.id}`} className="font-semibold text-ink-100 group-hover:text-gold-400 transition-colors truncate leading-tight flex-1">
+            {tournament.name}
+          </Link>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {tournament.placement && (
+              <span className="text-xs font-bold text-gold-400 bg-gold-500/10 px-2 py-0.5 rounded-full">
+                #{tournament.placement}{tournament.playerCount ? `/${tournament.playerCount}` : ''}
+              </span>
+            )}
+            <CardMenu tournament={tournament} onDeleted={onDeleted} />
           </div>
-        ))}
+        </div>
+
+        {/* Ligne 2 : date + lieu */}
+        <p className="text-xs text-ink-500 mb-3 flex items-center gap-1.5">
+          {date}
+          {tournament.location && (
+            <><span className="text-ink-700">·</span><span className="truncate">{tournament.location}</span></>
+          )}
+        </p>
+
+        {/* Ligne 3 : deck + stats */}
+        <div className="flex items-center justify-between gap-2">
+          <DeckBadges colors={tournament.myDeckColors as any} />
+          <div className="flex items-center gap-2 shrink-0">
+            {presence && (
+              <span className="flex items-center gap-1 text-xs text-blue-400">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                {presence.count}
+              </span>
+            )}
+            <span className="text-xs text-ink-600">{FORMAT_LABELS[tournament.format]}</span>
+            {total > 0 && <ResultBadge wins={wins} losses={losses} draws={draws} />}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
 export function TournamentsPage() {
+  const queryClient = useQueryClient();
+
   const { data: tournamentsData, isLoading } = useQuery({
     queryKey: ['tournaments', 1, 50],
     queryFn: () => listTournaments(1, 50),
@@ -134,6 +183,10 @@ export function TournamentsPage() {
   });
 
   const tournaments = tournamentsData?.tournaments ?? [];
+
+  const handleDeleted = () => {
+    queryClient.invalidateQueries({ queryKey: ['tournaments'] });
+  };
 
   if (isLoading) {
     return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gold-400"></div></div>;
@@ -150,113 +203,28 @@ export function TournamentsPage() {
       </div>
 
       {tournaments.length === 0 ? (
-        <div className="space-y-6">
-          <div className="ink-card p-8 sm:p-12 text-center">
-            <div className="text-5xl mb-4">🏆</div>
-            <p className="text-lg font-semibold text-ink-100">Aucun tournoi enregistré</p>
-            <p className="mt-2 text-ink-400">Commencez par créer votre premier tournoi !</p>
-            <Link to="/tournaments/new" className="ink-btn-primary inline-block mt-6 px-6 py-2.5 text-sm">+ Créer un tournoi</Link>
+        <div className="ink-card p-8 sm:p-12 text-center">
+          <div className="w-12 h-12 rounded-full bg-gold-500/10 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-6 h-6 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 3h14l-1.4 8.4A5 5 0 0112.6 16h-.8a5 5 0 01-5-4.6L5 3zM8 16h8m-4 0v4m-3 0h6" />
+            </svg>
           </div>
-          <FeatureShowcase />
+          <p className="text-base font-semibold text-ink-100">Aucun tournoi enregistré</p>
+          <p className="mt-1 text-sm text-ink-400">Commencez par créer votre premier tournoi.</p>
+          <Link to="/tournaments/new" className="ink-btn-primary inline-block mt-5 px-6 py-2.5 text-sm">+ Créer un tournoi</Link>
         </div>
       ) : (
-        <>
-          {/* Desktop table */}
-          <div className="ink-card overflow-hidden hidden md:block">
-            <table className="w-full text-sm">
-              <thead className="bg-ink-800/50 text-ink-400 uppercase text-xs">
-                <tr>
-                  <th className="text-left px-4 py-3">Tournoi</th>
-                  <th className="text-left px-4 py-3">Date</th>
-                  <th className="text-left px-4 py-3">Lieu</th>
-                  <th className="text-left px-4 py-3">Deck</th>
-                  <th className="text-center px-4 py-3">Format</th>
-                  <th className="text-center px-4 py-3">Top Cut</th>
-                  <th className="text-center px-4 py-3">Bilan</th>
-                  <th className="text-center px-4 py-3">Place</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-ink-800/50">
-                {tournaments.map(t => {
-                  const wins = t.rounds?.filter(m => m.result === 'WIN').length || 0;
-                  const losses = t.rounds?.filter(m => m.result === 'LOSS').length || 0;
-                  const draws = t.rounds?.filter(m => m.result === 'DRAW').length || 0;
-                  const tp = presence[t.id];
-                  return (
-                    <tr key={t.id} className="hover:bg-ink-800/30 transition-colors">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <Link to={`/tournaments/${t.id}`} className="font-medium text-ink-100 hover:text-gold-400 transition-colors">
-                            {t.name}
-                          </Link>
-                          {tp && <TeamBadge count={tp.count} members={tp.members} />}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-ink-400">{new Date(t.date).toLocaleDateString('fr-FR')}</td>
-                      <td className="px-4 py-3 text-ink-400">{t.location || '—'}</td>
-                      <td className="px-4 py-3"><DeckBadges colors={t.myDeckColors as any} /></td>
-                      <td className="px-4 py-3 text-center text-ink-300">{FORMAT_LABELS[t.format]}</td>
-                      <td className="px-4 py-3 text-center text-ink-300">{TOPCUT_LABELS[t.topCut]}</td>
-                      <td className="px-4 py-3 text-center font-medium">
-                        <span className="text-green-400">{wins}</span>
-                        <span className="text-ink-600"> / </span>
-                        <span className="text-red-400">{losses}</span>
-                        {draws > 0 && <><span className="text-ink-600"> / </span><span className="text-ink-400">{draws}</span></>}
-                      </td>
-                      <td className="px-4 py-3 text-center text-gold-400 font-medium">
-                        {t.placement ? `#${t.placement}` : '—'}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile card list */}
-          <div className="md:hidden space-y-3">
-            {tournaments.map((t: Tournament) => {
-              const wins = t.rounds?.filter(m => m.result === 'WIN').length || 0;
-              const losses = t.rounds?.filter(m => m.result === 'LOSS').length || 0;
-              const draws = t.rounds?.filter(m => m.result === 'DRAW').length || 0;
-              const tp = presence[t.id];
-              return (
-                <Link key={t.id} to={`/tournaments/${t.id}`} className="block ink-card-hover p-4">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-ink-100 truncate">{t.name}</h3>
-                        {tp && <TeamBadge count={tp.count} members={tp.members} />}
-                      </div>
-                      <p className="text-xs text-ink-500 mt-0.5">
-                        {new Date(t.date).toLocaleDateString('fr-FR')}
-                        {t.location && ` — ${t.location}`}
-                      </p>
-                    </div>
-                    {t.placement && (
-                      <span className="text-sm font-medium text-gold-400 shrink-0">#{t.placement}</span>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <DeckBadges colors={t.myDeckColors as any} />
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="text-ink-500">{FORMAT_LABELS[t.format]}</span>
-                      <span className="font-medium">
-                        <span className="text-green-400">{wins}</span>
-                        <span className="text-ink-600">/</span>
-                        <span className="text-red-400">{losses}</span>
-                        {draws > 0 && <><span className="text-ink-600">/</span><span className="text-ink-400">{draws}</span></>}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {tournaments.map(t => (
+            <TournamentCard
+              key={t.id}
+              tournament={t}
+              presence={presence[t.id]}
+              onDeleted={handleDeleted}
+            />
+          ))}
+        </div>
       )}
-
-      <FeatureShowcase compact={tournaments.length > 0} />
     </div>
   );
 }

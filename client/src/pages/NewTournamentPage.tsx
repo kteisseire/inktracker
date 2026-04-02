@@ -289,214 +289,201 @@ export function NewTournamentPage() {
     }
   };
 
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   if (initialLoading) {
     return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold-400"></div></div>;
   }
 
+  const FORMAT_LABELS: Record<string, string> = { BO1: 'Bo1', BO3: 'Bo3', BO5: 'Bo5' };
+  const TOPCUT_LABELS: Record<string, string> = { NONE: 'Aucun top cut', TOP4: 'Top 4', TOP8: 'Top 8', TOP16: 'Top 16', TOP32: 'Top 32' };
+
   return (
-    <div className="max-w-2xl mx-auto">
-      {isEdit && (
-        <Link to={`/tournaments/${editId}`} className="text-sm text-ink-500 hover:text-gold-400 transition-colors">&larr; Retour au tournoi</Link>
-      )}
-      <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide mb-6 mt-1">
+    <div className="max-w-2xl mx-auto space-y-4">
+      <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide mt-1">
         {isEdit ? 'Modifier le tournoi' : 'Nouveau tournoi'}
       </h1>
 
-      <form onSubmit={handleSubmit} className="ink-card p-4 sm:p-6 space-y-5">
-        {error && (
-          <div className="ink-error">{error}</div>
-        )}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <div className="ink-error">{error}</div>}
 
-        <div>
-          <label className="ink-label">Nom du tournoi *</label>
-          <input
-            type="text" required value={name} onChange={e => setName(e.target.value)}
-            placeholder="Ex: Challenge Lorcana Paris"
-            className="ink-input"
-          />
-        </div>
-
-        <div>
-          <label className="ink-label">Lien du tournoi</label>
+        {/* ── Lien Ravensburger ── */}
+        <div className="ink-card p-4 space-y-1">
+          <label className="ink-label">Lien Ravensburger Play Hub</label>
           <div className="relative">
             <input
               type="url" value={eventLink}
               onChange={e => handleEventLinkChange(e.target.value)}
               onPaste={e => {
                 const pasted = e.clipboardData.getData('text');
-                if (pasted && extractEventId(pasted)) {
-                  e.preventDefault();
-                  setEventLink(pasted);
-                  fetchEventData(pasted);
-                }
+                if (pasted && extractEventId(pasted)) { e.preventDefault(); setEventLink(pasted); fetchEventData(pasted); }
               }}
               placeholder="https://tcg.ravensburgerplay.com/events/..."
-              className="ink-input text-sm pr-20"
+              className="ink-input text-sm pr-10"
             />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-              {eventFetching && <span className="text-gold-400 text-sm animate-spin">&#9696;</span>}
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              {eventFetching && <span className="text-gold-400 animate-spin text-sm">&#9696;</span>}
               {eventFetchStatus === 'success' && <span className="text-green-400 text-lg">&#10003;</span>}
               {eventFetchStatus === 'error' && <span className="text-red-400 text-lg">&#10007;</span>}
               {extractEventId(eventLink) && !eventFetching && (
-                <button
-                  type="button"
-                  onClick={refreshEventData}
-                  className="text-xs text-ink-400 hover:text-gold-400 transition-colors p-1"
-                  title="Rafraîchir les infos"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
+                <button type="button" onClick={refreshEventData} className="p-1 text-ink-500 hover:text-gold-400 transition-colors" title="Rafraîchir">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                 </button>
               )}
             </div>
           </div>
-          <p className="text-xs text-ink-500 mt-1">
-            Colle le lien Ravensburger Play Hub pour remplir automatiquement les infos
-          </p>
+          <p className="text-xs text-ink-600">Les infos du tournoi sont remplies automatiquement</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="ink-label">Date *</label>
-            <input type="date" required value={date} onChange={e => setDate(e.target.value)}
-              className="ink-input" />
-          </div>
-          <div>
-            <label className="ink-label">Lieu</label>
-            <input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="Ex: Paris"
-              className="ink-input" />
-          </div>
-        </div>
-
-        <div>
-          <label className="ink-label">Nombre de joueurs</label>
-          <input type="number" min="2" value={playerCount} onChange={e => handlePlayerCountChange(e.target.value)}
-            className="ink-input" />
-          {playerCount && parseInt(playerCount) >= 2 && (
-            <p className="text-xs text-ink-500 mt-1">
-              Recommandation : {getRecommendedSwissRounds(parseInt(playerCount))} rondes
-              {getRecommendedTopCut(parseInt(playerCount)) !== 'NONE' && (
-                <>, {getRecommendedTopCut(parseInt(playerCount)).replace('TOP', 'Top ')}</>
-              )}
-            </p>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-          <div>
-            <label className="ink-label">Rondes *</label>
-            <input type="number" required min="1" value={swissRounds} onChange={e => setSwissRounds(e.target.value)}
-              className="ink-input" />
-          </div>
-          <div>
-            <label className="ink-label">Top Cut</label>
-            <select value={topCut} onChange={e => setTopCut(e.target.value)}
-              className="ink-input">
-              <option value="NONE">Aucun</option>
-              <option value="TOP4">Top 4</option>
-              <option value="TOP8">Top 8</option>
-              <option value="TOP16">Top 16</option>
-              <option value="TOP32">Top 32</option>
-            </select>
-          </div>
-          <div className="col-span-2 sm:col-span-1">
-            <label className="ink-label">Classement</label>
-            <input type="number" min="1" value={placement} onChange={e => setPlacement(e.target.value)} placeholder="#"
-              className="ink-input" />
-          </div>
-        </div>
-
-        <div>
-          <label className="ink-label">Format</label>
-          <select value={format} onChange={e => setFormat(e.target.value)}
-            className="ink-input">
-            <option value="BO1">Best of 1</option>
-            <option value="BO3">Best of 3</option>
-            <option value="BO5">Best of 5</option>
-          </select>
-        </div>
-
-        {/* Deck selection */}
-        <div className="space-y-3">
+        {/* ── Mon deck ── */}
+        <div className="ink-card p-4 space-y-3">
           <label className="ink-label">Mon deck *</label>
-
           {savedDecks.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {savedDecks.map(deck => (
-                <button
-                  key={deck.id} type="button"
-                  onClick={() => handleDeckSelect(deck.id)}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm transition-all ${
-                    selectedDeckId === deck.id
-                      ? 'border-gold-500 bg-gold-500/10 ring-2 ring-gold-500/30'
-                      : 'border-ink-700/50 bg-ink-900/50 hover:border-ink-600/50'
+                <button key={deck.id} type="button" onClick={() => handleDeckSelect(deck.id)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition-all ${
+                    selectedDeckId === deck.id ? 'border-gold-500 bg-gold-500/10 ring-2 ring-gold-500/30' : 'border-ink-700/50 bg-ink-900/50 hover:border-ink-600/50'
                   }`}
                 >
                   <DeckBadges colors={deck.colors as any} />
                   <span className="text-ink-200 font-medium text-sm">{deck.name}</span>
-                  {deck.isDefault && <span className="text-xs text-gold-400 font-medium hidden sm:inline">(défaut)</span>}
+                  {deck.isDefault && <span className="text-xs text-gold-400 hidden sm:inline">(défaut)</span>}
                 </button>
               ))}
-              <button
-                type="button"
-                onClick={() => handleDeckSelect('')}
-                className={`px-3 py-2.5 rounded-xl border text-sm transition-all ${
-                  selectedDeckId === ''
-                    ? 'border-gold-500 bg-gold-500/10 ring-2 ring-gold-500/30'
-                    : 'border-ink-700/50 bg-ink-900/50 hover:border-ink-600/50'
-                } text-ink-400`}
-              >
-                Autre...
-              </button>
+              <button type="button" onClick={() => handleDeckSelect('')}
+                className={`px-3 py-2 rounded-xl border text-sm transition-all text-ink-400 ${selectedDeckId === '' ? 'border-gold-500 bg-gold-500/10 ring-2 ring-gold-500/30' : 'border-ink-700/50 bg-ink-900/50 hover:border-ink-600/50'}`}
+              >Autre…</button>
             </div>
           )}
-
-          {/* Manual deck link + colors */}
           {(!selectedDeckId || savedDecks.length === 0) && (
             <div className="space-y-3">
-              <div>
-                <label className="block text-xs text-ink-500 mb-1">Lien du deck</label>
-                <div className="relative">
-                  <input
-                    type="url" value={myDeckLink}
-                    onChange={e => handleDeckLinkChange(e.target.value)}
-                    onPaste={e => {
-                      const pasted = e.clipboardData.getData('text');
-                      if (pasted && isDeckUrl(pasted)) { e.preventDefault(); setMyDeckLink(pasted); fetchColors(pasted); }
-                    }}
-                    placeholder="dreamborn.ink, lorcanito.com..."
-                    className="ink-input pr-10 text-sm"
-                  />
-                  {deckLinkLoading && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gold-400 text-sm animate-spin">&#9696;</span>}
-                  {deckLinkStatus === 'success' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-400 text-lg">&#10003;</span>}
-                  {deckLinkStatus === 'error' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-red-400 text-lg">&#10007;</span>}
-                </div>
-                {deckLinkStatus === 'error' && deckLinkError && (
-                  <p className="text-xs text-red-400 mt-1">{deckLinkError}</p>
-                )}
+              <div className="relative">
+                <input type="url" value={myDeckLink}
+                  onChange={e => handleDeckLinkChange(e.target.value)}
+                  onPaste={e => { const p = e.clipboardData.getData('text'); if (p && isDeckUrl(p)) { e.preventDefault(); setMyDeckLink(p); fetchColors(p); } }}
+                  placeholder="dreamborn.ink, lorcanito.com…"
+                  className="ink-input pr-10 text-sm"
+                />
+                {deckLinkLoading && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gold-400 animate-spin text-sm">&#9696;</span>}
+                {deckLinkStatus === 'success' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-400 text-lg">&#10003;</span>}
+                {deckLinkStatus === 'error' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-red-400 text-lg">&#10007;</span>}
               </div>
-              <div>
-                <label className="block text-xs text-ink-500 mb-2">Couleurs</label>
-                <InkColorPicker selected={myDeckColors} onChange={setMyDeckColors} />
-              </div>
+              {deckLinkStatus === 'error' && deckLinkError && <p className="text-xs text-red-400">{deckLinkError}</p>}
+              <InkColorPicker selected={myDeckColors} onChange={setMyDeckColors} />
             </div>
           )}
         </div>
 
-        <div>
-          <label className="ink-label">Notes</label>
-          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="Notes sur le tournoi..."
-            className="ink-input resize-none" />
-        </div>
+        {/* ── Preview des infos calculées ── */}
+        {(name || date || playerCount || swissRounds) && (
+          <div className="ink-card overflow-hidden">
+            <div className="flex items-center justify-between px-4 pt-3 pb-2">
+              <span className="text-xs text-ink-500 uppercase tracking-wider">Aperçu</span>
+            </div>
+            <div className="px-4 pb-1">
+              {name && <p className="font-semibold text-ink-100 truncate">{name}</p>}
+              <p className="text-ink-500 text-xs mt-0.5">
+                {new Date(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                {location && <span className="text-ink-600"> · {location}</span>}
+              </p>
+            </div>
+            <div className="h-px bg-ink-800/60 mx-4 my-2" />
+            <div className="grid grid-cols-4 divide-x divide-ink-800/60 pb-3">
+              <div className="flex flex-col items-center py-1 px-2 gap-0.5">
+                <span className="text-xs text-ink-600 uppercase tracking-wider">Rondes</span>
+                <span className="text-sm font-semibold text-ink-200">{swissRounds}</span>
+              </div>
+              <div className="flex flex-col items-center py-1 px-2 gap-0.5">
+                <span className="text-xs text-ink-600 uppercase tracking-wider">Format</span>
+                <span className="text-sm font-semibold text-ink-200">{FORMAT_LABELS[format]}</span>
+              </div>
+              <div className="flex flex-col items-center py-1 px-2 gap-0.5">
+                <span className="text-xs text-ink-600 uppercase tracking-wider">Joueurs</span>
+                <span className="text-sm font-semibold text-ink-200">{playerCount || '—'}</span>
+              </div>
+              <div className="flex flex-col items-center py-1 px-2 gap-0.5">
+                <span className="text-xs text-ink-600 uppercase tracking-wider">Top</span>
+                <span className="text-sm font-semibold text-ink-200">{topCut === 'NONE' ? '—' : TOPCUT_LABELS[topCut]}</span>
+              </div>
+            </div>
+          </div>
+        )}
 
-        <div className="flex gap-3 pt-2">
-          <button type="submit" disabled={loading}
-            className="flex-1 ink-btn-primary"
-          >{loading ? (isEdit ? 'Modification...' : 'Création...') : (isEdit ? 'Enregistrer' : 'Créer le tournoi')}</button>
-          <button type="button" onClick={() => navigate(isEdit ? `/tournaments/${editId}` : '/tournaments')}
-            className="ink-btn-secondary"
-          >Annuler</button>
+        {/* ── Paramètres avancés ── */}
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(v => !v)}
+          className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-ink-700/50 bg-ink-900/30 text-sm text-ink-400 hover:text-ink-200 hover:border-ink-600/50 transition-all"
+        >
+          <span>Paramètres avancés</span>
+          <svg className={`w-4 h-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {showAdvanced && (
+          <div className="ink-card p-4 space-y-4">
+            <div>
+              <label className="ink-label">Nom du tournoi *</label>
+              <input type="text" required value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Challenge Lorcana Paris" className="ink-input" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="ink-label">Date *</label>
+                <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="ink-input" />
+              </div>
+              <div>
+                <label className="ink-label">Lieu</label>
+                <input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="Ex: Paris" className="ink-input" />
+              </div>
+            </div>
+            <div>
+              <label className="ink-label">Nombre de joueurs</label>
+              <input type="number" min="2" value={playerCount} onChange={e => handlePlayerCountChange(e.target.value)} className="ink-input" />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="ink-label">Rondes *</label>
+                <input type="number" required min="1" value={swissRounds} onChange={e => setSwissRounds(e.target.value)} className="ink-input" />
+              </div>
+              <div>
+                <label className="ink-label">Top Cut</label>
+                <select value={topCut} onChange={e => setTopCut(e.target.value)} className="ink-input">
+                  <option value="NONE">Aucun</option>
+                  <option value="TOP4">Top 4</option>
+                  <option value="TOP8">Top 8</option>
+                  <option value="TOP16">Top 16</option>
+                  <option value="TOP32">Top 32</option>
+                </select>
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <label className="ink-label">Classement</label>
+                <input type="number" min="1" value={placement} onChange={e => setPlacement(e.target.value)} placeholder="#" className="ink-input" />
+              </div>
+            </div>
+            <div>
+              <label className="ink-label">Format</label>
+              <select value={format} onChange={e => setFormat(e.target.value)} className="ink-input">
+                <option value="BO1">Best of 1</option>
+                <option value="BO3">Best of 3</option>
+                <option value="BO5">Best of 5</option>
+              </select>
+            </div>
+            <div>
+              <label className="ink-label">Notes</label>
+              <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="Notes sur le tournoi…" className="ink-input resize-none" />
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-3 pt-1">
+          <button type="submit" disabled={loading} className="flex-1 ink-btn-primary">
+            {loading ? (isEdit ? 'Modification…' : 'Création…') : (isEdit ? 'Enregistrer' : 'Créer le tournoi')}
+          </button>
+          <button type="button" onClick={() => navigate(isEdit ? `/tournaments/${editId}` : '/tournaments')} className="ink-btn-secondary">
+            Annuler
+          </button>
         </div>
       </form>
     </div>

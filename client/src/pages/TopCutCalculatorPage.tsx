@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { getRecommendedSwissRounds, getRecommendedTopCut } from '@lorcana/shared';
 import { HelpButton } from '../components/ui/HelpButton.js';
+import { ToolsSubNav } from '../components/layout/ToolsSubNav.js';
 
 const TOPCUT_VALUES: Record<string, number> = { NONE: 0, TOP4: 4, TOP8: 8, TOP16: 16, TOP32: 32 };
 
@@ -87,7 +88,9 @@ export function TopCutCalculatorPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto">
+      <ToolsSubNav />
+      <div className="space-y-6">
       <div>
         <div className="flex items-center gap-2">
           <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Top Cut Calculator</h1>
@@ -219,6 +222,7 @@ export function TopCutCalculatorPage() {
           </p>
         </div>
       )}
+      </div>
     </div>
   );
 }

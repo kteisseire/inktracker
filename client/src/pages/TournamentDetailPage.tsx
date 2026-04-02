@@ -250,77 +250,108 @@ export function TournamentDetailPage() {
   const hasEventLink = !!(tournament.eventLink && extractEventId(tournament.eventLink));
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div>
-        <Link to="/tournaments" className="text-sm text-ink-500 hover:text-gold-400 transition-colors">&larr; Retour</Link>
-        <div className="flex items-center justify-between gap-3 mt-1">
+    <div className="space-y-4">
+      {/* Card principale du tournoi */}
+      <div className="ink-card overflow-hidden">
+        {/* Ligne du haut : nom + menu */}
+        <div className="flex items-start justify-between gap-3 p-4 pb-3">
           <div className="flex items-center gap-2 min-w-0">
-            <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide truncate min-w-0">{tournament.name}</h1>
+            <div className="min-w-0">
+              <h1 className="font-display text-xl font-bold text-ink-100 tracking-wide truncate">{tournament.name}</h1>
+              <p className="text-ink-500 text-xs mt-0.5">
+                {new Date(tournament.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                {tournament.location && <span className="text-ink-600"> · {tournament.location}</span>}
+              </p>
+            </div>
             <HelpButton sections={['Tournois', 'Arbre du tournoi et scouting']} />
           </div>
-          <DropdownMenu
-            items={[
-              { label: 'Partager', onClick: handleShare },
-              { label: 'Exporter image', onClick: () => exportTournamentImage(tournament, user?.username || 'Joueur') },
-              { label: 'Modifier', onClick: () => navigate(`/tournaments/${id}/edit`) },
-              { label: 'Supprimer', onClick: handleDeleteTournament, danger: true },
-            ]}
-          />
+          <div className="flex items-center gap-2 shrink-0">
+            {hasEventLink && (
+              <button
+                onClick={handleRefreshEvent}
+                disabled={refreshing}
+                className="p-1.5 rounded-lg text-ink-500 hover:text-gold-400 transition-colors disabled:opacity-40"
+                title="Rafraîchir les infos du tournoi"
+              >
+                <svg className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            )}
+            <DropdownMenu
+              items={[
+                { label: 'Partager', onClick: handleShare },
+                { label: 'Exporter image', onClick: () => exportTournamentImage(tournament, user?.username || 'Joueur') },
+                { label: 'Modifier', onClick: () => navigate(`/tournaments/${id}/edit`) },
+                { label: 'Supprimer', onClick: handleDeleteTournament, danger: true },
+              ]}
+            />
+          </div>
         </div>
-        <p className="text-ink-400 text-sm mt-1">
-          {new Date(tournament.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          {tournament.location && ` — ${tournament.location}`}
-        </p>
-        <div className="flex items-center gap-3 mt-1">
-          <a
-            href={tournament.eventLink || 'https://tcg.ravensburgerplay.com/my-events'}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs text-lorcana-sapphire hover:text-blue-300 transition-colors"
-          >
-            {tournament.eventLink ? 'Voir sur Ravensburger Play Hub' : 'Mes événements Ravensburger'}
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-          </a>
-          {hasEventLink && (
-            <button
-              onClick={handleRefreshEvent}
-              disabled={refreshing}
-              className="inline-flex items-center gap-1 text-xs text-ink-500 hover:text-gold-400 transition-colors disabled:opacity-50"
-              title="Rafraîchir les infos du tournoi"
-            >
-              <svg className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              {refreshing ? 'Mise à jour...' : 'Actualiser'}
-            </button>
-          )}
-        </div>
-      </div>
 
-      {/* Info cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
-        <InfoCard label="Deck" value={
-          tournament.myDeckLink ? (
-            <a href={tournament.myDeckLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:opacity-80">
-              <DeckBadges colors={tournament.myDeckColors as any} />
-              <svg className="w-3 h-3 text-ink-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-            </a>
-          ) : (
-            <DeckBadges colors={tournament.myDeckColors as any} />
-          )
-        } />
-        <InfoCard label="Bilan" value={
-          <span className="text-sm">
-            <span className="text-green-400">{wins}V</span>
-            {' '}
-            <span className="text-red-400">{losses}D</span>
-            {draws > 0 && <>{' '}<span className="text-ink-400">{draws}N</span></>}
-          </span>
-        } />
-        <InfoCard label="Format" value={FORMAT_LABELS[tournament.format]} />
-        <InfoCard label="Top Cut" value={TOPCUT_LABELS[tournament.topCut]} />
-        <InfoCard label="Joueurs" value={tournament.playerCount ?? '—'} className="col-span-2 sm:col-span-1" />
+        {/* Séparateur */}
+        <div className="h-px bg-ink-800/60 mx-4" />
+
+        {/* Grille de stats */}
+        <div className="grid grid-cols-4 divide-x divide-ink-800/60 px-0">
+          {/* Bilan */}
+          <div className="flex flex-col items-center justify-center py-3 px-2 gap-0.5">
+            <span className="text-xs text-ink-600 uppercase tracking-wider">Bilan</span>
+            <span className="text-sm font-semibold">
+              <span className="text-green-400">{wins}</span>
+              <span className="text-ink-600 mx-0.5">-</span>
+              <span className="text-red-400">{losses}</span>
+              {draws > 0 && <><span className="text-ink-600 mx-0.5">-</span><span className="text-ink-400">{draws}</span></>}
+            </span>
+          </div>
+
+          {/* Format */}
+          <div className="flex flex-col items-center justify-center py-3 px-2 gap-0.5">
+            <span className="text-xs text-ink-600 uppercase tracking-wider">Format</span>
+            <span className="text-sm font-semibold text-ink-200">{FORMAT_LABELS[tournament.format]}</span>
+          </div>
+
+          {/* Joueurs */}
+          <div className="flex flex-col items-center justify-center py-3 px-2 gap-0.5">
+            <span className="text-xs text-ink-600 uppercase tracking-wider">Joueurs</span>
+            <span className="text-sm font-semibold text-ink-200">{tournament.playerCount ?? '—'}</span>
+          </div>
+
+          {/* Classement ou Deck */}
+          <div className="flex flex-col items-center justify-center py-3 px-2 gap-0.5">
+            {tournament.placement ? (
+              <>
+                <span className="text-xs text-ink-600 uppercase tracking-wider">Classement</span>
+                <span className="text-sm font-bold text-gold-400">#{tournament.placement}</span>
+              </>
+            ) : tournament.myDeckColors?.length > 0 ? (
+              <>
+                <span className="text-xs text-ink-600 uppercase tracking-wider">Deck</span>
+                {tournament.myDeckLink ? (
+                  <a href={tournament.myDeckLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:opacity-80">
+                    <DeckBadges colors={tournament.myDeckColors as any} />
+                    <svg className="w-2.5 h-2.5 text-ink-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                  </a>
+                ) : (
+                  <DeckBadges colors={tournament.myDeckColors as any} />
+                )}
+              </>
+            ) : (
+              <>
+                <span className="text-xs text-ink-600 uppercase tracking-wider">Deck</span>
+                <span className="text-sm text-ink-600">—</span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Notes si présentes */}
+        {tournament.notes && (
+          <>
+            <div className="h-px bg-ink-800/60 mx-4" />
+            <p className="px-4 py-3 text-xs text-ink-500">{tournament.notes}</p>
+          </>
+        )}
       </div>
 
       {/* Top Cut Progress */}
@@ -334,21 +365,8 @@ export function TournamentDetailPage() {
         />
       )}
 
-      {tournament.placement && (
-        <div className="ink-card p-3 sm:p-4 text-center text-sm border-gold-500/20">
-          <span className="text-gold-400 font-medium">Classement final : #{tournament.placement}</span>
-          {tournament.playerCount && (
-            <span className="text-gold-500/70"> / {tournament.playerCount} joueurs</span>
-          )}
-        </div>
-      )}
-
-      {tournament.notes && (
-        <div className="ink-card p-3 sm:p-4 text-sm text-ink-400">{tournament.notes}</div>
-      )}
-
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-ink-800/50 sticky top-[53px] sm:top-[57px] z-30 bg-ink-950/95 backdrop-blur-md -mx-3 sm:-mx-4 px-3 sm:px-4">
+      <div className="flex gap-1 border-b border-ink-800/50 sticky top-14 z-30 bg-ink-950/95 backdrop-blur-md -mx-3 sm:-mx-4 px-3 sm:px-4">
         <button
           onClick={() => setTab('rounds')}
           className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
@@ -1563,31 +1581,47 @@ function MatchDetailModal({ match: m, roundNumber, isMe, getScout, possibleDecks
 /* ── Color grid shared by InlineScoutSection and UncertainDeckPicker ── */
 function ColorGrid({ colors, onToggle }: { colors: InkColor[]; onToggle: (c: InkColor) => void }) {
   return (
-    <div className="grid grid-cols-3 gap-1.5">
+    <div className="grid grid-cols-6 gap-1">
       {INK_COLORS.map(color => {
         const config = INK_COLORS_CONFIG[color];
         const isSelected = colors.includes(color);
         const isDisabled = !isSelected && colors.length >= 2;
+        const hex = config.hex;
         return (
           <button
             key={color}
             type="button"
             onClick={() => onToggle(color)}
             disabled={isDisabled}
-            className={`flex items-center justify-center px-2 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              isSelected
-                ? 'ring-2 ring-gold-400 scale-[1.02]'
-                : isDisabled
-                ? 'opacity-20 cursor-not-allowed'
-                : 'opacity-40 hover:opacity-70'
-            }`}
+            className="flex flex-col items-center gap-1 py-2 rounded-xl transition-all duration-200 active:scale-95"
             style={{
-              backgroundColor: config.hex,
-              color: color === 'AMBER' ? '#78350f' : '#fff',
-              textShadow: color === 'AMBER' ? 'none' : '0 1px 2px rgba(0,0,0,0.3)',
+              opacity: isDisabled ? 0.2 : isSelected ? 1 : 0.45,
+              background: isSelected ? `${hex}12` : 'transparent',
+              border: `1px solid ${isSelected ? `${hex}50` : 'transparent'}`,
             }}
           >
-            {config.label}
+            <svg viewBox="0 0 25.83 32" style={{ width: 22, height: 28, filter: isSelected ? `drop-shadow(0 0 5px ${hex}99)` : 'none', transition: 'filter 0.2s' }}>
+              {isSelected ? (
+                <>
+                  <path d="M12.91 0 0 16l12.91 16 12.91-16Z" fill={hex} opacity="0.25" />
+                  <path d="M12.91 0 0 16l12.91 16 12.91-16ZM1.28 16 12.91 1.59 24.54 16 12.91 30.41Z" fill={hex} />
+                  <path d="m21.99 16-9.08 11.25L3.83 16l9.08-11.25Z" fill={hex} />
+                </>
+              ) : (
+                <path d="M12.91 0 0 16l12.91 16 12.91-16ZM1.28 16 12.91 1.59 24.54 16 12.91 30.41Z" fill={hex} />
+              )}
+            </svg>
+            <span style={{
+              fontSize: '0.55rem',
+              fontWeight: isSelected ? 600 : 400,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: isSelected ? hex : 'rgba(255,255,255,0.35)',
+              transition: 'color 0.2s',
+              lineHeight: 1,
+            }}>
+              {config.label.slice(0, 4)}
+            </span>
           </button>
         );
       })}
@@ -1607,15 +1641,13 @@ function PossibleDecksRef({ decks }: { decks: PotentialDeck[] }) {
             <span className="text-[10px] text-ink-500 w-12 shrink-0">Deck {String.fromCharCode(65 + i)}</span>
             <div className="flex items-center gap-1">
               {(deck.deckColors as InkColor[]).filter(c => INK_COLORS_CONFIG[c]).map(c => {
-                const config = INK_COLORS_CONFIG[c];
+                const hex = INK_COLORS_CONFIG[c].hex;
                 return (
-                  <span
-                    key={c}
-                    className="inline-flex items-center px-1.5 py-px rounded-full text-[9px] font-semibold opacity-70"
-                    style={{ backgroundColor: config.hex, color: c === 'AMBER' ? '#78350f' : '#fff', textShadow: c === 'AMBER' ? 'none' : '0 1px 2px rgba(0,0,0,0.3)' }}
-                  >
-                    {config.label}
-                  </span>
+                  <svg key={c} viewBox="0 0 25.83 32" style={{ width: 12, height: 15, filter: `drop-shadow(0 0 2px ${hex}66)` }}>
+                    <path d="M12.91 0 0 16l12.91 16 12.91-16Z" fill={hex} opacity="0.2" />
+                    <path d="M12.91 0 0 16l12.91 16 12.91-16ZM1.28 16 12.91 1.59 24.54 16 12.91 30.41Z" fill={hex} />
+                    <path d="m21.99 16-9.08 11.25L3.83 16l9.08-11.25Z" fill={hex} />
+                  </svg>
                 );
               })}
             </div>
@@ -1788,22 +1820,37 @@ function InlineScoutSection({ name, isWinner, isCurrentUser, scout, potentialDec
 
 function DropdownMenu({ items }: { items: { label: string; onClick: () => void; danger?: boolean }[] }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const handle = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target as Node) &&
+          btnRef.current && !btnRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     };
     document.addEventListener('mousedown', handle);
     return () => document.removeEventListener('mousedown', handle);
   }, [open]);
 
+  const handleOpen = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, left: rect.right - 160 });
+    }
+    setOpen(o => !o);
+  };
+
   return (
-    <div className="relative shrink-0" ref={ref}>
+    <div className="relative shrink-0">
       <button
+        ref={btnRef}
         type="button"
-        onClick={e => { e.stopPropagation(); setOpen(!open); }}
+        onClick={handleOpen}
         className="flex items-center justify-center w-8 h-8 rounded-lg bg-gold-500/15 text-gold-400 hover:bg-gold-500/25 transition-colors"
       >
         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -1812,8 +1859,12 @@ function DropdownMenu({ items }: { items: { label: string; onClick: () => void; 
           <circle cx="12" cy="19" r="2" />
         </svg>
       </button>
-      {open && (
-        <div className="absolute right-0 mt-1 z-50 min-w-[140px] bg-ink-900 border border-ink-700/50 rounded-xl shadow-xl shadow-ink-950/50 py-1 overflow-hidden">
+      {open && createPortal(
+        <div
+          ref={menuRef}
+          className="fixed z-[9999] bg-ink-900 border border-ink-700/50 rounded-xl shadow-xl shadow-ink-950/50 py-1 overflow-hidden"
+          style={{ top: pos.top, left: pos.left, width: '160px' }}
+        >
           {items.map(item => (
             <button
               key={item.label}
@@ -1828,7 +1879,8 @@ function DropdownMenu({ items }: { items: { label: string; onClick: () => void; 
               {item.label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

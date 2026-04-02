@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { useAuth } from '../context/AuthContext.js';
 import { submitSuggestion } from '../api/suggestion.api.js';
+import { ToolsSubNav } from '../components/layout/ToolsSubNav.js';
 
 /* ── Visual mock helpers ── */
 
@@ -599,7 +600,9 @@ function Accordion({ item }: { item: FaqItem }) {
 
 export function HelpPage() {
   return (
-    <div className="max-w-3xl mx-auto space-y-8 py-4">
+    <div className="max-w-3xl mx-auto py-4">
+      <ToolsSubNav />
+      <div className="space-y-8">
       <div>
         <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Aide</h1>
         <p className="text-sm text-ink-400 mt-1">Tout ce que vous devez savoir pour utiliser GlimmerLog.</p>
@@ -630,6 +633,7 @@ export function HelpPage() {
             Ouvrir un ticket sur GitHub
           </a>
         </p>
+      </div>
       </div>
     </div>
   );

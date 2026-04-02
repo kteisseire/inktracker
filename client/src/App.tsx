@@ -4,6 +4,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { AuthProvider, useAuth } from './context/AuthContext.js';
 import { Header } from './components/layout/Header.js';
+import { BottomNav } from './components/layout/BottomNav.js';
 import { ProtectedRoute } from './components/layout/ProtectedRoute.js';
 import { LandingPage } from './pages/LandingPage.js';
 import { LoginPage } from './pages/LoginPage.js';
@@ -99,9 +100,10 @@ function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen">
       <Header />
-      <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8 pb-24 sm:pb-8">
         {children}
       </main>
+      <BottomNav />
     </div>
   );
 }

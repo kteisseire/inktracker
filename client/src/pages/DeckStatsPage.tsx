@@ -40,7 +40,6 @@ export function DeckStatsPage() {
   return (
     <div className="space-y-6 sm:space-y-8">
       <div className="flex items-start gap-3 sm:gap-4">
-        <Link to="/decks" className="text-ink-500 hover:text-gold-400 transition-colors mt-1 shrink-0">&larr;</Link>
         <div className="min-w-0">
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">

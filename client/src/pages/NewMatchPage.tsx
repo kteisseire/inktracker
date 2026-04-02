@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { createRound, updateRound } from '../api/matches.api.js';
 import { getTournament } from '../api/tournaments.api.js';
 import { extractEventId } from '../api/ravensburger.api.js';
@@ -8,7 +8,6 @@ import { listMyTeams } from '../api/team.api.js';
 import { InkColorPicker } from '../components/ui/InkColorPicker.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
 import { LoreCounter } from '../components/LoreCounter.js';
-import { PhotoCapture } from '../components/ui/PhotoCapture.js';
 import type { LoreResult, LoreState } from '../components/LoreCounter.js';
 import type { InkColor, MatchResult, Format, Round, ScoutReport, Team } from '@lorcana/shared';
 
@@ -65,12 +64,12 @@ export function NewMatchPage() {
   const [opponentName, setOpponentName] = useState('');
   const [opponentDeckColors, setOpponentDeckColors] = useState<InkColor[]>([]);
   const [notes, setNotes] = useState('');
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [tossWinner, setTossWinner] = useState<boolean | null>(null);
   const [games, setGames] = useState<GameInput[]>([]);
   const [loreCounterGameIndex, setLoreCounterGameIndex] = useState<number | null>(null);
   const [loreStates, setLoreStates] = useState<Record<number, LoreState>>({});
   const [boTimer, setBoTimer] = useState<{ seconds: number; running: boolean }>({ seconds: 50 * 60, running: false });
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Scouting
   const [eventId, setEventId] = useState<string | null>(null);
@@ -116,7 +115,6 @@ export function NewMatchPage() {
           setOpponentName(round.opponentName || '');
           setOpponentDeckColors(round.opponentDeckColors as InkColor[]);
           setNotes(round.notes || '');
-          setPhotoUrl(round.photoUrl || null);
           // Detect format override from game count
           const gameCount = (round.games || []).length;
           const editFmt = gameCount > 3 ? 'BO5' : gameCount > 1 ? 'BO3' : fmt;
@@ -235,26 +233,29 @@ export function NewMatchPage() {
   const handleNextGame = (result: LoreResult) => {
     if (loreCounterGameIndex === null) return;
     const index = loreCounterGameIndex;
+    const currentResult: MatchResult | undefined = result.winner ? (result.winner === 'me' ? 'WIN' : 'LOSS') : undefined;
     applyLoreResult(index, result);
-    setLoreCounterGameIndex(index + 1);
+    if (nextGameAvailable(currentResult)) {
+      setLoreCounterGameIndex(index + 1);
+    } else {
+      setLoreCounterGameIndex(null);
+    }
   };
 
-  // Calcule si une partie suivante est possible en simulant le résultat de la partie courante
-  function nextGameAvailable(): boolean {
+  // Calcule si une partie suivante est possible en incluant le résultat de la partie courante
+  function nextGameAvailable(currentResult?: MatchResult): boolean {
     if (loreCounterGameIndex === null) return false;
     const nextIndex = loreCounterGameIndex + 1;
     if (nextIndex >= maxGames(format)) return false;
-    // Simuler les résultats avec la partie courante comptée (worst case: elle ne décide pas la ronde)
     const needed = winsNeeded(format);
     let myWins = 0;
     let oppWins = 0;
-    for (let i = 0; i < nextIndex; i++) {
-      if (i === loreCounterGameIndex) continue; // ignorer la partie en cours (pas encore enregistrée)
-      if (games[i]?.result === 'WIN') myWins++;
-      if (games[i]?.result === 'LOSS') oppWins++;
+    for (let i = 0; i <= loreCounterGameIndex; i++) {
+      const r = i === loreCounterGameIndex ? currentResult : games[i]?.result;
+      if (r === 'WIN') myWins++;
+      if (r === 'LOSS') oppWins++;
     }
-    // Même si la partie courante donne une victoire, vérifier si ça décide déjà la ronde
-    return (myWins + 1) < needed && (oppWins + 1) < needed;
+    return myWins < needed && oppWins < needed;
   }
 
   const buildPayload = () => {
@@ -266,7 +267,6 @@ export function NewMatchPage() {
       opponentDeckColors: opponentDeckColors.length > 0 ? opponentDeckColors : undefined,
       result: playedGames.length > 0 ? computeRoundResult() : 'DRAW' as MatchResult,
       notes: notes || undefined,
-      photoUrl: photoUrl ?? undefined,
       games: playedGames.length > 0 ? playedGames.map((g) => {
         const actualIndex = games.indexOf(g);
         const wentFirst = getWentFirst(actualIndex);
@@ -320,70 +320,74 @@ export function NewMatchPage() {
 
   const max = maxGames(format);
   const isBo = max > 1;
+  const fmtLabel = (f: Format) => f === 'BO1' ? 'Bo1' : f === 'BO3' ? 'Bo3' : 'Bo5';
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Link to={`/tournaments/${tournamentId}`} className="text-sm text-ink-500 hover:text-gold-400 transition-colors">
-        &larr; Retour au tournoi
-      </Link>
-      <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide mt-2 mb-6">
+      <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide mb-6">
         {isEdit ? 'Modifier la ronde' : 'Ajouter une ronde'}
       </h1>
 
       <form onSubmit={handleSubmit} className="ink-card p-4 sm:p-6 space-y-5">
         {error && <div className="ink-error">{error}</div>}
 
-        {/* Round info */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="ink-label">N° de ronde *</label>
-            <input type="number" required min="1" value={roundNumber}
-              onChange={e => setRoundNumber(e.target.value)} className="ink-input" />
+        {/* Round info — lecture seule */}
+        <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-ink-900/50 border border-ink-800/50">
+          <div className="flex items-center gap-4 text-sm">
+            <span className="text-ink-400">Ronde <span className="text-ink-100 font-semibold">{roundNumber}</span></span>
+            <span className="text-ink-700">·</span>
+            <span className="text-ink-400">{isTopCut ? 'Top Cut' : 'Suisse'}</span>
+            <span className="text-ink-700">·</span>
+            <span className="text-ink-400">{fmtLabel(format)}</span>
           </div>
-          <div>
-            <label className="ink-label mb-2">Type</label>
-            <div className="flex gap-2">
-              <button type="button" onClick={() => setIsTopCut(false)}
-                className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all border-2 ${
-                  !isTopCut
-                    ? 'border-gold-500 bg-gold-500/10 text-gold-400'
-                    : 'border-ink-700/50 text-ink-400 hover:border-ink-600/50'
-                }`}>
-                Suisse
-              </button>
-              <button type="button" onClick={() => setIsTopCut(true)}
-                className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all border-2 ${
-                  isTopCut
-                    ? 'border-gold-500 bg-gold-500/10 text-gold-400'
-                    : 'border-ink-700/50 text-ink-400 hover:border-ink-600/50'
-                }`}>
-                Top Cut
-              </button>
-            </div>
-          </div>
+          <button type="button" onClick={() => setShowAdvanced(v => !v)}
+            className="text-xs text-ink-500 hover:text-gold-400 transition-colors flex items-center gap-1">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828 15.828a2 2 0 01-1.414.586H9v-1.414a2 2 0 01.586-1.414z" />
+            </svg>
+            Modifier
+          </button>
         </div>
 
-        {/* Format override */}
-        <div>
-          <label className="ink-label mb-2">Format</label>
-          <div className="flex gap-2">
-            {(['BO1', 'BO3', 'BO5'] as Format[]).map(fmt => (
-              <button key={fmt} type="button" onClick={() => handleFormatChange(fmt)}
-                className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all border-2 ${
-                  format === fmt
-                    ? 'border-gold-500 bg-gold-500/10 text-gold-400'
-                    : 'border-ink-700/50 text-ink-400 hover:border-ink-600/50'
-                }`}>
-                {fmt === 'BO1' ? 'Bo1' : fmt === 'BO3' ? 'Bo3' : 'Bo5'}
-              </button>
-            ))}
+        {/* Champs avancés */}
+        {showAdvanced && (
+          <div className="space-y-4 rounded-xl border border-ink-700/40 p-3 bg-ink-900/30">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="ink-label">N° de ronde</label>
+                <input type="number" required min="1" value={roundNumber}
+                  onChange={e => setRoundNumber(e.target.value)} className="ink-input" />
+              </div>
+              <div>
+                <label className="ink-label mb-2">Type</label>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setIsTopCut(false)}
+                    className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all border-2 ${
+                      !isTopCut ? 'border-gold-500 bg-gold-500/10 text-gold-400' : 'border-ink-700/50 text-ink-400 hover:border-ink-600/50'
+                    }`}>Suisse</button>
+                  <button type="button" onClick={() => setIsTopCut(true)}
+                    className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all border-2 ${
+                      isTopCut ? 'border-gold-500 bg-gold-500/10 text-gold-400' : 'border-ink-700/50 text-ink-400 hover:border-ink-600/50'
+                    }`}>Top Cut</button>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label className="ink-label mb-2">Format</label>
+              <div className="flex gap-2">
+                {(['BO1', 'BO3', 'BO5'] as Format[]).map(fmt => (
+                  <button key={fmt} type="button" onClick={() => handleFormatChange(fmt)}
+                    className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all border-2 ${
+                      format === fmt ? 'border-gold-500 bg-gold-500/10 text-gold-400' : 'border-ink-700/50 text-ink-400 hover:border-ink-600/50'
+                    }`}>{fmtLabel(fmt)}</button>
+                ))}
+              </div>
+              {format !== tournamentFormat && (
+                <p className="text-xs text-ink-500 mt-1">Format du tournoi : {fmtLabel(tournamentFormat)}</p>
+              )}
+            </div>
           </div>
-          {format !== tournamentFormat && (
-            <p className="text-xs text-ink-500 mt-1">
-              Format du tournoi : {tournamentFormat === 'BO1' ? 'Bo1' : tournamentFormat === 'BO3' ? 'Bo3' : 'Bo5'}
-            </p>
-          )}
-        </div>
+        )}
 
         <div>
           <label className="ink-label">Adversaire</label>
@@ -550,11 +554,6 @@ export function NewMatchPage() {
             placeholder="Notes sur la ronde..." className="ink-input resize-none" />
         </div>
 
-        <div>
-          <label className="ink-label mb-2">Photo</label>
-          <PhotoCapture value={photoUrl} onChange={setPhotoUrl} />
-        </div>
-
         <div className="flex gap-3 pt-2">
           <button type="submit" disabled={loading}
             className="flex-1 ink-btn-primary">
@@ -567,16 +566,22 @@ export function NewMatchPage() {
         </div>
       </form>
 
-      {loreCounterGameIndex !== null && (
-        <LoreCounter
-          key={loreCounterGameIndex}
-          onClose={handleLoreResult}
-          onNextGame={nextGameAvailable() ? handleNextGame : undefined}
-          initialState={loreStates[loreCounterGameIndex]}
-          timerState={boTimer}
-          onTimerChange={setBoTimer}
-        />
-      )}
+      {loreCounterGameIndex !== null && (() => {
+        const myWins = games.slice(0, loreCounterGameIndex).filter(g => g.result === 'WIN').length;
+        const oppWins = games.slice(0, loreCounterGameIndex).filter(g => g.result === 'LOSS').length;
+        const total = maxGames(format);
+        return (
+          <LoreCounter
+            key={loreCounterGameIndex}
+            onClose={handleLoreResult}
+            onNextGame={handleNextGame}
+            initialState={loreStates[loreCounterGameIndex]}
+            timerState={boTimer}
+            onTimerChange={setBoTimer}
+            matchInfo={total > 1 ? { gameNumber: loreCounterGameIndex + 1, totalGames: total, myWins, oppWins } : undefined}
+          />
+        );
+      })()}
     </div>
   );
 }

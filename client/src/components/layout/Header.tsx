@@ -1,7 +1,24 @@
-import { useState, useRef, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState, useRef, useEffect, } from 'react';
+import { Link, useLocation, useNavigate, useMatches } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.js';
 import { LogoIcon } from '../ui/Logo.js';
+
+function useBackTarget(): string | null {
+  const { pathname } = useLocation();
+  const segments = pathname.split('/').filter(Boolean);
+  // /tournaments/:id → /tournaments
+  // /tournaments/:id/edit → /tournaments/:id
+  // /tournaments/:id/rounds/new → /tournaments/:id
+  // /tournaments/:id/rounds/:rid/edit → /tournaments/:id
+  // /decks/:id/stats → /decks
+  // /teams/:id → /teams
+  if (segments.length >= 2) {
+    const [base, id, ...rest] = segments;
+    if (rest.length === 0) return `/${base}`; // /:base/:id
+    if (rest.length >= 1) return `/${base}/${id}`; // deeper → parent detail
+  }
+  return null;
+}
 
 type NavItem = { to: string; label: string; icon: string }
   | { label: string; icon: string; children: { to: string; label: string; icon: string }[] };
@@ -125,20 +142,40 @@ function DesktopDropdown({ item, pathname }: { item: Extract<NavItem, { children
 export function Header() {
   const { user, logout } = useAuth();
   const location = useLocation();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const backTarget = useBackTarget();
 
   const nav = user ? AUTH_NAV : PUBLIC_NAV;
 
   return (
-    <header className="border-b border-gold-500/10 bg-ink-950/80 backdrop-blur-md sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 group shrink-0">
-          <LogoIcon className="w-7 h-7 sm:w-8 sm:h-8 transition-transform group-hover:scale-110" />
-          <span className="font-display text-lg sm:text-xl tracking-wide">
+    <header className="sticky top-0 z-50 border-b border-gold-500/15" style={{ background: 'linear-gradient(180deg, rgba(26,16,53,0.92) 0%, rgba(12,10,20,0.88) 100%)', backdropFilter: 'blur(16px)', boxShadow: '0 1px 0 rgba(212,163,36,0.08), 0 4px 24px rgba(0,0,0,0.4)' }}>
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 h-14 grid grid-cols-[2.5rem_1fr_2.5rem] md:flex md:items-center md:justify-between items-center">
+        {/* Left: back button */}
+        <div className="flex items-center">
+          {backTarget && (
+            <button
+              onClick={() => navigate(backTarget)}
+              className="p-1.5 rounded-lg text-ink-400 hover:text-ink-100 hover:bg-ink-800/50 transition-colors"
+              aria-label="Retour"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Center: logo */}
+        <Link to="/" className="flex items-center justify-center gap-2 group md:justify-start md:shrink-0">
+          <LogoIcon className="w-7 h-7 transition-transform group-hover:scale-110" />
+          <span className="font-display text-lg tracking-wide">
             <span className="text-gold-400 group-hover:text-gold-300 transition-colors">Glimmer</span>
             <span className="text-ink-200">Log</span>
           </span>
         </Link>
+
+        {/* Mobile right spacer */}
+        <div className="md:hidden" />
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-1">
@@ -208,100 +245,7 @@ export function Header() {
           )}
         </div>
 
-        {/* Mobile hamburger */}
-        <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="md:hidden p-3 -mr-2 text-ink-400 hover:text-ink-100 transition-colors rounded-lg active:bg-ink-800/50"
-          aria-label="Menu"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {menuOpen
-              ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            }
-          </svg>
-        </button>
       </div>
-
-      {/* Mobile menu */}
-      {menuOpen && (
-        <div className="md:hidden border-t border-gold-500/10 bg-ink-950/95 backdrop-blur-md">
-          <nav className="px-3 py-2">
-            {nav.map(item => (
-              'to' in item ? (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => setMenuOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-                    isLinkActive(item.to, location.pathname)
-                      ? 'text-gold-400 bg-gold-500/10'
-                      : 'text-ink-300 hover:text-ink-100 active:bg-ink-800/50'
-                  }`}
-                >
-                  <NavIcon name={item.icon} className="w-5 h-5" />
-                  {item.label}
-                </Link>
-              ) : (
-                <MobileGroup key={item.label} item={item} pathname={location.pathname} onNavigate={() => setMenuOpen(false)} />
-              )
-            ))}
-          </nav>
-
-          {user && (
-            <div className="px-3 py-2 border-t border-ink-800/50">
-              <p className="px-4 py-1.5 text-[11px] text-ink-600 uppercase tracking-wider font-medium">Mon compte</p>
-              {USER_NAV.map(item => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => setMenuOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-                    isLinkActive(item.to, location.pathname)
-                      ? 'text-gold-400 bg-gold-500/10'
-                      : 'text-ink-300 hover:text-ink-100 active:bg-ink-800/50'
-                  }`}
-                >
-                  <NavIcon name={item.icon} className="w-5 h-5" />
-                  {item.label}
-                </Link>
-              ))}
-              {user.isAdmin && (
-                <Link
-                  to="/admin"
-                  onClick={() => setMenuOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-                    isLinkActive('/admin', location.pathname)
-                      ? 'text-gold-400 bg-gold-500/10'
-                      : 'text-ink-300 hover:text-ink-100 active:bg-ink-800/50'
-                  }`}
-                >
-                  <NavIcon name="admin" className="w-5 h-5" />
-                  Admin
-                </Link>
-              )}
-              <button
-                onClick={() => { logout(); setMenuOpen(false); }}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-ink-500 hover:text-ink-300 active:bg-ink-800/50 transition-colors w-full"
-              >
-                <NavIcon name="logout" className="w-5 h-5" />
-                Déconnexion
-              </button>
-            </div>
-          )}
-
-          {!user && (
-            <div className="px-3 py-3 border-t border-ink-800/50 flex gap-2">
-              <Link to="/login" onClick={() => setMenuOpen(false)} className="flex-1 text-center text-sm text-ink-300 hover:text-ink-100 transition-colors px-3 py-3 rounded-xl bg-ink-800/50 active:bg-ink-700/50 font-medium">
-                Connexion
-              </Link>
-              <Link to="/register" onClick={() => setMenuOpen(false)} className="flex-1 text-center text-sm font-semibold px-3 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 text-ink-950 hover:from-gold-400 hover:to-gold-300 transition-all">
-                S'inscrire
-              </Link>
-            </div>
-          )}
-        </div>
-      )}
     </header>
   );
 }

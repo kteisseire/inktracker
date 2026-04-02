@@ -3,33 +3,30 @@ import { createPortal } from 'react-dom';
 import { INK_COLORS, type InkColor, type ScoutReport, type PotentialDeck, type Team } from '@lorcana/shared';
 import { INK_COLORS_CONFIG } from '../../lib/colors.js';
 
-/* ── Full-size badge (used in deck pages, modals, etc.) ── */
-export function InkBadge({ color }: { color: InkColor }) {
+/* ── Losange Lorcana (taille configurable) ── */
+function InkLozenge({ color, size = 16 }: { color: InkColor; size?: number }) {
   const config = INK_COLORS_CONFIG[color];
+  const hex = config.hex;
+  const h = size * (32 / 25.83);
   return (
-    <span
-      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide shadow-sm"
-      style={{
-        backgroundColor: config.hex,
-        color: color === 'AMBER' ? '#78350f' : '#fff',
-        textShadow: color === 'AMBER' ? 'none' : '0 1px 2px rgba(0,0,0,0.3)',
-      }}
-    >
-      {config.label}
+    <span title={config.label} style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+      <svg viewBox="0 0 25.83 32" style={{ width: size, height: h, filter: `drop-shadow(0 0 3px ${hex}66)` }}>
+        <path d="M12.91 0 0 16l12.91 16 12.91-16Z" fill={hex} opacity="0.2" />
+        <path d="M12.91 0 0 16l12.91 16 12.91-16ZM1.28 16 12.91 1.59 24.54 16 12.91 30.41Z" fill={hex} />
+        <path d="m21.99 16-9.08 11.25L3.83 16l9.08-11.25Z" fill={hex} />
+      </svg>
     </span>
   );
 }
 
-/* ── Tiny colored dot ── */
+/* ── Full-size badge (used in deck pages, modals, etc.) ── */
+export function InkBadge({ color }: { color: InkColor }) {
+  return <InkLozenge color={color} size={18} />;
+}
+
+/* ── Tiny colored dot → remplacé par petit losange ── */
 function InkDot({ color }: { color: InkColor }) {
-  const config = INK_COLORS_CONFIG[color];
-  return (
-    <span
-      className="inline-block w-2.5 h-2.5 rounded-full ring-1 ring-white/10"
-      style={{ backgroundColor: config.hex }}
-      title={config.label}
-    />
-  );
+  return <InkLozenge color={color} size={12} />;
 }
 
 /* ── Full-size badge list (deck pages) ── */
@@ -37,8 +34,8 @@ export function DeckBadges({ colors }: { colors: InkColor[] }) {
   const valid = (colors || []).filter(c => c && INK_COLORS_CONFIG[c]);
   if (valid.length === 0) return <span className="text-xs text-ink-500">—</span>;
   return (
-    <span className="inline-flex gap-1.5">
-      {valid.map(c => <InkBadge key={c} color={c} />)}
+    <span className="inline-flex items-center gap-1.5">
+      {valid.map(c => <InkLozenge key={c} color={c} size={18} />)}
     </span>
   );
 }
@@ -258,31 +255,47 @@ export function ScoutPicker({ playerName, teams, eventId, existingColors, onSave
 
             <div className="space-y-2">
               <p className="text-xs text-ink-500 font-medium uppercase tracking-wide">Couleurs (2 max)</p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-6 gap-1">
                 {INK_COLORS.map(color => {
                   const config = INK_COLORS_CONFIG[color];
                   const isSelected = colors.includes(color);
                   const isDisabled = !isSelected && colors.length >= 2;
+                  const hex = config.hex;
                   return (
                     <button
                       key={color}
                       type="button"
                       onClick={() => toggle(color)}
                       disabled={isDisabled}
-                      className={`flex items-center justify-center px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                        isSelected
-                          ? 'ring-2 ring-gold-400 scale-[1.02] shadow-lg'
-                          : isDisabled
-                          ? 'opacity-20 cursor-not-allowed'
-                          : 'opacity-50 hover:opacity-75'
-                      }`}
+                      className="flex flex-col items-center gap-1 py-2 rounded-xl transition-all duration-200 active:scale-95"
                       style={{
-                        backgroundColor: config.hex,
-                        color: color === 'AMBER' ? '#78350f' : '#fff',
-                        textShadow: color === 'AMBER' ? 'none' : '0 1px 2px rgba(0,0,0,0.3)',
+                        opacity: isDisabled ? 0.2 : isSelected ? 1 : 0.45,
+                        background: isSelected ? `${hex}12` : 'transparent',
+                        border: `1px solid ${isSelected ? `${hex}50` : 'transparent'}`,
                       }}
                     >
-                      {config.label}
+                      <svg viewBox="0 0 25.83 32" style={{ width: 22, height: 28, filter: isSelected ? `drop-shadow(0 0 5px ${hex}99)` : 'none', transition: 'filter 0.2s' }}>
+                        {isSelected ? (
+                          <>
+                            <path d="M12.91 0 0 16l12.91 16 12.91-16Z" fill={hex} opacity="0.25" />
+                            <path d="M12.91 0 0 16l12.91 16 12.91-16ZM1.28 16 12.91 1.59 24.54 16 12.91 30.41Z" fill={hex} />
+                            <path d="m21.99 16-9.08 11.25L3.83 16l9.08-11.25Z" fill={hex} />
+                          </>
+                        ) : (
+                          <path d="M12.91 0 0 16l12.91 16 12.91-16ZM1.28 16 12.91 1.59 24.54 16 12.91 30.41Z" fill={hex} />
+                        )}
+                      </svg>
+                      <span style={{
+                        fontSize: '0.55rem',
+                        fontWeight: isSelected ? 600 : 400,
+                        letterSpacing: '0.06em',
+                        textTransform: 'uppercase',
+                        color: isSelected ? hex : 'rgba(255,255,255,0.35)',
+                        transition: 'color 0.2s',
+                        lineHeight: 1,
+                      }}>
+                        {config.label.slice(0, 4)}
+                      </span>
                     </button>
                   );
                 })}

@@ -192,7 +192,80 @@ const THEMES: Theme[] = [
     stars: false,
     particles: 'none',
   },
+  {
+    id: 'set12_wilds',
+    name: 'Wilds Unknown — Jungle',
+    bg: 'linear-gradient(170deg, #020a04 0%, #04120a 30%, #061508 60%, #030e05 100%)',
+    bgOverlay: 'radial-gradient(ellipse at 50% 60%, rgba(20,80,10,0.35) 0%, transparent 65%)',
+    separator: 'rgba(180,230,80,0.5)',
+    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(80,160,20,0.3) 20%, rgba(180,230,80,0.65) 50%, rgba(80,160,20,0.3) 80%, transparent 100%)',
+    pill: '#030b04',
+    pillBorder: 'rgba(120,200,40,0.3)',
+    meAccent: '#8de84a',
+    oppAccent: '#e8b84a',
+    stars: false,
+    particles: 'fireflies' as unknown as 'sparks',
+  },
 ];
+
+// ─── Fond Wilds Unknown ───────────────────────────────────────────────────
+function WildsBackground() {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+      {/* Brume de fond */}
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 80%, rgba(10,60,5,0.5) 0%, transparent 60%)' }} />
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 20% 40%, rgba(5,40,2,0.4) 0%, transparent 45%)' }} />
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 80% 20%, rgba(5,30,2,0.3) 0%, transparent 40%)' }} />
+
+      {/* Vignes coin bas-gauche */}
+      <svg className="absolute bottom-0 left-0" width="180" height="260" viewBox="0 0 180 260" fill="none" style={{ opacity: 0.18 }}>
+        <path d="M10 260 C10 220, 30 200, 20 170 C10 140, 40 130, 35 100 C30 70, 55 60, 50 30" stroke="#4a9a20" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+        <path d="M25 260 C25 230, 50 210, 45 185 C40 160, 65 145, 60 115 C55 85, 75 75, 70 45" stroke="#3a7a18" strokeWidth="2" strokeLinecap="round" fill="none"/>
+        <path d="M35 100 C35 100, 15 90, 5 75" stroke="#4a9a20" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+        <ellipse cx="5" cy="72" rx="8" ry="5" transform="rotate(-30 5 72)" fill="#3a8a18"/>
+        <path d="M50 30 C50 30, 68 22, 75 8" stroke="#4a9a20" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+        <ellipse cx="78" cy="5" rx="9" ry="6" transform="rotate(15 78 5)" fill="#3a8a18"/>
+        <path d="M20 170 C20 170, 0 160, -5 145" stroke="#3a7a18" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+        <ellipse cx="-6" cy="142" rx="7" ry="5" transform="rotate(-20 -6 142)" fill="#2a6a10"/>
+        <path d="M60 115 C60 115, 80 108, 90 95" stroke="#4a9a20" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+        <ellipse cx="93" cy="92" rx="8" ry="5" transform="rotate(10 93 92)" fill="#3a8a18"/>
+        <path d="M45 185 C45 185, 25 178, 15 165" stroke="#3a7a18" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+        <ellipse cx="13" cy="162" rx="7" ry="4" transform="rotate(-25 13 162)" fill="#2a6a10"/>
+      </svg>
+
+      {/* Vignes coin haut-droit */}
+      <svg className="absolute top-0 right-0" width="160" height="220" viewBox="0 0 160 220" fill="none" style={{ opacity: 0.15, transform: 'scaleX(-1)' }}>
+        <path d="M10 0 C10 35, 30 55, 25 85 C20 115, 45 125, 40 155 C35 185, 60 195, 55 225" stroke="#4a9a20" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+        <path d="M25 0 C25 30, 45 50, 40 78 C35 106, 55 118, 50 148" stroke="#3a7a18" strokeWidth="2" strokeLinecap="round" fill="none"/>
+        <path d="M25 85 C25 85, 45 78, 55 65" stroke="#4a9a20" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+        <ellipse cx="58" cy="62" rx="8" ry="5" transform="rotate(20 58 62)" fill="#3a8a18"/>
+        <path d="M40 155 C40 155, 60 148, 72 135" stroke="#3a7a18" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+        <ellipse cx="75" cy="132" rx="8" ry="5" transform="rotate(15 75 132)" fill="#2a6a10"/>
+        <path d="M50 78 C50 78, 68 72, 78 58" stroke="#4a9a20" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+        <ellipse cx="81" cy="55" rx="7" ry="5" transform="rotate(10 81 55)" fill="#3a8a18"/>
+      </svg>
+
+      {/* Silhouette feuillage bas (canopée) */}
+      <svg className="absolute bottom-0 inset-x-0" width="100%" height="80" viewBox="0 0 400 80" preserveAspectRatio="none" fill="none" style={{ opacity: 0.12 }}>
+        <path d="M0 80 C20 55, 40 70, 60 50 C80 30, 100 65, 130 45 C160 25, 180 60, 210 40 C240 20, 260 55, 290 38 C320 22, 345 58, 370 42 C390 30, 400 50, 400 80 Z" fill="#1a4a08"/>
+      </svg>
+
+      {/* Lucioles */}
+      {Array.from({ length: 18 }).map((_, i) => (
+        <div key={i} className="absolute rounded-full"
+          style={{
+            width: i % 3 === 0 ? 3 : 2,
+            height: i % 3 === 0 ? 3 : 2,
+            left: `${(i * 53 + 11) % 88 + 6}%`,
+            top: `${(i * 37 + 9) % 82 + 8}%`,
+            background: i % 4 === 0 ? '#e8d84a' : i % 4 === 1 ? '#8de84a' : i % 4 === 2 ? '#aae860' : '#f0e070',
+            opacity: 0.35 + (i % 5) * 0.1,
+            boxShadow: `0 0 ${4 + (i % 3) * 3}px 1px ${i % 2 === 0 ? '#c8d040' : '#80c030'}`,
+          }} />
+      ))}
+    </div>
+  );
+}
 
 // ─── Particules décoratives ────────────────────────────────────────────────
 function Particles({ type }: { type: 'bubbles' | 'sparks' }) {
@@ -403,6 +476,7 @@ export function LoreCounter({ onClose, initialState, timerState, onTimerChange }
         </div>
       )}
       {theme.particles && theme.particles !== 'none' && <Particles type={theme.particles} />}
+      {theme.id === 'set12_wilds' && <WildsBackground />}
 
       {/* Winner overlay */}
       {winner && (

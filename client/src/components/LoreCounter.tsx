@@ -860,35 +860,38 @@ export function LoreCounter({ onClose, onNextGame, initialState, timerState, onT
 
             {/* Boutons */}
             <div className="flex flex-col gap-2.5 w-full">
-              <button
-                onClick={handleClose}
-                className="w-full py-3.5 rounded-2xl font-semibold text-base tracking-wide transition-all active:scale-95"
-                style={{
-                  background: `linear-gradient(135deg, ${winner === 'me' ? theme.meAccent : theme.oppAccent}, ${winner === 'me' ? theme.meAccent : theme.oppAccent}bb)`,
-                  color: '#000',
-                  boxShadow: `0 0 20px ${winner === 'me' ? theme.meAccent : theme.oppAccent}44`,
-                }}
-              >
-                Terminer la partie
-              </button>
               {onNextGame ? (
                 <button
                   onClick={() => onNextGame({ myScore: myLore, opponentScore: opponentLore, winner, state: { myLore, opponentLore, history: rawHistory, winner } })}
-                  className="w-full py-3 rounded-2xl text-sm font-semibold transition-all active:scale-95"
-                  style={{ background: 'rgba(255,255,255,0.07)', border: `1px solid ${theme.pillBorder}`, color: 'rgba(255,255,255,0.65)' }}
+                  className="w-full py-3.5 rounded-2xl font-semibold text-base tracking-wide transition-all active:scale-95"
+                  style={{
+                    background: `linear-gradient(135deg, ${winner === 'me' ? theme.meAccent : theme.oppAccent}, ${winner === 'me' ? theme.meAccent : theme.oppAccent}bb)`,
+                    color: '#000',
+                    boxShadow: `0 0 20px ${winner === 'me' ? theme.meAccent : theme.oppAccent}44`,
+                  }}
                 >
                   Partie suivante →
                 </button>
               ) : (
                 <button
-                  onClick={() => { setWinner(null); winnerRef.current = null; }}
-                  className="w-full py-3 rounded-2xl text-sm transition-all active:scale-95"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid ${theme.pillBorder}`, color: 'rgba(255,255,255,0.5)' }}
+                  onClick={handleClose}
+                  className="w-full py-3.5 rounded-2xl font-semibold text-base tracking-wide transition-all active:scale-95"
+                  style={{
+                    background: `linear-gradient(135deg, ${winner === 'me' ? theme.meAccent : theme.oppAccent}, ${winner === 'me' ? theme.meAccent : theme.oppAccent}bb)`,
+                    color: '#000',
+                    boxShadow: `0 0 20px ${winner === 'me' ? theme.meAccent : theme.oppAccent}44`,
+                  }}
                 >
-                  Continuer
+                  Terminer la partie
                 </button>
               )}
-
+              <button
+                onClick={() => { setWinner(null); winnerRef.current = null; }}
+                className="w-full py-3 rounded-2xl text-sm transition-all active:scale-95"
+                style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid ${theme.pillBorder}`, color: 'rgba(255,255,255,0.5)' }}
+              >
+                Modifier le score
+              </button>
             </div>
 
             {/* Ligne décorative bas */}

@@ -236,15 +236,25 @@ export function NewMatchPage() {
     if (loreCounterGameIndex === null) return;
     const index = loreCounterGameIndex;
     applyLoreResult(index, result);
-    // Ouvre automatiquement la partie suivante
     setLoreCounterGameIndex(index + 1);
   };
 
+  // Calcule si une partie suivante est possible en simulant le résultat de la partie courante
   function nextGameAvailable(): boolean {
     if (loreCounterGameIndex === null) return false;
     const nextIndex = loreCounterGameIndex + 1;
     if (nextIndex >= maxGames(format)) return false;
-    return !isRoundDecided(nextIndex);
+    // Simuler les résultats avec la partie courante comptée (worst case: elle ne décide pas la ronde)
+    const needed = winsNeeded(format);
+    let myWins = 0;
+    let oppWins = 0;
+    for (let i = 0; i < nextIndex; i++) {
+      if (i === loreCounterGameIndex) continue; // ignorer la partie en cours (pas encore enregistrée)
+      if (games[i]?.result === 'WIN') myWins++;
+      if (games[i]?.result === 'LOSS') oppWins++;
+    }
+    // Même si la partie courante donne une victoire, vérifier si ça décide déjà la ronde
+    return (myWins + 1) < needed && (oppWins + 1) < needed;
   }
 
   const buildPayload = () => {
@@ -559,6 +569,7 @@ export function NewMatchPage() {
 
       {loreCounterGameIndex !== null && (
         <LoreCounter
+          key={loreCounterGameIndex}
           onClose={handleLoreResult}
           onNextGame={nextGameAvailable() ? handleNextGame : undefined}
           initialState={loreStates[loreCounterGameIndex]}

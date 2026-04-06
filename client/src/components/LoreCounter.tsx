@@ -699,6 +699,7 @@ export function LoreCounter({ onClose, onNextGame, initialState, timerState, onT
   const [obfuscateTarget, setObfuscateTarget] = useState<'me' | 'opponent' | null>(null);
   const [showObfuscatePicker, setShowObfuscatePicker] = useState(false);
   const [showObfuscateCancel, setShowObfuscateCancel] = useState(false);
+  const [extraTurns, setExtraTurns] = useState<number | null>(null); // null = inactif, sinon tours joués (max 5)
   const myLoreRef = useRef(initialState?.myLore ?? 0);
   const opponentLoreRef = useRef(initialState?.opponentLore ?? 0);
 
@@ -1018,52 +1019,108 @@ export function LoreCounter({ onClose, onNextGame, initialState, timerState, onT
               gap: 0,
             }}
           >
-            {/* Play/Pause */}
-            <button
-              onClick={(e) => { e.stopPropagation(); !timerExpired && setTimerRunning(r => !r); }}
-              className="p-2.5 rounded-full transition-colors active:scale-90 flex items-center justify-center"
-              aria-label={timerRunning ? 'Pause' : 'Démarrer'}
-              style={{ transform: `rotate(${timerSide === 'left' ? '-90' : '90'}deg)`, pointerEvents: 'auto' }}
-            >
-              {timerExpired ? (
-                <svg className="w-6 h-6" fill="none" stroke="#d85b5b" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              ) : timerRunning ? (
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
-              ) : (
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M8 5v14l11-7z" /></svg>
-              )}
-            </button>
+            {extraTurns !== null ? (
+              /* ── Mode compteur de tours ── */
+              <>
+                {/* + tour (désactivé à 5) */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setExtraTurns(t => Math.min((t ?? 0) + 1, 5)); }}
+                  disabled={extraTurns >= 5}
+                  className="p-2.5 rounded-full transition-colors active:scale-90 flex items-center justify-center disabled:opacity-20"
+                  style={{ pointerEvents: 'auto', color: extraTurns >= 5 ? 'rgba(255,255,255,0.2)' : 'rgba(245,197,66,0.8)' }}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                </button>
 
-            {/* Séparateur */}
-            <div style={{ width: '1.8rem', height: '1px', background: `${timerColor}30`, margin: '0.25rem 0' }} />
+                <div style={{ width: '1.8rem', height: '1px', background: 'rgba(212,163,36,0.3)', margin: '0.25rem 0' }} />
 
-            {/* Timer */}
-            <button
-              onClick={(e) => { e.stopPropagation(); if (!timerRunning) { setTimerInput(formatTimer(timerSeconds)); setEditingTimer(true); } }}
-              className="flex items-center justify-center transition-colors active:opacity-60 py-1"
-              aria-label="Modifier la durée"
-              style={{ writingMode: 'vertical-rl', letterSpacing: '0.08em', transform: timerSide === 'left' ? 'rotate(180deg)' : 'none', pointerEvents: 'auto' }}
-            >
-              <span className="font-mono font-bold tabular-nums" style={{ color: timerColor, fontSize: 'clamp(1.6rem, 6.5vw, 2.2rem)', textShadow: timerSeconds <= 60 ? `0 0 20px ${timerColor}` : undefined }}>
-                {formatTimer(timerSeconds)}
-              </span>
-            </button>
+                {/* Affichage tour X / reste Y */}
+                <div
+                  className="flex flex-col items-center py-2 gap-0.5"
+                  style={{ writingMode: 'vertical-rl', transform: timerSide === 'left' ? 'rotate(180deg)' : 'none', pointerEvents: 'auto' }}
+                >
+                  <span className="font-bold tabular-nums" style={{ color: '#f5c542', fontSize: 'clamp(1.6rem, 6.5vw, 2.2rem)', textShadow: '0 0 16px rgba(245,197,66,0.5)', letterSpacing: '0.05em' }}>
+                    {extraTurns}
+                  </span>
+                  <span className="font-medium" style={{ color: 'rgba(245,197,66,0.35)', fontSize: '0.5rem', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                    /{5 - extraTurns} rest.
+                  </span>
+                </div>
 
-            {/* Séparateur */}
-            <div style={{ width: '1.8rem', height: '1px', background: `${timerColor}30`, margin: '0.25rem 0' }} />
+                <div style={{ width: '1.8rem', height: '1px', background: 'rgba(212,163,36,0.3)', margin: '0.25rem 0' }} />
 
-            {/* Reset — même taille que pause pour symétrie */}
-            {!timerRunning && timerSeconds !== DEFAULT_TIMER ? (
-              <button
-                onClick={(e) => { e.stopPropagation(); setTimerSeconds(DEFAULT_TIMER); }}
-                className="p-2.5 rounded-full transition-colors active:scale-90 flex items-center justify-center text-white/30 hover:text-white/70"
-                style={{ pointerEvents: 'auto' }}
-                aria-label="Réinitialiser le timer"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-              </button>
+                {/* − tour (désactivé à 0, presse longue = quitter) */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setExtraTurns(t => Math.max((t ?? 1) - 1, 0)); }}
+                  onContextMenu={(e) => { e.preventDefault(); setExtraTurns(null); }}
+                  disabled={extraTurns <= 0}
+                  className="p-2.5 rounded-full transition-colors active:scale-90 flex items-center justify-center disabled:opacity-20"
+                  style={{ pointerEvents: 'auto', color: extraTurns <= 0 ? 'rgba(255,255,255,0.2)' : 'rgba(245,197,66,0.8)' }}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" /></svg>
+                </button>
+              </>
             ) : (
-              <div className="p-2.5" style={{ width: '2.75rem', height: '2.75rem' }} />
+              /* ── Mode timer normal ── */
+              <>
+                {/* Play/Pause */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); !timerExpired && setTimerRunning(r => !r); }}
+                  className="p-2.5 rounded-full transition-colors active:scale-90 flex items-center justify-center"
+                  aria-label={timerRunning ? 'Pause' : 'Démarrer'}
+                  style={{ transform: `rotate(${timerSide === 'left' ? '-90' : '90'}deg)`, pointerEvents: 'auto' }}
+                >
+                  {timerExpired ? (
+                    <svg className="w-6 h-6" fill="none" stroke="#d85b5b" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  ) : timerRunning ? (
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+                  ) : (
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" style={{ color: timerColor }}><path d="M8 5v14l11-7z" /></svg>
+                  )}
+                </button>
+
+                <div style={{ width: '1.8rem', height: '1px', background: `${timerColor}30`, margin: '0.25rem 0' }} />
+
+                {/* Timer */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); if (!timerRunning) { setTimerInput(formatTimer(timerSeconds)); setEditingTimer(true); } }}
+                  className="flex items-center justify-center transition-colors active:opacity-60 py-1"
+                  aria-label="Modifier la durée"
+                  style={{ writingMode: 'vertical-rl', letterSpacing: '0.08em', transform: timerSide === 'left' ? 'rotate(180deg)' : 'none', pointerEvents: 'auto' }}
+                >
+                  <span className="font-mono font-bold tabular-nums" style={{ color: timerColor, fontSize: 'clamp(1.6rem, 6.5vw, 2.2rem)', textShadow: timerSeconds <= 60 ? `0 0 20px ${timerColor}` : undefined }}>
+                    {formatTimer(timerSeconds)}
+                  </span>
+                </button>
+
+                <div style={{ width: '1.8rem', height: '1px', background: `${timerColor}30`, margin: '0.25rem 0' }} />
+
+                {/* Bouton tours supplémentaires si timer expiré et pas encore actif */}
+                {timerExpired && extraTurns === null ? (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setExtraTurns(0); }}
+                    className="p-2 rounded-full transition-colors active:scale-90 flex items-center justify-center"
+                    style={{ pointerEvents: 'auto' }}
+                    aria-label="Compteur de tours"
+                    title="5 tours supplémentaires"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="rgba(245,197,66,0.8)" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
+                ) : !timerRunning && timerSeconds !== DEFAULT_TIMER ? (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setTimerSeconds(DEFAULT_TIMER); }}
+                    className="p-2.5 rounded-full transition-colors active:scale-90 flex items-center justify-center text-white/30 hover:text-white/70"
+                    style={{ pointerEvents: 'auto' }}
+                    aria-label="Réinitialiser le timer"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                  </button>
+                ) : (
+                  <div className="p-2.5" style={{ width: '2.75rem', height: '2.75rem' }} />
+                )}
+              </>
             )}
           </div>
         </div>
@@ -1182,6 +1239,16 @@ export function LoreCounter({ onClose, onNextGame, initialState, timerState, onT
                   >{label}</button>
                 ))}
               </div>
+              {timerExpired && (
+                <button
+                  onClick={() => { setExtraTurns(5); setEditingTimer(false); }}
+                  className="w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+                  style={{ background: 'rgba(245,197,66,0.12)', color: '#f5c542', border: '1px solid rgba(245,197,66,0.3)' }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  5 tours supplémentaires
+                </button>
+              )}
               <div className="flex gap-3 w-full">
                 <button onClick={() => setEditingTimer(false)} className="flex-1 py-2.5 rounded-xl text-sm text-white/50 bg-white/5">Annuler</button>
                 <button

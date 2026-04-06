@@ -1083,7 +1083,7 @@ export function LoreCounter({ onClose, onNextGame, initialState, timerState, onT
 
                 {/* Timer */}
                 <button
-                  onClick={(e) => { e.stopPropagation(); if (!timerRunning) { setTimerInput(formatTimer(timerSeconds)); setEditingTimer(true); } }}
+                  onClick={(e) => { e.stopPropagation(); if (!timerRunning || extraTurns !== null) { setTimerInput(formatTimer(timerSeconds)); setEditingTimer(true); } }}
                   className="flex items-center justify-center transition-colors active:opacity-60 py-1"
                   aria-label="Modifier la durée"
                   style={{ writingMode: 'vertical-rl', letterSpacing: '0.08em', transform: timerSide === 'left' ? 'rotate(180deg)' : 'none', pointerEvents: 'auto' }}
@@ -1239,16 +1239,14 @@ export function LoreCounter({ onClose, onNextGame, initialState, timerState, onT
                   >{label}</button>
                 ))}
               </div>
-              {timerExpired && (
-                <button
-                  onClick={() => { setExtraTurns(5); setEditingTimer(false); }}
-                  className="w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
-                  style={{ background: 'rgba(245,197,66,0.12)', color: '#f5c542', border: '1px solid rgba(245,197,66,0.3)' }}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  5 tours supplémentaires
-                </button>
-              )}
+              <button
+                onClick={() => { setExtraTurns(0); setEditingTimer(false); }}
+                className="w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+                style={{ background: 'rgba(245,197,66,0.12)', color: '#f5c542', border: '1px solid rgba(245,197,66,0.3)' }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                {extraTurns !== null ? 'Réinitialiser les tours' : '5 tours supplémentaires'}
+              </button>
               <div className="flex gap-3 w-full">
                 <button onClick={() => setEditingTimer(false)} className="flex-1 py-2.5 rounded-xl text-sm text-white/50 bg-white/5">Annuler</button>
                 <button

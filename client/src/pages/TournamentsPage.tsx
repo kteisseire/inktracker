@@ -172,7 +172,7 @@ function TournamentCard({ tournament, presence, onDeleted }: {
 export function TournamentsPage() {
   const queryClient = useQueryClient();
 
-  const { data: tournamentsData, isLoading } = useQuery({
+  const { data: tournamentsData, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['tournaments', 1, 50],
     queryFn: () => listTournaments(1, 50),
   });
@@ -202,7 +202,19 @@ export function TournamentsPage() {
           <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Mes tournois</h1>
           <HelpButton sections={['Tournois']} />
         </div>
-        <Link to="/tournaments/new" className="ink-btn-primary text-sm px-4 py-2">+ Nouveau</Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="p-2 rounded-lg text-ink-400 hover:text-ink-100 hover:bg-ink-700/50 transition-colors disabled:opacity-40"
+            aria-label="Rafraîchir"
+          >
+            <svg className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+          <Link to="/tournaments/new" className="ink-btn-primary text-sm px-4 py-2">+ Nouveau</Link>
+        </div>
       </div>
 
       {tournaments.length === 0 ? (

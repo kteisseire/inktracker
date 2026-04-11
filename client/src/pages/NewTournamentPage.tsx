@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, FormEvent } from 'react';
 import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { createTournament, updateTournament, getTournament } from '../api/tournaments.api.js';
 import { listDecks, extractDeckColors } from '../api/deck.api.js';
 import { fetchEventInfo, extractEventId } from '../api/ravensburger.api.js';
@@ -32,6 +33,7 @@ export function NewTournamentPage() {
   const { id: editId } = useParams<{ id: string }>();
   const isEdit = !!editId;
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const fromShared = searchParams.get('from') === 'shared';
   const [loading, setLoading] = useState(false);
@@ -277,9 +279,11 @@ export function NewTournamentPage() {
 
       if (isEdit) {
         await updateTournament(editId, payload);
+        queryClient.invalidateQueries({ queryKey: ['tournaments', 1, 50] });
         navigate(`/tournaments/${editId}`);
       } else {
         const tournament = await createTournament(payload);
+        queryClient.invalidateQueries({ queryKey: ['tournaments', 1, 50] });
         navigate(`/tournaments/${tournament.id}`);
       }
     } catch (err: any) {

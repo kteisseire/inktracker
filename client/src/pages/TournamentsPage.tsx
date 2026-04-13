@@ -175,6 +175,7 @@ export function TournamentsPage() {
   const { data: tournamentsData, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['tournaments', 1, 50],
     queryFn: () => listTournaments(1, 50),
+    staleTime: 1000 * 30, // 30s
   });
 
   const { data: presence = {} } = useQuery({

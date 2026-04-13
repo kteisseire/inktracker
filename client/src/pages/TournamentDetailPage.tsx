@@ -1677,16 +1677,20 @@ function UncertainDeckPicker({ p1Name, p2Name, existingPotentials, teams, roundN
   const [teamId] = useState(teams[0]?.id || null);
   const [saving, setSaving] = useState(false);
 
+  const pendingRef = useRef<{ a: InkColor[]; b: InkColor[] } | null>(null);
   const savingRef = useRef(false);
   const autoSave = async (a: InkColor[], b: InkColor[]) => {
-    if (a.length !== 2 || b.length !== 2 || savingRef.current) return;
+    if (a.length !== 2 || b.length !== 2) return;
+    if (savingRef.current) { pendingRef.current = { a, b }; return; }
     savingRef.current = true;
     setSaving(true);
     try {
       await onPotentialDecks(teamId, roundNumber, tableNumber, p1Name, p2Name, [a, b]);
     } finally {
-      setSaving(false);
       savingRef.current = false;
+      const next = pendingRef.current;
+      pendingRef.current = null;
+      if (next) { autoSave(next.a, next.b); } else { setSaving(false); }
     }
   };
 
@@ -1752,9 +1756,11 @@ function InlineScoutSection({ name, isWinner, isCurrentUser, scout, potentialDec
 
   useEffect(() => { setColors((scout?.deckColors || []) as InkColor[]); }, [scout]);
 
+  const pendingRef = useRef<InkColor[] | null>(null);
   const savingRef = useRef(false);
   const autoSave = async (newColors: InkColor[]) => {
-    if (newColors.length !== 2 || savingRef.current) return;
+    if (newColors.length !== 2) return;
+    if (savingRef.current) { pendingRef.current = newColors; return; }
     const same = JSON.stringify(newColors.slice().sort()) === JSON.stringify(existingColors.slice().sort());
     if (same) return;
     savingRef.current = true;
@@ -1762,8 +1768,10 @@ function InlineScoutSection({ name, isWinner, isCurrentUser, scout, potentialDec
     try {
       await onScout(name, newColors, teamId);
     } finally {
-      setSaving(false);
       savingRef.current = false;
+      const next = pendingRef.current;
+      pendingRef.current = null;
+      if (next) { autoSave(next); } else { setSaving(false); }
     }
   };
 

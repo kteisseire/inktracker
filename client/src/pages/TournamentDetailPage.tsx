@@ -998,7 +998,27 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
   }
 
   if (!data || data.rounds.length === 0) {
-    return <div className="ink-card p-8 text-center text-ink-400">Aucune donnée de tournoi disponible</div>;
+    return (
+      <div className="ink-card p-8 text-center space-y-4">
+        <p className="text-ink-400">
+          Aucune ronde disponible pour le moment.
+          <br />
+          <span className="text-ink-500 text-sm">
+            Rafraîchissez dès que la ronde 1 sera lancée pour récupérer l'arbre en direct.
+          </span>
+        </p>
+        <button
+          onClick={() => loadRounds(true)}
+          disabled={refreshing}
+          className="ink-btn-primary inline-flex items-center gap-2 text-sm px-4 py-2 disabled:opacity-50"
+        >
+          <svg className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          {refreshing ? 'Rafraîchissement...' : 'Rafraîchir'}
+        </button>
+      </div>
+    );
   }
 
   const currentRound = data.rounds.find(r => r.roundNumber === selectedRound) || data.rounds[data.rounds.length - 1];

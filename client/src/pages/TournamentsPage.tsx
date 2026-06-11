@@ -4,22 +4,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createPortal } from 'react-dom';
 import { listTournaments, getTeamPresence, deleteTournament, shareTournament } from '../api/tournaments.api.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
+import { RecordLine } from '../components/ui/ResultChip.js';
 import { HelpButton } from '../components/ui/HelpButton.js';
+import { SkeletonRows } from '../components/ui/Skeleton.js';
 import type { Tournament } from '@lorcana/shared';
 
 const FORMAT_LABELS: Record<string, string> = { BO1: 'Bo1', BO3: 'Bo3', BO5: 'Bo5' };
-
-function ResultBadge({ wins, losses, draws }: { wins: number; losses: number; draws: number }) {
-  if (wins === 0 && losses === 0 && draws === 0) return <span className="text-xs text-ink-600">—</span>;
-  return (
-    <span className="text-sm font-semibold tabular-nums">
-      <span className="text-green-400">{wins}</span>
-      <span className="text-ink-600">–</span>
-      <span className="text-red-400">{losses}</span>
-      {draws > 0 && <><span className="text-ink-600">–</span><span className="text-ink-400">{draws}</span></>}
-    </span>
-  );
-}
 
 function CardMenu({ tournament, onDeleted }: { tournament: Tournament; onDeleted: (id: string) => void }) {
   const [open, setOpen] = useState(false);
@@ -33,8 +23,10 @@ function CardMenu({ tournament, onDeleted }: { tournament: Tournament; onDeleted
       const target = e.target as Node;
       if (btnRef.current && !btnRef.current.contains(target)) setOpen(false);
     };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('mousedown', handle);
-    return () => document.removeEventListener('mousedown', handle);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', handle); document.removeEventListener('keydown', onKey); };
   }, [open]);
 
   const handleOpen = (e: React.MouseEvent) => {
@@ -70,7 +62,7 @@ function CardMenu({ tournament, onDeleted }: { tournament: Tournament; onDeleted
       <button
         ref={btnRef}
         onClick={handleOpen}
-        className="p-1.5 rounded-lg text-ink-500 hover:text-ink-200 hover:bg-ink-700/50 transition-colors"
+        className="touch-compact p-1.5 rounded-md text-ink-500 hover:text-ink-200 hover:bg-ink-700/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50"
         aria-label="Actions"
       >
         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -79,7 +71,7 @@ function CardMenu({ tournament, onDeleted }: { tournament: Tournament; onDeleted
       </button>
       {open && createPortal(
         <div
-          className="fixed bg-ink-900 border border-ink-700/50 rounded-xl shadow-xl shadow-ink-950/50 py-1 z-[200]"
+          className="fixed bg-ink-900 border border-rule rounded-lg shadow-card-hover py-1 z-[200]"
           style={{ top: pos.top, left: pos.left, width: 160 }}
         >
           <button onClick={e => { e.stopPropagation(); navigate(`/tournaments/${tournament.id}/edit`); setOpen(false); }}
@@ -96,9 +88,9 @@ function CardMenu({ tournament, onDeleted }: { tournament: Tournament; onDeleted
             </svg>
             Partager
           </button>
-          <div className="my-1 border-t border-ink-800/50" />
+          <div className="my-1 ink-divider" />
           <button onClick={handleDelete}
-            className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/5 transition-colors">
+            className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-300 hover:text-red-200 hover:bg-lorcana-ruby/10 transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
@@ -123,16 +115,16 @@ function TournamentCard({ tournament, presence, onDeleted }: {
   const date = new Date(tournament.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 
   return (
-    <div className="ink-card overflow-hidden hover:border-gold-500/20 transition-colors group">
+    <div className="ink-card-hover overflow-hidden group">
       <div className="p-4">
-        {/* Ligne 1 : nom + menu */}
+        {/* Line 1: name + placement medal + menu */}
         <div className="flex items-center justify-between gap-2 mb-1">
-          <Link to={`/tournaments/${tournament.id}`} className="font-semibold text-ink-100 group-hover:text-gold-400 transition-colors truncate leading-tight flex-1">
+          <Link to={`/tournaments/${tournament.id}`} className="font-display text-[0.95rem] tracking-[0.02em] text-ink-100 group-hover:text-gold-400 transition-colors truncate leading-tight flex-1">
             {tournament.name}
           </Link>
           <div className="flex items-center gap-1.5 shrink-0">
             {tournament.placement && (
-              <span className="text-xs font-bold text-gold-400 bg-gold-500/10 px-2 py-0.5 rounded-full">
+              <span className="ink-num text-xs text-gold-400 bg-gold-500/10 px-2 py-0.5 rounded-full">
                 #{tournament.placement}{tournament.playerCount ? `/${tournament.playerCount}` : ''}
               </span>
             )}
@@ -140,28 +132,28 @@ function TournamentCard({ tournament, presence, onDeleted }: {
           </div>
         </div>
 
-        {/* Ligne 2 : date + lieu */}
+        {/* Line 2: date · location */}
         <p className="text-xs text-ink-500 mb-3 flex items-center gap-1.5">
-          {date}
+          <span className="ink-num">{date}</span>
           {tournament.location && (
             <><span className="text-ink-700">·</span><span className="truncate">{tournament.location}</span></>
           )}
         </p>
 
-        {/* Ligne 3 : deck + stats */}
+        {/* Line 3: deck + presence + format + record */}
         <div className="flex items-center justify-between gap-2">
           <DeckBadges colors={tournament.myDeckColors as any} />
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
             {presence && (
-              <span className="flex items-center gap-1 text-xs text-blue-400">
+              <span className="flex items-center gap-1 text-xs text-lorcana-sapphire">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                {presence.count}
+                <span className="ink-num">{presence.count}</span>
               </span>
             )}
-            <span className="text-xs text-ink-600">{FORMAT_LABELS[tournament.format]}</span>
-            {total > 0 && <ResultBadge wins={wins} losses={losses} draws={draws} />}
+            <span className="text-[0.7rem] uppercase tracking-[0.08em] text-ink-500">{FORMAT_LABELS[tournament.format]}</span>
+            {total > 0 && <RecordLine wins={wins} losses={losses} draws={draws} />}
           </div>
         </div>
       </div>
@@ -192,19 +184,16 @@ export function TournamentsPage() {
     });
   };
 
-  if (isLoading) {
-    return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gold-400"></div></div>;
-  }
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Mes tournois</h1>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <h1 className="font-display text-2xl text-ink-50 tracking-[0.03em]">Mes tournois</h1>
+          {tournaments.length > 0 && <span className="ink-num text-sm text-ink-500">{tournaments.length}</span>}
           <button
             onClick={() => refetch()}
             disabled={isFetching}
-            className="p-1.5 rounded-lg text-ink-500 hover:text-ink-200 hover:bg-ink-700/50 transition-colors disabled:opacity-40"
+            className="touch-compact p-1.5 rounded-md text-ink-500 hover:text-gold-400 hover:bg-ink-800/50 transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50"
             aria-label="Rafraîchir"
           >
             <svg className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -213,17 +202,19 @@ export function TournamentsPage() {
           </button>
           <HelpButton sections={['Tournois']} />
         </div>
-        <Link to="/tournaments/new" className="ink-btn-primary text-sm px-4 py-2">+ Nouveau</Link>
+        <Link to="/tournaments/new" className="ink-btn-primary text-sm px-4 py-2 shrink-0">+ Nouveau</Link>
       </div>
 
-      {tournaments.length === 0 ? (
-        <div className="ink-card p-8 sm:p-12 text-center">
+      {isLoading ? (
+        <SkeletonRows count={6} />
+      ) : tournaments.length === 0 ? (
+        <div className="section-wash p-8 sm:p-12 text-center">
           <div className="w-12 h-12 rounded-full bg-gold-500/10 flex items-center justify-center mx-auto mb-4">
             <svg className="w-6 h-6 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 3h14l-1.4 8.4A5 5 0 0112.6 16h-.8a5 5 0 01-5-4.6L5 3zM8 16h8m-4 0v4m-3 0h6" />
             </svg>
           </div>
-          <p className="text-base font-semibold text-ink-100">Aucun tournoi enregistré</p>
+          <p className="font-display text-lg text-ink-50 tracking-[0.02em]">Aucun tournoi enregistré</p>
           <p className="mt-1 text-sm text-ink-400">Commencez par créer votre premier tournoi.</p>
           <Link to="/tournaments/new" className="ink-btn-primary inline-block mt-5 px-6 py-2.5 text-sm">+ Créer un tournoi</Link>
         </div>

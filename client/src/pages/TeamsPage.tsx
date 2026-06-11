@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { listMyTeams, createTeam, listMyInvites, respondToInvite } from '../api/team.api.js';
 import { HelpButton } from '../components/ui/HelpButton.js';
+import { RoleBadge } from '../components/ui/RoleBadge.js';
+import { HollowLozenge } from '../components/ui/InkBadge.js';
+import { SkeletonRows } from '../components/ui/Skeleton.js';
 import { ProfileSubNav } from '../components/layout/ProfileSubNav.js';
-import type { Team, TeamInvite } from '@lorcana/shared';
-
-const ROLE_LABELS: Record<string, string> = { OWNER: 'Propriétaire', ADMIN: 'Admin', MEMBER: 'Membre' };
+import type { TeamInvite } from '@lorcana/shared';
 
 export function TeamsPage() {
   const queryClient = useQueryClient();
@@ -29,82 +30,79 @@ export function TeamsPage() {
     queryClient.invalidateQueries({ queryKey: ['my-invites'] });
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold-400"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-2xl mx-auto">
       <ProfileSubNav />
       <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Mes équipes</h1>
-          <HelpButton sections={['Équipes']} />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h1 className="font-display text-2xl text-ink-50 tracking-[0.03em]">Mes équipes</h1>
+            <HelpButton sections={['Équipes']} />
+          </div>
+          {!showForm && (
+            <button onClick={() => setShowForm(true)} className="ink-btn-primary text-sm px-4 py-2">
+              + Créer
+            </button>
+          )}
         </div>
-        {!showForm && (
-          <button onClick={() => setShowForm(true)} className="ink-btn-primary text-sm px-4 py-2">
-            + Créer
-          </button>
+
+        {/* Pending invites */}
+        {invites.length > 0 && (
+          <div className="space-y-2">
+            <h2 className="rubric-label">Invitations en attente</h2>
+            {invites.map(inv => (
+              <InviteCard key={inv.id} invite={inv} onRespond={reload} />
+            ))}
+          </div>
         )}
-      </div>
 
-      {/* Pending invites */}
-      {invites.length > 0 && (
-        <div className="space-y-2">
-          <h2 className="text-sm font-semibold text-ink-400 uppercase tracking-wide">Invitations en attente</h2>
-          {invites.map(inv => (
-            <InviteCard key={inv.id} invite={inv} onRespond={reload} />
-          ))}
-        </div>
-      )}
+        {/* Create form */}
+        {showForm && (
+          <CreateTeamForm
+            onCreated={() => { setShowForm(false); reload(); }}
+            onCancel={() => setShowForm(false)}
+          />
+        )}
 
-      {/* Create form */}
-      {showForm && (
-        <CreateTeamForm
-          onCreated={() => { setShowForm(false); reload(); }}
-          onCancel={() => setShowForm(false)}
-        />
-      )}
-
-      {/* Teams list */}
-      {teams.length === 0 && !showForm ? (
-        <div className="text-center py-12 text-ink-400">
-          <p className="text-lg mb-2">Aucune équipe</p>
-          <p className="text-sm">Créez une équipe ou attendez une invitation.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {teams.map(team => (
-            <Link
-              key={team.id}
-              to={`/teams/${team.id}`}
-              className="ink-card-hover p-4 flex items-center justify-between group"
-            >
-              <div className="min-w-0">
-                <div className="font-semibold text-ink-100 group-hover:text-gold-400 transition-colors truncate">
-                  {team.name}
+        {/* Teams list */}
+        {loading ? (
+          <SkeletonRows count={3} />
+        ) : teams.length === 0 && !showForm ? (
+          <div className="section-wash flex flex-col items-center text-center py-12 gap-3">
+            <HollowLozenge size={26} />
+            <p className="font-display text-lg text-ink-50 tracking-[0.02em]">Aucune équipe</p>
+            <p className="text-sm text-ink-500">Créez une équipe ou attendez une invitation.</p>
+            <button onClick={() => setShowForm(true)} className="ink-btn-primary text-sm px-4 py-2 mt-1">Créer une équipe</button>
+          </div>
+        ) : teams.length > 0 ? (
+          <div className="ink-card divide-y divide-rule overflow-hidden">
+            {teams.map(team => (
+              <Link
+                key={team.id}
+                to={`/teams/${team.id}`}
+                className="row-tappable flex items-center justify-between gap-3 px-4 py-3.5 hover:bg-ink-800/40 transition-colors group"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-display text-[0.95rem] tracking-[0.02em] text-ink-100 group-hover:text-gold-400 transition-colors truncate">
+                      {team.name}
+                    </span>
+                    <RoleBadge role={team.myRole} />
+                  </div>
+                  {team.description && (
+                    <p className="text-xs text-ink-500 mt-0.5 truncate">{team.description}</p>
+                  )}
+                  <p className="text-xs text-ink-500 mt-1">
+                    <span className="ink-num">{team.memberCount}</span> membre{(team.memberCount || 0) > 1 ? 's' : ''}
+                  </p>
                 </div>
-                {team.description && (
-                  <p className="text-xs text-ink-500 mt-0.5 truncate">{team.description}</p>
-                )}
-                <div className="flex items-center gap-3 mt-1.5 text-xs text-ink-500">
-                  <span>{team.memberCount} membre{(team.memberCount || 0) > 1 ? 's' : ''}</span>
-                  <span className="text-ink-600">·</span>
-                  <span className="text-ink-400">{ROLE_LABELS[team.myRole || 'MEMBER']}</span>
-                </div>
-              </div>
-              <svg className="w-4 h-4 text-ink-600 group-hover:text-ink-400 transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          ))}
-        </div>
-      )}
+                <svg className="w-4 h-4 text-ink-600 group-hover:text-ink-400 transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            ))}
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -124,10 +122,10 @@ function InviteCard({ invite, onRespond }: { invite: TeamInvite; onRespond: () =
   };
 
   return (
-    <div className="ink-card p-3 sm:p-4 flex items-center justify-between gap-3">
+    <div className="ink-card border-l-2 border-l-lorcana-emerald/70 p-3 sm:p-4 flex items-center justify-between gap-3">
       <div className="min-w-0">
-        <span className="text-sm font-medium text-ink-100">{invite.team?.name}</span>
-        <p className="text-xs text-ink-500 mt-0.5">Invitation reçue</p>
+        <span className="font-display text-[0.95rem] tracking-[0.02em] text-ink-100">{invite.team?.name}</span>
+        <p className="text-xs text-lorcana-emerald/80 mt-0.5">Invitation reçue</p>
       </div>
       <div className="flex gap-2 shrink-0">
         <button
@@ -172,9 +170,16 @@ function CreateTeamForm({ onCreated, onCancel }: { onCreated: () => void; onCanc
 
   return (
     <form onSubmit={handleSubmit} className="ink-card p-4 sm:p-5 space-y-4">
-      <h2 className="text-sm font-semibold text-ink-300 uppercase tracking-wide">Nouvelle équipe</h2>
+      <h2 className="rubric-label">Nouvelle équipe</h2>
 
-      {error && <div className="ink-error">{error}</div>}
+      {error && (
+        <div className="ink-error">
+          <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+          <span>{error}</span>
+        </div>
+      )}
 
       <div>
         <label className="ink-label">Nom *</label>

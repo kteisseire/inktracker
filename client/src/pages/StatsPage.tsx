@@ -5,6 +5,7 @@ import { RecordLine } from '../components/ui/ResultChip.js';
 import { DateFilterBar, useDateFilter } from '../components/ui/DateFilterBar.js';
 import { HelpButton } from '../components/ui/HelpButton.js';
 import { SkeletonStatPanel, SkeletonRows } from '../components/ui/Skeleton.js';
+import { Reveal, FolioHero, CountUpPercent, GildedDivider } from '../components/ui/folio.js';
 import type { OverviewStats, MatchupStat, DeckPerformance, GoingFirstStats } from '@lorcana/shared';
 
 export function StatsPage() {
@@ -54,17 +55,13 @@ export function StatsPage() {
           <SkeletonRows count={4} />
         </div>
       ) : (
-        <>
+        <Reveal i={0} className="space-y-6 sm:space-y-8">
           {/* Overview instrument panel */}
           {overview && overview.totalRounds > 0 && (
             <div className="grid gap-3 sm:gap-4 sm:grid-cols-3">
-              <div className="ink-card-hero p-5 flex flex-col justify-center">
-                <span className="rubric-label">Win rate global</span>
-                <div className="mt-1.5 flex items-baseline gap-1">
-                  <span className="font-display text-5xl leading-none text-gold-300">{overview.overallWinRate}</span>
-                  <span className="text-ink-400 text-xl font-display">%</span>
-                </div>
-              </div>
+              <FolioHero rubric="Win rate global" tick>
+                <CountUpPercent value={overview.overallWinRate} animate={false} />
+              </FolioHero>
               <div className="ink-card sm:col-span-2 grid grid-cols-3 divide-x divide-rule">
                 <Figure label="Tournois" value={overview.totalTournaments} />
                 <Figure label="Rondes" value={overview.totalRounds} />
@@ -111,6 +108,8 @@ export function StatsPage() {
               )} />
             </section>
           )}
+
+          {matchups.length > 0 && <GildedDivider className="my-1" />}
 
           {/* Matchups */}
           {matchups.length > 0 && (
@@ -199,7 +198,7 @@ export function StatsPage() {
               </p>
             </div>
           )}
-        </>
+        </Reveal>
       )}
     </div>
   );

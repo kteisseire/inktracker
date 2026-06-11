@@ -46,6 +46,12 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
+      fontSize: {
+        // Folio display scale (Codex Vivant) — fluid, one giant per screen
+        'folio-hero': ['clamp(3.5rem, 14vw, 6rem)', { lineHeight: '0.85', letterSpacing: '-0.02em' }],
+        'folio-title': ['clamp(2rem, 8vw, 3.25rem)', { lineHeight: '1.0', letterSpacing: '0.03em' }],
+        'folio-name': ['clamp(1.5rem, 5vw, 2.25rem)', { lineHeight: '1.05', letterSpacing: '0.02em' }],
+      },
       borderRadius: {
         // One system, three steps (manuscripts + instruments have crisp edges)
         sm: '6px',

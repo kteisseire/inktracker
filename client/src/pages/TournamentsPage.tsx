@@ -7,6 +7,7 @@ import { DeckBadges } from '../components/ui/InkBadge.js';
 import { RecordLine } from '../components/ui/ResultChip.js';
 import { HelpButton } from '../components/ui/HelpButton.js';
 import { SkeletonRows } from '../components/ui/Skeleton.js';
+import { Reveal } from '../components/ui/folio.js';
 import type { Tournament } from '@lorcana/shared';
 
 const FORMAT_LABELS: Record<string, string> = { BO1: 'Bo1', BO3: 'Bo3', BO5: 'Bo5' };
@@ -186,24 +187,24 @@ export function TournamentsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
+      <Reveal i={0} className="flex items-end justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <h1 className="font-display text-2xl text-ink-50 tracking-[0.03em]">Mes tournois</h1>
-          {tournaments.length > 0 && <span className="ink-num text-sm text-ink-500">{tournaments.length}</span>}
+          <h1 className="folio-title">Mes tournois</h1>
+          {tournaments.length > 0 && <span className="ink-num text-sm text-ink-400 mb-1.5">{tournaments.length}</span>}
           <button
             onClick={() => refetch()}
             disabled={isFetching}
-            className="touch-compact p-1.5 rounded-md text-ink-500 hover:text-gold-400 hover:bg-ink-800/50 transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50"
+            className="touch-compact p-1.5 mb-1 rounded-md text-ink-500 hover:text-gold-400 hover:bg-ink-800/50 transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50"
             aria-label="Rafraîchir"
           >
             <svg className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>
-          <HelpButton sections={['Tournois']} />
+          <span className="mb-1"><HelpButton sections={['Tournois']} /></span>
         </div>
-        <Link to="/tournaments/new" className="ink-btn-primary text-sm px-4 py-2 shrink-0">+ Nouveau</Link>
-      </div>
+        <Link to="/tournaments/new" className="ink-btn-primary text-sm px-4 py-2 shrink-0 mb-1">+ Nouveau</Link>
+      </Reveal>
 
       {isLoading ? (
         <SkeletonRows count={6} />
@@ -220,13 +221,14 @@ export function TournamentsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {tournaments.map(t => (
-            <TournamentCard
-              key={t.id}
-              tournament={t}
-              presence={presence[t.id]}
-              onDeleted={handleDeleted}
-            />
+          {tournaments.map((t, i) => (
+            <Reveal key={t.id} i={i}>
+              <TournamentCard
+                tournament={t}
+                presence={presence[t.id]}
+                onDeleted={handleDeleted}
+              />
+            </Reveal>
           ))}
         </div>
       )}

@@ -5,6 +5,7 @@ import { GoogleSignInButton } from '../components/GoogleSignInButton.js';
 import { DiscordSignInButton } from '../components/DiscordSignInButton.js';
 import { LogoIcon } from '../components/ui/Logo.js';
 import { HollowLozenge } from '../components/ui/InkBadge.js';
+import { Reveal, CornerFlourish } from '../components/ui/folio.js';
 import { safeRedirect } from '../lib/safeRedirect.js';
 
 export function LoginPage() {
@@ -34,17 +35,20 @@ export function LoginPage() {
 
   return (
     <div className="max-w-md mx-auto py-8 sm:py-16 px-1">
-      <div className="text-center mb-8">
+      <Reveal i={0} className="text-center mb-8">
         <div className="flex justify-center mb-4">
           <LogoIcon className="w-12 h-12" />
         </div>
-        <h1 className="font-display text-2xl text-ink-50 tracking-[0.03em]">Connexion</h1>
+        <h1 className="folio-title">Connexion</h1>
         <p className="mt-2 text-sm text-ink-500">Accédez à vos tournois et statistiques</p>
-      </div>
+      </Reveal>
 
       <form onSubmit={handleSubmit} className="ink-card-hero p-6 sm:p-8 space-y-5">
+        {/* The one screen where the frontispiece flourish strokes itself */}
+        <CornerFlourish draw />
+
         {error && (
-          <div className="ink-error">
+          <div className="ink-error sheet-enter">
             <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
             </svg>
@@ -52,12 +56,12 @@ export function LoginPage() {
           </div>
         )}
 
-        <div>
+        <Reveal as="div" i={0}>
           <label className="ink-label">Email</label>
           <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="ink-input" />
-        </div>
+        </Reveal>
 
-        <div>
+        <Reveal as="div" i={1}>
           <div className="flex items-center justify-between">
             <label className="ink-label">Mot de passe</label>
             <Link to="/forgot-password" className="text-xs text-gold-400 hover:text-gold-300 transition-colors">
@@ -65,11 +69,13 @@ export function LoginPage() {
             </Link>
           </div>
           <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="ink-input" />
-        </div>
+        </Reveal>
 
-        <button type="submit" disabled={loading} className="w-full ink-btn-primary py-3">
-          {loading ? 'Connexion...' : 'Se connecter'}
-        </button>
+        <Reveal as="div" i={2}>
+          <button type="submit" disabled={loading} className="w-full ink-btn-primary py-3">
+            {loading ? 'Connexion...' : 'Se connecter'}
+          </button>
+        </Reveal>
 
         <p className="text-center text-sm text-ink-400">
           Pas de compte ?{' '}

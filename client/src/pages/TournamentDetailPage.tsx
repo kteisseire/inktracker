@@ -257,7 +257,7 @@ export function TournamentDetailPage() {
         <div className="flex items-start justify-between gap-3 p-4 pb-3">
           <div className="flex items-center gap-2 min-w-0">
             <div className="min-w-0">
-              <h1 className="font-display text-xl text-ink-50 tracking-[0.03em] truncate">{tournament.name}</h1>
+              <h1 className="folio-name">{tournament.name}</h1>
               <p className="text-ink-500 text-xs mt-0.5">
                 {new Date(tournament.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                 {tournament.location && <span className="text-ink-600"> · {tournament.location}</span>}

@@ -6,7 +6,8 @@ import { DeckBadges, HollowLozenge } from '../components/ui/InkBadge.js';
 import { LogoIcon } from '../components/ui/Logo.js';
 import { HelpButton } from '../components/ui/HelpButton.js';
 import { SkeletonStatPanel, SkeletonRows } from '../components/ui/Skeleton.js';
-import type { OverviewStats, Tournament } from '@lorcana/shared';
+import { Reveal, FolioHero, CountUpPercent, DropCap } from '../components/ui/folio.js';
+import type { OverviewStats } from '@lorcana/shared';
 
 export function DashboardPage() {
   const { data: stats = null } = useQuery<OverviewStats | null>({
@@ -24,8 +25,8 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-7 sm:space-y-9">
-      {/* Title */}
-      <div className="flex items-center justify-between gap-3">
+      {/* Title (the win-rate numeral is this screen's giant, so the title stays measured) */}
+      <Reveal i={0} className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <h1 className="font-display text-2xl sm:text-3xl text-ink-50 tracking-[0.03em]">Tableau de bord</h1>
           <HelpButton sections={['Tournois', 'Statistiques']} />
@@ -33,27 +34,23 @@ export function DashboardPage() {
         <Link to="/tournaments/new" className="ink-btn-primary text-sm px-4 py-2 shrink-0">
           + Nouveau
         </Link>
-      </div>
+      </Reveal>
 
       {/* Stats instrument panel */}
       {loading && !stats ? (
         <SkeletonStatPanel />
       ) : stats && !isEmpty ? (
         <div className="grid gap-3 sm:gap-4 sm:grid-cols-3">
-          {/* Win Rate — the one hero number, in Marcellus */}
-          <div className="ink-card-hero p-5 flex flex-col justify-center">
-            <span className="rubric-label">Win rate</span>
-            <div className="mt-1.5 flex items-baseline gap-1">
-              <span className="font-display text-5xl leading-none text-gold-300">{stats.overallWinRate}</span>
-              <span className="text-ink-400 text-xl font-display">%</span>
-            </div>
-          </div>
-          {/* Three machined figures in one divided panel */}
-          <div className="ink-card sm:col-span-2 grid grid-cols-3 divide-x divide-rule">
+          <Reveal i={1} className="sm:col-span-1">
+            <FolioHero rubric="Win rate" tick className="h-full">
+              <CountUpPercent value={stats.overallWinRate} />
+            </FolioHero>
+          </Reveal>
+          <Reveal i={2} as="div" className="ink-card sm:col-span-2 grid grid-cols-3 divide-x divide-rule">
             <Figure label="Tournois" value={stats.totalTournaments} />
             <Figure label="Rondes" value={stats.totalRounds} />
             <Figure label="V / D / N" value={`${stats.wins}/${stats.losses}/${stats.draws}`} />
-          </div>
+          </Reveal>
         </div>
       ) : null}
 
@@ -63,10 +60,10 @@ export function DashboardPage() {
           <div className="text-center">
             <div className="flex justify-center mb-3"><LogoIcon className="w-11 h-11" /></div>
             <h2 className="font-display text-xl sm:text-2xl text-ink-50 tracking-[0.03em]">Bienvenue sur GlimmerLog</h2>
-            <p className="text-sm text-ink-400 mt-1.5 max-w-md mx-auto">
-              L'outil complet pour suivre vos performances en tournois Disney Lorcana.
-            </p>
           </div>
+          <DropCap className="max-w-md mx-auto">
+            L'outil complet pour suivre et analyser vos performances en tournois Disney Lorcana : tournois, decks, statistiques, matchups et plus.
+          </DropCap>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <Feature icon="trophy" title="Suivi de tournois" description="Enregistrez vos tournois, rondes et parties avec le score de lore." />
             <Feature icon="cards" title="Gestion de decks" description="Organisez vos decks, liez-les depuis Dreamborn, Lorcanito et plus." />
@@ -102,8 +99,10 @@ export function DashboardPage() {
           ) : (
             <div className="ink-card divide-y divide-rule overflow-hidden">
               {recentTournaments.map((t, i) => (
-                <Link
+                <Reveal
                   key={t.id}
+                  as={Link}
+                  i={i}
                   to={`/tournaments/${t.id}`}
                   data-active={i === 0 ? 'true' : undefined}
                   className="status-rail row-tappable flex items-center gap-3 pl-4 pr-3 py-3.5 transition-colors hover:bg-ink-800/40"
@@ -121,7 +120,7 @@ export function DashboardPage() {
                       <span className="ink-num text-sm text-gold-400">#{t.placement}</span>
                     )}
                   </div>
-                </Link>
+                </Reveal>
               ))}
             </div>
           )}

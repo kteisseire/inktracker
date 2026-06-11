@@ -59,9 +59,9 @@ function ModalBackdrop({ children, onClose }: { children: React.ReactNode; onClo
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center" onClick={e => { e.stopPropagation(); onClose(); }}>
-      <div className="absolute inset-0 bg-ink-950/70" />
+      <div className="absolute inset-0 bg-ink-950/70 veil-enter" />
       <div
-        className="relative w-full sm:max-w-sm ink-card-hero rounded-t-xl sm:rounded-xl p-5 sm:p-6"
+        className="relative w-full sm:max-w-sm ink-card-hero rounded-t-xl sm:rounded-xl p-5 sm:p-6 sheet-enter"
         onClick={e => e.stopPropagation()}
       >
         <button

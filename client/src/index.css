@@ -50,7 +50,7 @@
     background: #38305a;
   }
 
-  /* Reduced motion: collapse transitions + disable decorative motion */
+  /* Reduced motion: collapse transitions + disable decorative motion + force final states */
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     *, *::before, *::after {
@@ -58,6 +58,9 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
+    [data-reveal], .reveal-pending { opacity: 1 !important; transform: none !important; }
+    .status-rail[data-active]::before { transform: scaleY(1) !important; }
+    .corner-flourish path { stroke-dashoffset: 0 !important; }
   }
 }
 
@@ -172,4 +175,55 @@
   .section-wash {
     @apply bg-ink-900/40 rounded-xl p-4 sm:p-5;
   }
+
+  /* ---- Folio display scale (Codex Vivant) ---- */
+  /* The ONE giant numeral per screen — tabular mono so the count-up never reflows */
+  .folio-hero-num {
+    @apply ink-num text-folio-hero text-gold-300;
+    font-variant-numeric: tabular-nums;
+  }
+  /* Trailing percent stays Marcellus — the serif/mono pairing IS the drama */
+  .folio-hero-pct {
+    @apply font-display text-2xl sm:text-3xl text-ink-400;
+  }
+  .folio-title {
+    @apply font-display text-folio-title text-ink-50;
+  }
+  .folio-name {
+    @apply font-display text-folio-name text-ink-50;
+  }
 }
+
+/* ============================================================
+   Motion layer (Codex Vivant) — compositor-only, reduced-motion + fail-open safe.
+   Keyframes + reveal mechanism live OUTSIDE @layer so they always apply.
+   ============================================================ */
+
+@keyframes rise-in { from { opacity: 0.001; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes draw-rail { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes sheet-up { from { opacity: 0.001; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes veil-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes draw-stroke { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+
+/* Reveal: hidden state is opt-IN (added by JS) and scoped under [data-anim-ready],
+   so no-JS / slow-hydration / observer-error users always see fully visible content. */
+html[data-anim-ready] .reveal-pending { opacity: 0.001; }
+
+[data-reveal="in"] {
+  animation: rise-in 380ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation-delay: calc(min(var(--i, 0), 8) * 45ms);
+}
+
+/* Status-rail draws itself once, top-to-bottom — the illuminator's final stroke */
+.status-rail[data-active="true"]::before {
+  transform-origin: top;
+  animation: draw-rail 340ms cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+/* Modal / sheet entrance */
+.sheet-enter { animation: sheet-up 280ms cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.veil-enter { animation: veil-in 200ms ease both; }
+
+/* Corner flourish: static by default; strokes itself only when .is-drawing (Login frontispiece) */
+.corner-flourish path { stroke-dasharray: 1; stroke-dashoffset: 0; }
+.corner-flourish.is-drawing path { stroke-dashoffset: 1; animation: draw-stroke 600ms cubic-bezier(0.65, 0, 0.35, 1) both; }

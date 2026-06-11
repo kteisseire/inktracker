@@ -106,7 +106,7 @@ export function SharedTournamentPage() {
           </svg>
           Tournoi partagé par <span className="text-gold-400 font-medium">{tournament.user.username}</span>
         </div>
-        <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">{tournament.name}</h1>
+        <h1 className="font-display text-2xl text-ink-100 tracking-wide">{tournament.name}</h1>
         <p className="text-ink-400 text-sm mt-1">
           {new Date(tournament.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           {tournament.location && ` — ${tournament.location}`}

@@ -15,7 +15,7 @@ export function ProfilePage() {
       <div className="space-y-4">
 
         <div className="flex items-center gap-2">
-          <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Mon profil</h1>
+          <h1 className="font-display text-2xl text-ink-100 tracking-wide">Mon profil</h1>
           <HelpButton sections={['Compte et sécurité']} />
         </div>
 

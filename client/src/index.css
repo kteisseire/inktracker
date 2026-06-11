@@ -3,27 +3,33 @@
 @tailwind utilities;
 
 @layer base {
+  /* No faux-bold ever: Marcellus ships a single 400 weight; without this guard
+     `font-bold` on a display element synth-bolds into a smear. */
+  html {
+    font-synthesis-weight: none;
+    font-synthesis: none;
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-ink-950 text-ink-100 antialiased;
-    background-image:
-      radial-gradient(ellipse at 50% 0%, rgba(90,50,160,0.18) 0%, transparent 55%),
-      radial-gradient(ellipse at 20% 100%, rgba(50,30,100,0.12) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 60%, rgba(212,163,36,0.04) 0%, transparent 40%);
+    /* Codex Illuminé: one restrained top vignette over the void — no AI 3-radial mesh */
+    background-image: radial-gradient(ellipse 120% 80% at 50% -10%, rgba(46,30,86,0.32) 0%, transparent 60%);
+    background-attachment: fixed;
     min-height: 100vh;
     min-height: 100dvh;
   }
 
   ::selection {
-    background-color: rgba(212,163,36,0.3);
+    background-color: rgba(245,197,66,0.28);
     color: #fcd879;
   }
 
-  /* Minimum touch target on mobile */
+  /* Minimum touch target on mobile — raised to 44px for tappable rows */
   @media (pointer: coarse) {
-    button, [role="button"] {
-      min-height: 36px;
+    button, [role="button"], a.row-tappable {
+      min-height: 44px;
     }
-    /* Exceptions for inline/icon-only elements */
     .touch-compact {
       min-height: unset;
     }
@@ -44,56 +50,126 @@
     background: #38305a;
   }
 
-  /* Smooth scroll */
-  html {
-    scroll-behavior: smooth;
+  /* Reduced motion: collapse transitions + disable decorative motion */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
 @layer components {
+  /* ---- Surfaces ---- */
   .ink-card {
-    @apply bg-ink-900/80 backdrop-blur-sm border border-gold-500/10 rounded-2xl shadow-card;
+    /* opaque (no glass/blur), solid rule border that survives bright halls, no glow */
+    @apply bg-ink-900/95 border border-rule rounded-xl shadow-card;
   }
 
   .ink-card-hover {
-    @apply ink-card transition-all duration-300 hover:border-gold-500/25 hover:shadow-card-hover;
+    /* border-COLOR change as the default interactive cue — no layout-shifting lift */
+    @apply ink-card transition-colors duration-150 hover:border-rule-gold hover:shadow-card-hover;
   }
 
-  .ink-input {
-    @apply w-full px-4 py-3 bg-ink-850 border border-ink-700/50 rounded-xl text-ink-100 placeholder-ink-500
-      focus:ring-2 focus:ring-gold-500/40 focus:border-gold-500/40 outline-none transition-colors text-base;
+  .ink-card-hero {
+    /* the ONE edge-lit surface: a 1px gold catch-light on the top edge only */
+    @apply bg-ink-900/95 border border-rule rounded-xl relative;
+    box-shadow: 0 2px 16px rgba(8,6,15,0.55), inset 0 1px 0 rgba(245,197,66,0.18);
   }
 
-  .ink-select {
-    @apply ink-input appearance-none cursor-pointer;
-  }
-
-  .ink-label {
-    @apply block text-sm font-medium text-ink-300 mb-1.5;
-  }
-
+  /* ---- Buttons ---- */
   .ink-btn-primary {
-    @apply bg-gradient-to-r from-gold-500 to-gold-400 text-ink-950 font-semibold py-3 px-6 rounded-xl
-      hover:from-gold-400 hover:to-gold-300 active:from-gold-600 active:to-gold-500
-      transition-all duration-200 shadow-glow-gold-sm hover:shadow-glow-gold
+    /* SOLID gold, warm gold-ink label, void-tinted shadow, tactile press — no gradient, no glow */
+    @apply bg-gold-400 text-gold-ink font-semibold py-3 px-6 rounded-lg
+      hover:bg-gold-300 active:bg-gold-500 active:scale-[0.98]
+      transition-all duration-150 shadow-[0_2px_10px_rgba(8,6,15,0.5)]
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-300/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950
       disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base;
   }
 
   .ink-btn-secondary {
-    @apply px-6 py-3 border border-ink-700/50 rounded-xl text-ink-300 font-medium
-      hover:bg-ink-800/50 hover:border-ink-600/50 hover:text-ink-100 active:bg-ink-700/50
-      transition-all duration-200 text-sm sm:text-base;
+    @apply px-6 py-3 border border-rule rounded-lg text-ink-300 font-medium
+      hover:bg-ink-800/50 hover:border-ink-600 hover:text-ink-100 active:bg-ink-700/50 active:scale-[0.98]
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950
+      transition-all duration-150 text-sm sm:text-base;
   }
 
+  .ink-btn-danger {
+    @apply px-6 py-3 border border-lorcana-ruby/25 rounded-lg text-red-300 font-medium
+      hover:bg-lorcana-ruby/10 hover:text-red-200 active:scale-[0.98]
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lorcana-ruby/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950
+      transition-all duration-150 text-sm sm:text-base;
+  }
+
+  /* ---- Inputs ---- */
+  .ink-input {
+    @apply w-full px-4 py-3 bg-ink-850 border border-rule rounded-md text-ink-100 placeholder-ink-500
+      focus:bg-ink-900/60 focus:border-rule-gold focus:ring-2 focus:ring-gold-400/35 outline-none
+      transition-colors text-base;
+  }
+
+  .ink-select {
+    @apply ink-input appearance-none cursor-pointer pr-10;
+  }
+
+  .ink-label {
+    @apply block text-xs font-medium text-ink-300 mb-1.5;
+  }
+
+  /* ---- Alerts ---- */
   .ink-error {
-    @apply bg-lorcana-ruby/10 border border-lorcana-ruby/20 text-red-300 px-4 py-3 rounded-xl text-sm;
+    @apply flex items-start gap-2 bg-lorcana-ruby/10 border border-lorcana-ruby/25 text-red-200 px-4 py-3 rounded-lg text-sm;
   }
 
+  .ink-alert-success {
+    @apply flex items-start gap-2 bg-lorcana-emerald/10 border border-lorcana-emerald/25 text-emerald-200 px-4 py-3 rounded-lg text-sm;
+  }
+
+  .ink-alert-info {
+    @apply flex items-start gap-2 bg-lorcana-sapphire/10 border border-lorcana-sapphire/25 text-sky-200 px-4 py-3 rounded-lg text-sm;
+  }
+
+  /* ---- Dividers ---- */
   .ink-divider {
-    @apply h-px bg-gradient-to-r from-transparent via-gold-500/20 to-transparent;
+    /* solid hairline that survives bright light — NOT a vanishing gold gradient */
+    @apply h-px bg-rule;
   }
 
+  /* ---- Section title (the SOLE sanctioned font-display class) ---- */
   .ink-section-title {
-    @apply text-lg font-display font-bold text-ink-100 tracking-wide;
+    /* No font-bold (Marcellus is 400-only) — weight comes from size + tracking + color */
+    @apply text-lg sm:text-xl font-display text-ink-50 tracking-[0.03em];
+  }
+
+  /* ---- Signature utilities ---- */
+  /* Manuscript red-letter convention, in gold. Use for the PRIMARY section per view. */
+  .rubric-label {
+    @apply text-[0.6875rem] font-medium uppercase tracking-[0.16em] text-gold-500;
+  }
+
+  /* Every data numeral: tabular mono so columns align and digits never jitter on refresh */
+  .ink-num {
+    font-family: theme('fontFamily.mono');
+    font-feature-settings: 'tnum' 1, 'zero' 1;
+  }
+
+  /* The "you are here" cursor: a 3px gold rail marking the ONE active element per group */
+  .status-rail {
+    @apply relative;
+  }
+  .status-rail[data-active="true"]::before {
+    content: '';
+    @apply absolute left-0 top-1 bottom-1 w-[3px] rounded-full bg-gold-400;
+  }
+  .status-rail[data-active="pending"]::before {
+    content: '';
+    @apply absolute left-0 top-1 bottom-1 w-[3px] rounded-full bg-ink-600;
+  }
+
+  /* Faint field boundary for ruled groups on long pages — no border, no blur */
+  .section-wash {
+    @apply bg-ink-900/40 rounded-xl p-4 sm:p-5;
   }
 }

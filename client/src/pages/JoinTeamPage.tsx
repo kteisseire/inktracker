@@ -64,7 +64,7 @@ export function JoinTeamPage() {
 
         <div>
           <p className="text-xs text-ink-500 mb-1">Vous êtes invité à rejoindre</p>
-          <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">{team.name}</h1>
+          <h1 className="font-display text-2xl text-ink-100 tracking-wide">{team.name}</h1>
           {team.description && <p className="text-sm text-ink-400 mt-2">{team.description}</p>}
           <p className="text-xs text-ink-500 mt-3">{team.memberCount} membre{team.memberCount > 1 ? 's' : ''}</p>
         </div>

@@ -29,7 +29,7 @@ export function ForgotPasswordPage() {
         <div className="flex justify-center mb-4">
           <LogoIcon className="w-12 h-12" />
         </div>
-        <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Mot de passe oublié</h1>
+        <h1 className="font-display text-2xl text-ink-100 tracking-wide">Mot de passe oublié</h1>
         <p className="mt-2 text-sm text-ink-500">Entrez votre email pour recevoir un lien de réinitialisation</p>
       </div>
 

@@ -304,7 +304,7 @@ export function NewTournamentPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
-      <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide mt-1">
+      <h1 className="font-display text-2xl text-ink-100 tracking-wide mt-1">
         {isEdit ? 'Modifier le tournoi' : 'Nouveau tournoi'}
       </h1>
 

@@ -839,7 +839,7 @@ export function LoreCounter({ onClose, onNextGame, initialState, timerState, onT
                 {winner === 'me' ? 'Partie terminée' : 'Partie terminée'}
               </span>
               <span
-                className="font-display text-5xl font-bold tracking-wide mt-1"
+                className="font-display text-5xl tracking-wide mt-1"
                 style={{
                   color: winner === 'me' ? theme.meAccent : theme.oppAccent,
                   textShadow: `0 0 32px ${winner === 'me' ? theme.meAccent : theme.oppAccent}88`,
@@ -856,14 +856,14 @@ export function LoreCounter({ onClose, onNextGame, initialState, timerState, onT
             >
               <div className="flex flex-col items-center gap-0.5">
                 <span className="text-xs tracking-widest uppercase" style={{ color: theme.meAccent + '99' }}>Moi</span>
-                <span className="text-4xl font-bold font-display tabular-nums" style={{ color: theme.meAccent }}>{myLore}</span>
+                <span className="text-4xl font-display tabular-nums" style={{ color: theme.meAccent }}>{myLore}</span>
               </div>
               <div className="flex flex-col items-center gap-0.5 px-2">
                 <div className="w-px h-10" style={{ background: theme.pillBorder }} />
               </div>
               <div className="flex flex-col items-center gap-0.5">
                 <span className="text-xs tracking-widest uppercase" style={{ color: theme.oppAccent + '99' }}>Adv.</span>
-                <span className="text-4xl font-bold font-display tabular-nums" style={{ color: theme.oppAccent }}>{opponentLore}</span>
+                <span className="text-4xl font-display tabular-nums" style={{ color: theme.oppAccent }}>{opponentLore}</span>
               </div>
             </div>
 
@@ -1346,7 +1346,7 @@ export function LoreCounter({ onClose, onNextGame, initialState, timerState, onT
       {showThemes && (
         <div className="absolute inset-0 z-30 flex flex-col" style={{ background: 'rgba(0,0,0,0.96)', backdropFilter: 'blur(8px)' }}>
           <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-            <h2 className="font-display font-bold text-white tracking-wide">Thème</h2>
+            <h2 className="font-display text-white tracking-wide">Thème</h2>
             <button onClick={() => setShowThemes(false)} className="p-2 text-white/40 hover:text-white/70 transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
@@ -1425,7 +1425,7 @@ export function LoreCounter({ onClose, onNextGame, initialState, timerState, onT
       {showHistory && (
         <div className="absolute inset-0 z-30 flex flex-col" style={{ background: 'rgba(0,0,0,0.97)', backdropFilter: 'blur(8px)' }}>
           <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-            <h2 className="font-display font-bold text-white tracking-wide">Historique</h2>
+            <h2 className="font-display text-white tracking-wide">Historique</h2>
             <button onClick={() => setShowHistory(false)} className="p-2 text-white/40 hover:text-white/70 transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
@@ -1485,7 +1485,7 @@ function PlayerSide({ label, lore, accent, onChangeLore, disabled, obfuscated, o
         {/* Contenu centré : label + chiffre + losanges */}
         <div className="flex-1 flex flex-col items-center justify-center pointer-events-none gap-2 py-3">
           <span className="text-xs font-medium tracking-[0.2em] uppercase" style={{ color: `${accent}99` }}>{label}</span>
-          <span className="font-display font-bold leading-none tabular-nums" style={{ fontSize: 'clamp(5rem, 22vw, 11rem)', color: accent, textShadow: glow }}>
+          <span className="font-display leading-none tabular-nums" style={{ fontSize: 'clamp(5rem, 22vw, 11rem)', color: accent, textShadow: glow }}>
             {lore}
           </span>
           {/* Badge Obfuscate */}

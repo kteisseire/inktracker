@@ -38,7 +38,7 @@ export function RegisterPage() {
         <div className="flex justify-center mb-4">
           <LogoIcon className="w-12 h-12" />
         </div>
-        <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Inscription</h1>
+        <h1 className="font-display text-2xl text-ink-100 tracking-wide">Inscription</h1>
         <p className="mt-2 text-sm text-ink-500">Créez votre compte pour suivre vos tournois</p>
       </div>
 

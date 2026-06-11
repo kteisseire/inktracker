@@ -19,6 +19,7 @@ export default {
           850: '#130f26',
           900: '#0e0b1e',
           950: '#08060f',
+          haze: '#14102a', // warm pane fill for section-wash + solid fallback behind blur
         },
         gold: {
           300: '#fcd879',
@@ -26,7 +27,11 @@ export default {
           500: '#d4a324',
           600: '#b8891a',
           700: '#8a6613',
+          ink: '#2a2008', // warm dark label text ON gold buttons
         },
+        // Codex Illuminé tokens
+        rule: 'rgba(39,32,64,0.6)',        // solid default divider (ink-700 @ 60%) — never vanishes in bright light
+        'rule-gold': 'rgba(245,197,66,0.40)', // active/selected/terminator hairline
         lorcana: {
           amber: '#F5A623',
           amethyst: '#9B59B6',
@@ -37,22 +42,27 @@ export default {
         },
       },
       fontFamily: {
-        display: ['Cinzel', 'serif'],
+        display: ['Marcellus', 'Cormorant Garamond', 'serif'],
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+      },
+      borderRadius: {
+        // One system, three steps (manuscripts + instruments have crisp edges)
+        sm: '6px',
+        md: '6px',   // inputs, chips, badges
+        lg: '10px',  // buttons, list rows, dropdown panels
+        xl: '14px',  // cards, panels, modals
+        '2xl': '14px', // retired → folds into card radius
       },
       backgroundImage: {
         'ink-gradient': 'radial-gradient(ellipse at 50% 0%, #1a1035 0%, #0c0a14 70%)',
         'card-gradient': 'linear-gradient(180deg, rgba(26,16,53,0.8) 0%, rgba(12,10,20,0.95) 100%)',
-        'gold-shimmer': 'linear-gradient(135deg, #d4a324 0%, #f5c542 50%, #d4a324 100%)',
       },
       boxShadow: {
-        'glow-gold': '0 0 24px rgba(212,163,36,0.2)',
-        'glow-gold-sm': '0 0 12px rgba(212,163,36,0.12)',
-        'card': '0 4px 24px rgba(0,0,0,0.5)',
-        'card-hover': '0 8px 32px rgba(0,0,0,0.65)',
-      },
-      borderColor: {
-        'ink-border': 'rgba(212,163,36,0.15)',
+        // Tinted to the void — never gold glow at rest
+        'card': '0 2px 16px rgba(8,6,15,0.55)',
+        'card-hover': '0 6px 28px rgba(8,6,15,0.7)',
+        'edge-lit': 'inset 0 1px 0 rgba(245,197,66,0.18)', // single top-edge catch-light (hero/modal only)
       },
     },
   },

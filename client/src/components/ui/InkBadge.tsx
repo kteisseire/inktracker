@@ -10,7 +10,7 @@ function InkLozenge({ color, size = 16 }: { color: InkColor; size?: number }) {
   const h = size * (32 / 25.83);
   return (
     <span title={config.label} style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-      <svg viewBox="0 0 25.83 32" style={{ width: size, height: h, filter: `drop-shadow(0 0 3px ${hex}66)` }}>
+      <svg viewBox="0 0 25.83 32" style={{ width: size, height: h, filter: `drop-shadow(0 0 1.5px ${hex}55)` }}>
         <path d="M12.91 0 0 16l12.91 16 12.91-16Z" fill={hex} opacity="0.2" />
         <path d="M12.91 0 0 16l12.91 16 12.91-16ZM1.28 16 12.91 1.59 24.54 16 12.91 30.41Z" fill={hex} />
         <path d="m21.99 16-9.08 11.25L3.83 16l9.08-11.25Z" fill={hex} />
@@ -22,6 +22,16 @@ function InkLozenge({ color, size = 16 }: { color: InkColor; size?: number }) {
 /* ── Full-size badge (used in deck pages, modals, etc.) ── */
 export function InkBadge({ color }: { color: InkColor }) {
   return <InkLozenge color={color} size={18} />;
+}
+
+/* ── Hollow gold lozenge: the universal empty-state glyph + "ou" separator mark ── */
+export function HollowLozenge({ size = 22, className = '' }: { size?: number; className?: string }) {
+  const h = size * (32 / 25.83);
+  return (
+    <svg viewBox="0 0 25.83 32" style={{ width: size, height: h }} className={className} aria-hidden="true">
+      <path d="M12.91 0 0 16l12.91 16 12.91-16Z" fill="none" stroke="#f5c542" strokeWidth="1.4" />
+    </svg>
+  );
 }
 
 /* ── Tiny colored dot → remplacé par petit losange ── */
@@ -49,9 +59,9 @@ function ModalBackdrop({ children, onClose }: { children: React.ReactNode; onClo
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center" onClick={e => { e.stopPropagation(); onClose(); }}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-ink-950/70" />
       <div
-        className="relative w-full sm:max-w-sm bg-ink-900 border border-ink-700/50 rounded-t-2xl sm:rounded-2xl shadow-2xl p-5 sm:p-6"
+        className="relative w-full sm:max-w-sm ink-card-hero rounded-t-xl sm:rounded-xl p-5 sm:p-6"
         onClick={e => e.stopPropagation()}
       >
         <button
@@ -274,7 +284,7 @@ export function ScoutPicker({ playerName, teams, eventId, existingColors, onSave
                         border: `1px solid ${isSelected ? `${hex}50` : 'transparent'}`,
                       }}
                     >
-                      <svg viewBox="0 0 25.83 32" style={{ width: 22, height: 28, filter: isSelected ? `drop-shadow(0 0 5px ${hex}99)` : 'none', transition: 'filter 0.2s' }}>
+                      <svg viewBox="0 0 25.83 32" style={{ width: 22, height: 28, filter: isSelected ? `drop-shadow(0 0 2px ${hex}60)` : 'none', transition: 'filter 0.2s' }}>
                         {isSelected ? (
                           <>
                             <path d="M12.91 0 0 16l12.91 16 12.91-16Z" fill={hex} opacity="0.25" />

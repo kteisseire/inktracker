@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, } from 'react';
-import { Link, useLocation, useNavigate, useMatches } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.js';
 import { LogoIcon } from '../ui/Logo.js';
 
@@ -89,6 +89,24 @@ function isGroupActive(children: { to: string }[], pathname: string) {
   return children.some(c => isLinkActive(c.to, pathname));
 }
 
+const navBtnBase = 'relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50';
+
+/* Desktop top-level link with the ink-fill gold underline on active */
+function DesktopLink({ to, icon, label, pathname }: { to: string; icon: string; label: string; pathname: string }) {
+  const active = isLinkActive(to, pathname);
+  return (
+    <Link
+      to={to}
+      aria-current={active ? 'page' : undefined}
+      className={`${navBtnBase} ${active ? 'text-gold-400' : 'text-ink-400 hover:text-ink-100 hover:bg-ink-800/50'}`}
+    >
+      <NavIcon name={icon} className="w-3.5 h-3.5" />
+      {label}
+      {active && <span className="absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-gold-400" />}
+    </Link>
+  );
+}
+
 /* Desktop dropdown for nav groups */
 function DesktopDropdown({ item, pathname }: { item: Extract<NavItem, { children: any[] }>; pathname: string }) {
   const [open, setOpen] = useState(false);
@@ -100,39 +118,45 @@ function DesktopDropdown({ item, pathname }: { item: Extract<NavItem, { children
     const handle = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('mousedown', handle);
-    return () => document.removeEventListener('mousedown', handle);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', handle); document.removeEventListener('keydown', onKey); };
   }, [open]);
 
   return (
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-          active ? 'text-gold-400 bg-gold-500/10' : 'text-ink-400 hover:text-ink-100 hover:bg-ink-800/50'
-        }`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className={`${navBtnBase} ${active ? 'text-gold-400' : 'text-ink-400 hover:text-ink-100 hover:bg-ink-800/50'}`}
       >
         <NavIcon name={item.icon} className="w-3.5 h-3.5" />
         {item.label}
         <NavIcon name="chevron" className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+        {active && <span className="absolute bottom-0 left-3 right-7 h-[2px] rounded-full bg-gold-400" />}
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1 min-w-[200px] bg-ink-900 border border-ink-700/50 rounded-xl shadow-xl shadow-ink-950/50 py-1 z-50">
-          {item.children.map(child => (
-            <Link
-              key={child.to}
-              to={child.to}
-              onClick={() => setOpen(false)}
-              className={`flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors ${
-                isLinkActive(child.to, pathname)
-                  ? 'text-gold-400 bg-gold-500/5'
-                  : 'text-ink-300 hover:text-ink-100 hover:bg-ink-800/50'
-              }`}
-            >
-              <NavIcon name={child.icon} className="w-4 h-4" />
-              {child.label}
-            </Link>
-          ))}
+        <div role="menu" className="absolute top-full left-0 mt-1.5 min-w-[200px] bg-ink-900 border border-rule rounded-lg shadow-card-hover py-1 z-50">
+          {item.children.map(child => {
+            const childActive = isLinkActive(child.to, pathname);
+            return (
+              <Link
+                key={child.to}
+                to={child.to}
+                role="menuitem"
+                onClick={() => setOpen(false)}
+                className={`status-rail flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors ${
+                  childActive ? 'text-gold-400' : 'text-ink-300 hover:text-ink-100 hover:bg-ink-800/50'
+                }`}
+                data-active={childActive ? 'true' : undefined}
+              >
+                <NavIcon name={child.icon} className="w-4 h-4" />
+                {child.label}
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
@@ -148,14 +172,14 @@ export function Header() {
   const nav = user ? AUTH_NAV : PUBLIC_NAV;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-gold-500/15" style={{ background: 'linear-gradient(180deg, rgba(26,16,53,0.92) 0%, rgba(12,10,20,0.88) 100%)', backdropFilter: 'blur(16px)', boxShadow: '0 1px 0 rgba(212,163,36,0.08), 0 4px 24px rgba(0,0,0,0.4)' }}>
+    <header className="sticky top-0 z-50 border-b border-rule bg-ink-950/95 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 h-14 grid grid-cols-[2.5rem_1fr_2.5rem] md:flex md:items-center md:justify-between items-center">
         {/* Left: back button */}
         <div className="flex items-center">
           {backTarget && (
             <button
               onClick={() => navigate(backTarget)}
-              className="p-1.5 rounded-lg text-ink-400 hover:text-ink-100 hover:bg-ink-800/50 transition-colors"
+              className="p-1.5 rounded-lg text-ink-400 hover:text-ink-100 hover:bg-ink-800/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50"
               aria-label="Retour"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -167,8 +191,8 @@ export function Header() {
 
         {/* Center: logo */}
         <Link to="/" className="flex items-center justify-center gap-2 group md:justify-start md:shrink-0">
-          <LogoIcon className="w-7 h-7 transition-transform group-hover:scale-110" />
-          <span className="font-display text-lg tracking-wide">
+          <LogoIcon className="w-7 h-7 transition-transform group-hover:scale-105" />
+          <span className="font-display text-lg tracking-[0.03em]">
             <span className="text-gold-400 group-hover:text-gold-300 transition-colors">Glimmer</span>
             <span className="text-ink-200">Log</span>
           </span>
@@ -182,54 +206,26 @@ export function Header() {
           <nav className="flex gap-0.5">
             {nav.map(item => (
               'to' in item ? (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isLinkActive(item.to, location.pathname)
-                      ? 'text-gold-400 bg-gold-500/10'
-                      : 'text-ink-400 hover:text-ink-100 hover:bg-ink-800/50'
-                  }`}
-                >
-                  <NavIcon name={item.icon} className="w-3.5 h-3.5" />
-                  {item.label}
-                </Link>
+                <DesktopLink key={item.to} to={item.to} icon={item.icon} label={item.label} pathname={location.pathname} />
               ) : (
                 <DesktopDropdown key={item.label} item={item} pathname={location.pathname} />
               )
             ))}
           </nav>
-          <div className="w-px h-5 bg-ink-800 mx-2" />
+          <div className="w-px h-5 bg-rule mx-2" />
           {user ? (
             <div className="flex items-center gap-0.5">
               {USER_NAV.map(item => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isLinkActive(item.to, location.pathname)
-                      ? 'text-gold-400 bg-gold-500/10'
-                      : 'text-ink-400 hover:text-ink-100 hover:bg-ink-800/50'
-                  }`}
-                >
-                  <NavIcon name={item.icon} className="w-3.5 h-3.5" />
-                  {item.label}
-                </Link>
+                <DesktopLink key={item.to} to={item.to} icon={item.icon} label={item.label} pathname={location.pathname} />
               ))}
               {user.isAdmin && (
-                <Link
-                  to="/admin"
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isLinkActive('/admin', location.pathname)
-                      ? 'text-gold-400 bg-gold-500/10'
-                      : 'text-ink-400 hover:text-ink-100 hover:bg-ink-800/50'
-                  }`}
-                >
-                  <NavIcon name="admin" className="w-3.5 h-3.5" />
-                  Admin
-                </Link>
+                <DesktopLink to="/admin" icon="admin" label="Admin" pathname={location.pathname} />
               )}
-              <button onClick={logout} className="flex items-center gap-1.5 text-sm text-ink-500 hover:text-ink-300 transition-colors px-2 py-2 rounded-lg hover:bg-ink-800/50">
+              <button
+                onClick={logout}
+                aria-label="Se déconnecter"
+                className="flex items-center gap-1.5 text-sm text-ink-500 hover:text-ink-300 transition-colors px-2 py-2 rounded-lg hover:bg-ink-800/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50"
+              >
                 <NavIcon name="logout" className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -238,7 +234,7 @@ export function Header() {
               <Link to="/login" className="text-sm text-ink-400 hover:text-ink-100 transition-colors px-3 py-2 rounded-lg hover:bg-ink-800/50">
                 Connexion
               </Link>
-              <Link to="/register" className="text-sm font-semibold px-4 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 text-ink-950 hover:from-gold-400 hover:to-gold-300 transition-all">
+              <Link to="/register" className="ink-btn-primary text-sm px-4 py-2">
                 S'inscrire
               </Link>
             </div>
@@ -259,7 +255,7 @@ function MobileGroup({ item, pathname, onNavigate }: { item: Extract<NavItem, { 
     <div>
       <button
         onClick={() => setOpen(!open)}
-        className={`flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
+        className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
           active ? 'text-gold-400' : 'text-ink-300'
         }`}
       >
@@ -270,13 +266,13 @@ function MobileGroup({ item, pathname, onNavigate }: { item: Extract<NavItem, { 
         <NavIcon name="chevron" className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className="ml-4 pl-4 border-l border-ink-800/50 space-y-0.5 pb-1">
+        <div className="ml-4 pl-4 border-l border-rule space-y-0.5 pb-1">
           {item.children.map(child => (
             <Link
               key={child.to}
               to={child.to}
               onClick={onNavigate}
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-colors ${
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors ${
                 isLinkActive(child.to, pathname)
                   ? 'text-gold-400 bg-gold-500/10 font-medium'
                   : 'text-ink-400 hover:text-ink-100 active:bg-ink-800/50'

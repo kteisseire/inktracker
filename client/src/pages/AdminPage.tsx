@@ -58,7 +58,7 @@ export function AdminPage() {
       <ProfileSubNav />
       <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Administration</h1>
+        <h1 className="font-display text-2xl text-ink-100 tracking-wide">Administration</h1>
       </div>
 
       {/* Tabs */}

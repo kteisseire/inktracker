@@ -324,7 +324,7 @@ export function NewMatchPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide mb-6">
+      <h1 className="font-display text-2xl text-ink-100 tracking-wide mb-6">
         {isEdit ? 'Modifier la ronde' : 'Ajouter une ronde'}
       </h1>
 

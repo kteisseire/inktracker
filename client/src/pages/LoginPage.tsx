@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.js';
 import { GoogleSignInButton } from '../components/GoogleSignInButton.js';
 import { DiscordSignInButton } from '../components/DiscordSignInButton.js';
 import { LogoIcon } from '../components/ui/Logo.js';
+import { HollowLozenge } from '../components/ui/InkBadge.js';
 import { safeRedirect } from '../lib/safeRedirect.js';
 
 export function LoginPage() {
@@ -37,12 +38,19 @@ export function LoginPage() {
         <div className="flex justify-center mb-4">
           <LogoIcon className="w-12 h-12" />
         </div>
-        <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Connexion</h1>
+        <h1 className="font-display text-2xl text-ink-50 tracking-[0.03em]">Connexion</h1>
         <p className="mt-2 text-sm text-ink-500">Accédez à vos tournois et statistiques</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="ink-card p-6 sm:p-8 space-y-5">
-        {error && <div className="ink-error">{error}</div>}
+      <form onSubmit={handleSubmit} className="ink-card-hero p-6 sm:p-8 space-y-5">
+        {error && (
+          <div className="ink-error">
+            <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+            <span>{error}</span>
+          </div>
+        )}
 
         <div>
           <label className="ink-label">Email</label>
@@ -68,9 +76,10 @@ export function LoginPage() {
           <Link to={redirectTo ? `/register?redirect=${encodeURIComponent(redirectTo)}` : '/register'} className="text-gold-400 hover:text-gold-300 transition-colors font-medium">S'inscrire</Link>
         </p>
 
+        {/* Signature separator: hairline — ◇ — hairline */}
         <div className="flex items-center gap-3">
           <div className="flex-1 ink-divider" />
-          <span className="text-sm text-ink-500">ou</span>
+          <HollowLozenge size={14} />
           <div className="flex-1 ink-divider" />
         </div>
 

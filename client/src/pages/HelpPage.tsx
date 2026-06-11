@@ -604,7 +604,7 @@ export function HelpPage() {
       <ToolsSubNav />
       <div className="space-y-8">
       <div>
-        <h1 className="font-display text-2xl font-bold text-ink-100 tracking-wide">Aide</h1>
+        <h1 className="font-display text-2xl text-ink-100 tracking-wide">Aide</h1>
         <p className="text-sm text-ink-400 mt-1">Tout ce que vous devez savoir pour utiliser GlimmerLog.</p>
       </div>
 

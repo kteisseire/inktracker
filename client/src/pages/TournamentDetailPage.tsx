@@ -257,7 +257,7 @@ export function TournamentDetailPage() {
         <div className="flex items-start justify-between gap-3 p-4 pb-3">
           <div className="flex items-center gap-2 min-w-0">
             <div className="min-w-0">
-              <h1 className="font-display text-xl font-bold text-ink-100 tracking-wide truncate">{tournament.name}</h1>
+              <h1 className="font-display text-xl text-ink-50 tracking-[0.03em] truncate">{tournament.name}</h1>
               <p className="text-ink-500 text-xs mt-0.5">
                 {new Date(tournament.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                 {tournament.location && <span className="text-ink-600"> · {tournament.location}</span>}
@@ -499,7 +499,7 @@ export function TournamentDetailPage() {
       {syncData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/80 backdrop-blur-sm px-4">
           <div className="ink-card p-5 sm:p-6 max-w-md w-full space-y-4">
-            <h3 className="font-display font-bold text-ink-100 text-lg">Synchroniser les informations ?</h3>
+            <h3 className="font-display text-ink-50 text-lg tracking-[0.02em]">Synchroniser les informations ?</h3>
             <p className="text-sm text-ink-400">Données récupérées depuis Ravensburger Play Hub :</p>
             <div className="space-y-2 text-sm">
               {syncData.name && syncData.name !== tournament.name && (

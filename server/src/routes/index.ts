@@ -9,6 +9,8 @@ import teamRoutes from './team.routes.js';
 import scoutingRoutes from './scouting.routes.js';
 import adminRoutes from './admin.routes.js';
 import suggestionRoutes from './suggestion.routes.js';
+import matchupNoteRoutes from './matchup-note.routes.js';
+import metagameRoutes from './metagame.routes.js';
 
 const router = Router();
 
@@ -22,5 +24,7 @@ router.use('/decks', deckRoutes);
 router.use('/ravensburger', ravensburgerRoutes);
 router.use('/teams', teamRoutes);
 router.use('/scouting', scoutingRoutes);
+router.use('/matchup-notes', matchupNoteRoutes);
+router.use('/metagame', metagameRoutes);
 
 export default router;

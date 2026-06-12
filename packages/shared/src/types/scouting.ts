@@ -6,6 +6,7 @@ export interface ScoutReport {
   eventId: string;
   playerName: string;
   deckColors: InkColor[];
+  archetypeName: string | null;
   reportedById: string;
   reportedBy: { id: string; username: string };
   createdAt: string;
@@ -17,12 +18,13 @@ export interface CreateScoutReportRequest {
   eventId: string;
   playerName: string;
   deckColors: InkColor[];
+  archetypeName?: string;
 }
 
 export interface BulkScoutReportRequest {
   teamId?: string | null;
   eventId: string;
-  reports: { playerName: string; deckColors: InkColor[] }[];
+  reports: { playerName: string; deckColors: InkColor[]; archetypeName?: string }[];
 }
 
 export interface PotentialDeck {

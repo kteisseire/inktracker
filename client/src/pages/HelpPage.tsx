@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { useAuth } from '../context/AuthContext.js';
 import { submitSuggestion } from '../api/suggestion.api.js';
 import { ToolsSubNav } from '../components/layout/ToolsSubNav.js';
+import { Seo } from '../components/Seo.js';
 
 /* ── Visual mock helpers ── */
 
@@ -601,6 +602,11 @@ function Accordion({ item }: { item: FaqItem }) {
 export function HelpPage() {
   return (
     <div className="max-w-3xl mx-auto py-4">
+      <Seo
+        title="Aide"
+        description="Toutes les réponses à vos questions sur GlimmerLog : tournois, decks, statistiques, scouting et compteur de lore."
+        path="/help"
+      />
       <ToolsSubNav />
       <div className="space-y-8">
       <div>

@@ -48,7 +48,7 @@ export function BottomNav() {
   const items: TabItem[] = user
     ? [
         { to: '/tournaments', label: 'Tournois', paths: ['/tournaments'], icon: ICON.trophy },
-        { to: '/decks', label: 'Decks', paths: ['/decks', '/stats'], icon: ICON.cards },
+        { to: '/decks', label: 'Decks', paths: ['/decks', '/stats', '/metagame'], icon: ICON.cards },
         { to: '/top-cut', label: 'Outils', paths: ['/top-cut', '/lore-counter', '/help'], icon: ICON.tools },
         { to: '/profile', label: 'Profil', paths: ['/profile', '/teams', '/admin'], icon: ICON.profile },
       ]

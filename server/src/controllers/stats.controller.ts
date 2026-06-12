@@ -79,15 +79,35 @@ export async function getDeckPerformance(req: AuthRequest, res: Response) {
     where: { userId: req.userId, ...df },
     select: {
       myDeckColors: true,
+      archetypeName: true,
       rounds: { select: { result: true } },
     },
   });
 
-  const deckMap = new Map<string, { tournaments: number; wins: number; losses: number; draws: number }>();
+  // Group by colors + archetypeName when an archetype name is present, otherwise
+  // fall back to grouping by colors alone (legacy/no-archetype tournaments).
+  type DeckEntry = {
+    deckColors: string[];
+    archetypeName: string | null;
+    tournaments: number;
+    wins: number;
+    losses: number;
+    draws: number;
+  };
+  const deckMap = new Map<string, DeckEntry>();
 
   for (const t of tournaments) {
-    const key = [...t.myDeckColors].sort().join('/');
-    const entry = deckMap.get(key) || { tournaments: 0, wins: 0, losses: 0, draws: 0 };
+    const sortedColors = [...t.myDeckColors].sort();
+    const archetypeName = t.archetypeName?.trim() || null;
+    const key = archetypeName ? `${sortedColors.join('/')}::${archetypeName}` : sortedColors.join('/');
+    const entry = deckMap.get(key) || {
+      deckColors: sortedColors,
+      archetypeName,
+      tournaments: 0,
+      wins: 0,
+      losses: 0,
+      draws: 0,
+    };
     entry.tournaments++;
     for (const r of t.rounds) {
       if (r.result === 'WIN') entry.wins++;
@@ -97,13 +117,17 @@ export async function getDeckPerformance(req: AuthRequest, res: Response) {
     deckMap.set(key, entry);
   }
 
-  const deckStats = Array.from(deckMap.entries()).map(([key, stats]) => {
-    const total = stats.wins + stats.losses + stats.draws;
+  const deckStats = Array.from(deckMap.values()).map((entry) => {
+    const total = entry.wins + entry.losses + entry.draws;
     return {
-      deckColors: key.split('/'),
-      ...stats,
+      deckColors: entry.deckColors,
+      archetypeName: entry.archetypeName,
+      tournaments: entry.tournaments,
+      wins: entry.wins,
+      losses: entry.losses,
+      draws: entry.draws,
       total,
-      winRate: calculateWinRate(stats.wins, total),
+      winRate: calculateWinRate(entry.wins, total),
     };
   });
 

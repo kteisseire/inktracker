@@ -8,6 +8,7 @@ import { listMyTeams } from '../api/team.api.js';
 import { InkColorPicker } from '../components/ui/InkColorPicker.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
 import { LoreCounter } from '../components/LoreCounter.js';
+import { RoundTimer } from '../components/RoundTimer.js';
 import type { LoreResult, LoreState } from '../components/LoreCounter.js';
 import type { InkColor, MatchResult, Format, Round, ScoutReport, Team } from '@lorcana/shared';
 
@@ -70,6 +71,7 @@ export function NewMatchPage() {
   const [loreStates, setLoreStates] = useState<Record<number, LoreState>>({});
   const [boTimer, setBoTimer] = useState<{ seconds: number; running: boolean }>({ seconds: 50 * 60, running: false });
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showRoundTimer, setShowRoundTimer] = useState(false);
 
   // Scouting
   const [eventId, setEventId] = useState<string | null>(null);
@@ -347,6 +349,21 @@ export function NewMatchPage() {
             </svg>
             Modifier
           </button>
+        </div>
+
+        {/* Timer de ronde — accès rapide, repliable */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowRoundTimer(v => !v)}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 border-gold-500/25 bg-gold-500/5 text-gold-400 hover:bg-gold-500/10 hover:border-gold-500/40 active:scale-[0.98]"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {showRoundTimer ? 'Masquer le timer de ronde' : 'Timer de ronde'}
+          </button>
+          {showRoundTimer && <RoundTimer className="mt-3" />}
         </div>
 
         {/* Champs avancés */}

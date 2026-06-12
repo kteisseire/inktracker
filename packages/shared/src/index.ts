@@ -6,3 +6,4 @@ export * from './types/stats.js';
 export * from './types/deck.js';
 export * from './types/team.js';
 export * from './types/scouting.js';
+export * from './types/matchupNote.js';

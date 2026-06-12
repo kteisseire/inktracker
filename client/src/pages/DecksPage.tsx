@@ -25,7 +25,7 @@ function isDeckUrl(value: string): boolean {
   } catch { return false; }
 }
 
-interface DeckFormData { name: string; colors: InkColor[]; link: string; }
+interface DeckFormData { name: string; colors: InkColor[]; link: string; archetypeName: string; }
 
 function DeckForm({ initial, onSubmit, onCancel, submitLabel }: {
   initial?: DeckFormData;
@@ -36,6 +36,7 @@ function DeckForm({ initial, onSubmit, onCancel, submitLabel }: {
   const [name, setName] = useState(initial?.name ?? '');
   const [colors, setColors] = useState<InkColor[]>(initial?.colors ?? []);
   const [link, setLink] = useState(initial?.link ?? '');
+  const [archetypeName, setArchetypeName] = useState(initial?.archetypeName ?? '');
   const [linkLoading, setLinkLoading] = useState(false);
   const [linkSuccess, setLinkSuccess] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -67,7 +68,7 @@ function DeckForm({ initial, onSubmit, onCancel, submitLabel }: {
     e.preventDefault();
     if (colors.length === 0) { setError('Sélectionnez au moins une couleur'); return; }
     setError(''); setSaving(true);
-    try { await onSubmit({ name, colors, link }); }
+    try { await onSubmit({ name, colors, link, archetypeName }); }
     catch (err: any) { setError(err.response?.data?.error || 'Erreur'); }
     finally { setSaving(false); }
   };
@@ -103,6 +104,11 @@ function DeckForm({ initial, onSubmit, onCancel, submitLabel }: {
         <label className="ink-label">Couleurs *</label>
         <InkColorPicker selected={colors} onChange={setColors} />
       </div>
+      <div>
+        <label className="ink-label">Archétype (optionnel)</label>
+        <input type="text" value={archetypeName} onChange={e => setArchetypeName(e.target.value)}
+          maxLength={60} placeholder="Ex: Amber/Steel Songs" className="ink-input" />
+      </div>
       <div className="flex gap-3 pt-1">
         <button type="submit" disabled={saving} className="flex-1 ink-btn-primary">
           {saving ? 'Enregistrement...' : submitLabel}
@@ -127,13 +133,13 @@ export function DecksPage() {
 
   const handleCreate = async (data: DeckFormData) => {
     const isFirst = decks.length === 0;
-    await createDeck({ name: data.name, colors: data.colors, link: data.link || undefined, isDefault: isFirst });
+    await createDeck({ name: data.name, colors: data.colors, link: data.link || undefined, archetypeName: data.archetypeName.trim() || undefined, isDefault: isFirst });
     setShowForm(false); reloadDecks();
   };
 
   const handleUpdate = async (data: DeckFormData) => {
     if (!editingDeck) return;
-    await updateDeck(editingDeck.id, { name: data.name, colors: data.colors, link: data.link || undefined });
+    await updateDeck(editingDeck.id, { name: data.name, colors: data.colors, link: data.link || undefined, archetypeName: data.archetypeName.trim() || undefined });
     setEditingDeck(null); reloadDecks();
   };
 
@@ -166,7 +172,7 @@ export function DecksPage() {
       {editingDeck && (
         <div className="mb-6">
           <DeckForm
-            initial={{ name: editingDeck.name, colors: editingDeck.colors as InkColor[], link: editingDeck.link ?? '' }}
+            initial={{ name: editingDeck.name, colors: editingDeck.colors as InkColor[], link: editingDeck.link ?? '', archetypeName: editingDeck.archetypeName ?? '' }}
             onSubmit={handleUpdate} onCancel={() => setEditingDeck(null)} submitLabel="Enregistrer"
           />
         </div>
@@ -193,6 +199,9 @@ export function DecksPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                   <span className="font-display text-[0.95rem] tracking-[0.02em] text-ink-100 truncate">{deck.name}</span>
+                  {deck.archetypeName && (
+                    <span className="text-xs text-ink-500 truncate">{deck.archetypeName}</span>
+                  )}
                   {deck.isDefault && (
                     <span className="text-[10px] bg-gold-500/15 text-gold-400 px-2 py-0.5 rounded-full uppercase tracking-[0.08em] shrink-0">Défaut</span>
                   )}

@@ -10,6 +10,7 @@ export const createTournamentSchema = z.object({
   topCut: z.enum(['NONE', 'TOP4', 'TOP8', 'TOP16', 'TOP32']).default('NONE'),
   format: z.enum(['BO1', 'BO3', 'BO5']).default('BO1'),
   myDeckColors: z.array(inkColorEnum).min(1).max(3),
+  archetypeName: z.string().trim().max(60).optional(),
   myDeckLink: z.string().url().max(500).nullish(),
   deckId: z.string().uuid().nullish(),
   eventLink: z.string().url().max(500).nullish(),

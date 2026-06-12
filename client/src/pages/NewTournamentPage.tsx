@@ -52,6 +52,7 @@ export function NewTournamentPage() {
   const [topCut, setTopCut] = useState<string>('NONE');
   const [format, setFormat] = useState<string>('BO3');
   const [myDeckColors, setMyDeckColors] = useState<InkColor[]>([]);
+  const [archetypeName, setArchetypeName] = useState('');
   const [myDeckLink, setMyDeckLink] = useState('');
   const [deckLinkLoading, setDeckLinkLoading] = useState(false);
   const [deckLinkStatus, setDeckLinkStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -80,6 +81,7 @@ export function NewTournamentPage() {
         setTopCut(t.topCut);
         setFormat(t.format);
         setMyDeckColors(t.myDeckColors as InkColor[]);
+        setArchetypeName(t.archetypeName || '');
         setMyDeckLink(t.myDeckLink || '');
         setEventLink(t.eventLink || '');
         setPlacement(t.placement ? String(t.placement) : '');
@@ -128,6 +130,7 @@ export function NewTournamentPage() {
       const deck = savedDecks.find(d => d.id === deckId);
       if (deck) {
         setMyDeckColors(deck.colors as InkColor[]);
+        setArchetypeName(deck.archetypeName ?? '');
         setMyDeckLink(deck.link ?? '');
         setDeckLinkStatus('idle');
         setDeckLinkError('');
@@ -270,6 +273,7 @@ export function NewTournamentPage() {
         topCut: topCut as any,
         format: format as any,
         myDeckColors,
+        archetypeName: archetypeName.trim() || undefined,
         myDeckLink: myDeckLink && isDeckUrl(myDeckLink) ? myDeckLink : undefined,
         deckId: selectedDeckId || undefined,
         eventLink: eventLink && isEventUrl(eventLink) ? eventLink : undefined,
@@ -445,6 +449,13 @@ export function NewTournamentPage() {
               </div>
             </div>
           )}
+
+          {/* Archétype nommé */}
+          <div>
+            <label className="ink-label">Archétype (optionnel)</label>
+            <input type="text" value={archetypeName} onChange={e => setArchetypeName(e.target.value)}
+              maxLength={60} placeholder="Ex: Amber/Steel Songs" className="ink-input" />
+          </div>
         </div>
 
         {/* ── Preview des infos calculées ── */}

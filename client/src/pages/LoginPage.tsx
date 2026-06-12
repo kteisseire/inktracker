@@ -8,6 +8,7 @@ import { HollowLozenge } from '../components/ui/InkBadge.js';
 import { Reveal, CornerFlourish } from '../components/ui/folio.js';
 import { ErrorAlert } from '../components/ui/ErrorAlert.js';
 import { safeRedirect } from '../lib/safeRedirect.js';
+import { Seo } from '../components/Seo.js';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -36,6 +37,7 @@ export function LoginPage() {
 
   return (
     <div className="max-w-md mx-auto py-8 sm:py-16 px-1">
+      <Seo title="Connexion" description="Connectez-vous à GlimmerLog pour accéder à vos tournois et statistiques Disney Lorcana." path="/login" />
       <Reveal i={0} className="text-center mb-8">
         <div className="flex justify-center mb-4">
           <LogoIcon className="w-12 h-12" />

@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+Allow: /t/
+Allow: /join/
+Allow: /lore-counter
+Allow: /top-cut
+Allow: /help
+Allow: /login
+Allow: /register
+
+Disallow: /api
+Disallow: /admin
+Disallow: /profile
+Disallow: /tournaments
+Disallow: /decks
+Disallow: /teams
+Disallow: /stats
+Disallow: /metagame
+
+Sitemap: https://glimmerlog.com/sitemap.xml

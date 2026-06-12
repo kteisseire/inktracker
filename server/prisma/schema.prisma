@@ -26,6 +26,7 @@ model User {
   teamMembers            TeamMember[]
   suggestions            Suggestion[]
   tournaments            Tournament[]
+  matchupNotes           MatchupNote[]
 
   @@map("users")
 }
@@ -76,43 +77,45 @@ model TeamInvite {
 }
 
 model Deck {
-  id          String       @id @default(uuid())
-  userId      String
-  name        String
-  colors      InkColor[]
-  link        String?
-  isDefault   Boolean      @default(false)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tournaments Tournament[]
+  id            String       @id @default(uuid())
+  userId        String
+  name          String
+  colors        InkColor[]
+  link          String?
+  archetypeName String?
+  isDefault     Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tournaments   Tournament[]
 
   @@index([userId])
   @@map("decks")
 }
 
 model Tournament {
-  id           String     @id @default(uuid())
-  userId       String
-  name         String
-  location     String?
-  date         DateTime
-  playerCount  Int?
-  swissRounds  Int
-  topCut       TopCut     @default(NONE)
-  format       Format     @default(BO1)
-  myDeckColors InkColor[]
-  placement    Int?
-  notes        String?
-  shareId      String?    @unique
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  deckId       String?
-  eventLink    String?
-  myDeckLink   String?
-  rounds       Round[]
-  deck         Deck?      @relation(fields: [deckId], references: [id])
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String     @id @default(uuid())
+  userId        String
+  name          String
+  location      String?
+  date          DateTime
+  playerCount   Int?
+  swissRounds   Int
+  topCut        TopCut     @default(NONE)
+  format        Format     @default(BO1)
+  myDeckColors  InkColor[]
+  archetypeName String?
+  placement     Int?
+  notes         String?
+  shareId       String?    @unique
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  deckId        String?
+  eventLink     String?
+  myDeckLink    String?
+  rounds        Round[]
+  deck          Deck?      @relation(fields: [deckId], references: [id])
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([deckId])
@@ -158,16 +161,17 @@ model Game {
 }
 
 model ScoutReport {
-  id           String     @id @default(uuid())
-  teamId       String?
-  eventId      String
-  playerName   String
-  deckColors   InkColor[]
-  reportedById String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  reportedBy   User       @relation(fields: [reportedById], references: [id], onDelete: Cascade)
-  team         Team?      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  id            String     @id @default(uuid())
+  teamId        String?
+  eventId       String
+  playerName    String
+  deckColors    InkColor[]
+  archetypeName String?
+  reportedById  String
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  reportedBy    User       @relation(fields: [reportedById], references: [id], onDelete: Cascade)
+  team          Team?      @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@unique([reportedById, eventId, playerName])
   @@index([teamId, eventId])
@@ -214,6 +218,26 @@ model Suggestion {
 
   @@index([createdAt])
   @@map("suggestions")
+}
+
+// Personal notes about how to play against a given opponent deck color combination.
+// `opponentColors` is the array of ink colors (1-3) for the opponent's deck.
+// `colorKey` is a deterministic, sorted, comma-joined representation of `opponentColors`
+// (e.g. "AMBER,STEEL") used to enforce a per-user uniqueness constraint, since Prisma
+// does not support `@unique`/`@@unique` directly on array (list) fields in PostgreSQL.
+model MatchupNote {
+  id             String     @id @default(uuid())
+  userId         String
+  opponentColors InkColor[]
+  colorKey       String
+  content        String
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, colorKey])
+  @@index([userId])
+  @@map("matchup_notes")
 }
 
 enum InkColor {

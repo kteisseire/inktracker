@@ -5,6 +5,7 @@ import { GoogleSignInButton } from '../components/GoogleSignInButton.js';
 import { DiscordSignInButton } from '../components/DiscordSignInButton.js';
 import { LogoIcon } from '../components/ui/Logo.js';
 import { safeRedirect } from '../lib/safeRedirect.js';
+import { Seo } from '../components/Seo.js';
 
 export function RegisterPage() {
   const { register } = useAuth();
@@ -34,6 +35,7 @@ export function RegisterPage() {
 
   return (
     <div className="max-w-md mx-auto py-8 sm:py-16 px-1">
+      <Seo title="Inscription" description="Créez votre compte GlimmerLog gratuitement et commencez à suivre vos tournois Disney Lorcana." path="/register" />
       <div className="text-center mb-8">
         <div className="flex justify-center mb-4">
           <LogoIcon className="w-12 h-12" />

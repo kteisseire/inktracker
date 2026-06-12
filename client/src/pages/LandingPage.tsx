@@ -1,9 +1,32 @@
 import { Link } from 'react-router-dom';
 import { LogoIcon } from '../components/ui/Logo.js';
+import { Seo } from '../components/Seo.js';
+
+const WEBAPP_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'GlimmerLog',
+  url: 'https://glimmerlog.com',
+  description: "L'outil complet pour suivre et analyser vos performances en tournois Disney Lorcana. Statistiques, matchups, compteur de lore et plus.",
+  applicationCategory: 'SportsApplication',
+  operatingSystem: 'Any',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'EUR',
+  },
+};
 
 export function LandingPage() {
   return (
     <div className="space-y-20 sm:space-y-28 py-6 sm:py-12">
+      <Seo
+        title="GlimmerLog — Suivi de tournois Disney Lorcana"
+        description="Suivez vos rondes, scoutez les decks adverses et analysez vos performances en tournois Disney Lorcana avec GlimmerLog."
+        path="/"
+        noSuffix
+        jsonLd={WEBAPP_JSON_LD}
+      />
       {/* Hero */}
       <section className="text-center max-w-3xl mx-auto px-2">
         <div className="flex justify-center mb-6">

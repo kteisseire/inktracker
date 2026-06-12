@@ -151,7 +151,7 @@ export async function getEventScoutReports(req: AuthRequest, res: Response) {
 
 /** Create or update a single scout report (certain deck) */
 export async function upsertScoutReport(req: AuthRequest, res: Response) {
-  const { teamId, eventId, playerName, deckColors } = req.body;
+  const { teamId, eventId, playerName, deckColors, archetypeName } = req.body;
 
   // If teamId is provided, verify membership
   if (teamId) {
@@ -166,6 +166,7 @@ export async function upsertScoutReport(req: AuthRequest, res: Response) {
     where: { reportedById_eventId_playerName: { reportedById: req.userId!, eventId, playerName: playerName.trim() } },
     update: {
       deckColors,
+      archetypeName: archetypeName || null,
       teamId: teamId || null,
       updatedAt: new Date(),
     },
@@ -174,6 +175,7 @@ export async function upsertScoutReport(req: AuthRequest, res: Response) {
       eventId,
       playerName: playerName.trim(),
       deckColors,
+      archetypeName: archetypeName || null,
       reportedById: req.userId!,
     },
     include: {
@@ -200,11 +202,12 @@ export async function bulkUpsertScoutReports(req: AuthRequest, res: Response) {
   }
 
   const results = await Promise.all(
-    reports.map((r: { playerName: string; deckColors: string[] }) =>
+    reports.map((r: { playerName: string; deckColors: string[]; archetypeName?: string }) =>
       prisma.scoutReport.upsert({
         where: { reportedById_eventId_playerName: { reportedById: req.userId!, eventId, playerName: r.playerName.trim() } },
         update: {
           deckColors: r.deckColors as any,
+          archetypeName: r.archetypeName || null,
           teamId: teamId || null,
           updatedAt: new Date(),
         },
@@ -213,6 +216,7 @@ export async function bulkUpsertScoutReports(req: AuthRequest, res: Response) {
           eventId,
           playerName: r.playerName.trim(),
           deckColors: r.deckColors as any,
+          archetypeName: r.archetypeName || null,
           reportedById: req.userId!,
         },
         include: {

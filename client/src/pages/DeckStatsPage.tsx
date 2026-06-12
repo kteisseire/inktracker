@@ -48,6 +48,9 @@ export function DeckStatsPage() {
               {deck.name}
             </h1>
             <DeckBadges colors={deck.colors as any} />
+            {deck.archetypeName && (
+              <span className="text-sm text-ink-500">{deck.archetypeName}</span>
+            )}
           </div>
           {deck.link && (
             <a href={deck.link} target="_blank" rel="noopener noreferrer"

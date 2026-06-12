@@ -4,6 +4,7 @@ import { getSharedTournament, listTournaments } from '../api/tournaments.api.js'
 import { DeckBadges } from '../components/ui/InkBadge.js';
 import { RESULT_STYLES } from '../components/ui/ResultChip.js';
 import { useAuth } from '../context/AuthContext.js';
+import { Seo } from '../components/Seo.js';
 import type { Tournament, InkColor } from '@lorcana/shared';
 
 const FORMAT_LABELS: Record<string, string> = { BO1: 'Bo1', BO3: 'Bo3', BO5: 'Bo5' };
@@ -92,8 +93,16 @@ export function SharedTournamentPage() {
   // Is this the user's own tournament?
   const isOwnTournament = user && tournament.userId === user.id;
 
+  const recordSummary = `${wins}V ${losses}D${draws > 0 ? ` ${draws}N` : ''}`;
+
   return (
     <div className="space-y-5">
+      <Seo
+        title={tournament.name}
+        description={`Résultats de ${tournament.user.username} au tournoi "${tournament.name}" — ${recordSummary}.`}
+        path={`/t/${shareId}`}
+        type="article"
+      />
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 text-sm text-ink-500 mb-1">

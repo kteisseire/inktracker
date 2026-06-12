@@ -6,6 +6,7 @@ export const createScoutReportSchema = z.object({
   eventId: z.string().min(1),
   playerName: z.string().min(1),
   deckColors: z.array(inkColorEnum).min(1).max(3),
+  archetypeName: z.string().trim().max(60).optional(),
 });
 
 export const bulkScoutReportSchema = z.object({
@@ -14,6 +15,7 @@ export const bulkScoutReportSchema = z.object({
   reports: z.array(z.object({
     playerName: z.string().min(1),
     deckColors: z.array(inkColorEnum).min(1).max(3),
+    archetypeName: z.string().trim().max(60).optional(),
   })).min(1),
 });
 

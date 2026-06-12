@@ -87,6 +87,7 @@ export function TournamentDetailPage() {
           map.set(key, {
             id: '', teamId: '', eventId: '', playerName: r.opponentName,
             deckColors: r.opponentDeckColors as InkColor[],
+            archetypeName: null,
             reportedById: '', reportedBy: { id: '', username: 'moi' },
             createdAt: r.createdAt, updatedAt: r.updatedAt,
           });
@@ -804,6 +805,7 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
           eventId,
           playerName: r.opponentName,
           deckColors: r.opponentDeckColors as InkColor[],
+          archetypeName: null,
           reportedById: '',
           reportedBy: { id: '', username: username || 'moi' },
           createdAt: r.createdAt,
@@ -2201,6 +2203,7 @@ function RoundCard({ round, tournamentId, format, onDelete, scoutMap, possibleDe
   const displayScout: ScoutReport | undefined = scout ?? (hasLocalColors ? {
     id: '', teamId: '', eventId: '', playerName: round.opponentName || '',
     deckColors: round.opponentDeckColors as InkColor[],
+    archetypeName: null,
     reportedById: '', reportedBy: { id: '', username: 'moi' },
     createdAt: round.createdAt, updatedAt: round.updatedAt,
   } : undefined);
@@ -2277,6 +2280,7 @@ function GameBadge({ game }: { game: Game }) {
     <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs ${result.cls}`}>
       <span className="font-bold">G{game.gameNumber}</span>
       <span>{game.myScore}–{game.opponentScore}</span>
+      {/* going-first indicator */}
       {game.wentFirst !== null && <span className="text-[10px] opacity-70">{game.wentFirst ? '(1er)' : '(2nd)'}</span>}
     </div>
   );

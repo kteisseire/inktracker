@@ -32,6 +32,7 @@ const AUTH_NAV: NavItem[] = [
       { to: '/', label: 'Vue d\'ensemble', icon: 'home' },
       { to: '/decks', label: 'Mes decks', icon: 'cards' },
       { to: '/stats', label: 'Statistiques', icon: 'chart' },
+      { to: '/metagame', label: 'Métagame', icon: 'meta' },
     ],
   },
   {
@@ -78,6 +79,7 @@ function NavIcon({ name, className = 'w-4 h-4' }: { name: string; className?: st
     case 'help': return <svg {...props}><path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
     case 'chevron': return <svg {...props}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>;
     case 'admin': return <svg {...props}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>;
+    case 'meta': return <svg {...props}><path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h1A2.5 2.5 0 0114 10.5v0a2.5 2.5 0 002.5 2.5h.5a2.5 2.5 0 012.5 2.5v.5a2.5 2.5 0 01-1 2M12 21a9 9 0 100-18 9 9 0 000 18z" /></svg>;
     default: return null;
   }
 }

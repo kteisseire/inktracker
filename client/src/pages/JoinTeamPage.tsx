@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getTeamByInviteCode, joinTeamByCode } from '../api/team.api.js';
 import { useAuth } from '../context/AuthContext.js';
+import { Seo } from '../components/Seo.js';
 
 export function JoinTeamPage() {
   const { inviteCode } = useParams<{ inviteCode: string }>();
@@ -54,6 +55,11 @@ export function JoinTeamPage() {
 
   return (
     <div className="max-w-md mx-auto py-12 space-y-6">
+      <Seo
+        title={`Rejoindre ${team.name}`}
+        description={`Vous êtes invité à rejoindre l'équipe "${team.name}" sur GlimmerLog.`}
+        path={`/join/${inviteCode}`}
+      />
       <div className="ink-card p-6 space-y-5 text-center">
         {/* Team icon */}
         <div className="w-16 h-16 rounded-2xl bg-ink-800/80 border border-ink-700/50 flex items-center justify-center mx-auto">

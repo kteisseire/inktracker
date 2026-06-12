@@ -13,6 +13,7 @@ export interface Tournament {
   topCut: TopCut;
   format: Format;
   myDeckColors: InkColor[];
+  archetypeName: string | null;
   myDeckLink: string | null;
   deckId: string | null;
   eventLink: string | null;
@@ -33,6 +34,7 @@ export interface CreateTournamentRequest {
   topCut: TopCut;
   format: Format;
   myDeckColors: InkColor[];
+  archetypeName?: string;
   myDeckLink?: string;
   deckId?: string;
   eventLink?: string;

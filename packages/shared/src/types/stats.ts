@@ -20,6 +20,13 @@ export interface MatchupStat {
 
 export interface DeckPerformance {
   deckColors: InkColor[];
+  /**
+   * Optional named archetype for this deck (e.g. "Amber/Steel Aggro").
+   * When present, grouping is done by colors + archetypeName; when absent
+   * (legacy data), grouping falls back to colors alone. Optional for
+   * backward compatibility with clients built before this field existed.
+   */
+  archetypeName?: string | null;
   tournaments: number;
   wins: number;
   losses: number;
@@ -51,4 +58,41 @@ export interface DeckStats {
     totalRounds: number;
     winRate: number;
   }[];
+}
+
+/**
+ * One row of the community metagame overview: an opponent deck color
+ * combination (optionally with a named archetype, when enough scout report
+ * data is available), aggregated anonymously across all users' rounds.
+ */
+export interface MetagameEntry {
+  opponentDeckColors: InkColor[];
+  /**
+   * Most common named archetype reported (via ScoutReport) for this color
+   * combination in the selected date range, if any. Null when no archetype
+   * data is available — clients should fall back to displaying colors only.
+   */
+  archetypeName?: string | null;
+  /** Total rounds played against this combination across all users. */
+  total: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  /** Win rate (%) from the reporters' point of view, i.e. against this combination. */
+  winRate: number;
+  /** Share (%) of this combination among all rounds in the response (metagame presence). */
+  metaShare: number;
+}
+
+/**
+ * Anonymized, community-wide metagame snapshot. No userId, username, or any
+ * other identifying information is included. Combinations with fewer than
+ * `MIN_ROUNDS_THRESHOLD` (5) total rounds are excluded as noise.
+ */
+export interface MetagameOverview {
+  /** Total rounds considered (after filtering out low-sample combinations). */
+  totalRounds: number;
+  /** Minimum number of rounds required for a combination to be included. */
+  minRoundsThreshold: number;
+  entries: MetagameEntry[];
 }

@@ -6,6 +6,7 @@ export interface Deck {
   name: string;
   colors: InkColor[];
   link: string | null;
+  archetypeName: string | null;
   isDefault: boolean;
   createdAt: string;
   updatedAt: string;
@@ -15,6 +16,7 @@ export interface CreateDeckRequest {
   name: string;
   colors: InkColor[];
   link?: string;
+  archetypeName?: string;
   isDefault?: boolean;
 }
 

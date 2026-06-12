@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
@@ -15,6 +16,7 @@ import { NewTournamentPage } from './pages/NewTournamentPage.js';
 import { TournamentDetailPage } from './pages/TournamentDetailPage.js';
 import { NewMatchPage } from './pages/NewMatchPage.js';
 import { StatsPage } from './pages/StatsPage.js';
+import { MetagamePage } from './pages/MetagamePage.js';
 import { DecksPage } from './pages/DecksPage.js';
 import { DeckStatsPage } from './pages/DeckStatsPage.js';
 import { LoreCounterPage } from './pages/LoreCounterPage.js';
@@ -79,6 +81,7 @@ function AppRoutes() {
       <Route path="/decks" element={<ProtectedRoute><Layout><DecksPage /></Layout></ProtectedRoute>} />
       <Route path="/decks/:deckId/stats" element={<ProtectedRoute><Layout><DeckStatsPage /></Layout></ProtectedRoute>} />
       <Route path="/stats" element={<ProtectedRoute><Layout><StatsPage /></Layout></ProtectedRoute>} />
+      <Route path="/metagame" element={<ProtectedRoute><Layout><MetagamePage /></Layout></ProtectedRoute>} />
       <Route path="/teams" element={<ProtectedRoute><Layout><TeamsPage /></Layout></ProtectedRoute>} />
       <Route path="/teams/:id" element={<ProtectedRoute><Layout><TeamDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Layout><ProfilePage /></Layout></ProtectedRoute>} />
@@ -110,14 +113,16 @@ function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <PersistQueryClientProvider client={queryClient} persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}>
-      <BrowserRouter>
-        <AuthProvider>
-          <OfflineBanner />
-          <AppRoutes />
-          <InstallBanner />
-        </AuthProvider>
-      </BrowserRouter>
-    </PersistQueryClientProvider>
+    <HelmetProvider>
+      <PersistQueryClientProvider client={queryClient} persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}>
+        <BrowserRouter>
+          <AuthProvider>
+            <OfflineBanner />
+            <AppRoutes />
+            <InstallBanner />
+          </AuthProvider>
+        </BrowserRouter>
+      </PersistQueryClientProvider>
+    </HelmetProvider>
   );
 }

@@ -3,6 +3,11 @@ import crypto from 'crypto';
 import prisma from '../lib/prisma.js';
 import { AuthRequest } from '../middleware/auth.js';
 
+/** True when the membership grants team-management rights (owner or admin). */
+function isOwnerOrAdmin(membership: { role: string } | null): boolean {
+  return !!membership && (membership.role === 'OWNER' || membership.role === 'ADMIN');
+}
+
 // ─── List my teams ───
 export async function listMyTeams(req: AuthRequest, res: Response) {
   const memberships = await prisma.teamMember.findMany({
@@ -85,7 +90,7 @@ export async function updateTeam(req: AuthRequest, res: Response) {
   const membership = await prisma.teamMember.findUnique({
     where: { teamId_userId: { teamId: req.params.id, userId: req.userId! } },
   });
-  if (!membership || (membership.role !== 'OWNER' && membership.role !== 'ADMIN')) {
+  if (!isOwnerOrAdmin(membership)) {
     res.status(403).json({ error: 'Permission insuffisante' });
     return;
   }
@@ -119,7 +124,7 @@ export async function inviteMember(req: AuthRequest, res: Response) {
   const membership = await prisma.teamMember.findUnique({
     where: { teamId_userId: { teamId: req.params.id, userId: req.userId! } },
   });
-  if (!membership || (membership.role !== 'OWNER' && membership.role !== 'ADMIN')) {
+  if (!isOwnerOrAdmin(membership)) {
     res.status(403).json({ error: 'Permission insuffisante' });
     return;
   }
@@ -166,7 +171,7 @@ export async function cancelInvite(req: AuthRequest, res: Response) {
   const membership = await prisma.teamMember.findUnique({
     where: { teamId_userId: { teamId: req.params.id, userId: req.userId! } },
   });
-  if (!membership || (membership.role !== 'OWNER' && membership.role !== 'ADMIN')) {
+  if (!isOwnerOrAdmin(membership)) {
     res.status(403).json({ error: 'Permission insuffisante' });
     return;
   }
@@ -294,7 +299,7 @@ export async function generateInviteCode(req: AuthRequest, res: Response) {
   const membership = await prisma.teamMember.findUnique({
     where: { teamId_userId: { teamId: req.params.id, userId: req.userId! } },
   });
-  if (!membership || (membership.role !== 'OWNER' && membership.role !== 'ADMIN')) {
+  if (!isOwnerOrAdmin(membership)) {
     res.status(403).json({ error: 'Permission insuffisante' });
     return;
   }

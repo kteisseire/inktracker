@@ -1,7 +1,6 @@
 import type { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma.js';
 
-const prisma = new PrismaClient();
 const RPH_API = 'https://api.ravensburgerplay.com/api/v2';
 
 const rphFetch = (path: string) =>

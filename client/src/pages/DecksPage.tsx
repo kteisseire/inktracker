@@ -6,6 +6,7 @@ import { DeckBadges, HollowLozenge } from '../components/ui/InkBadge.js';
 import { InkColorPicker } from '../components/ui/InkColorPicker.js';
 import { HelpButton } from '../components/ui/HelpButton.js';
 import { SkeletonRows } from '../components/ui/Skeleton.js';
+import { ErrorAlert } from '../components/ui/ErrorAlert.js';
 import type { Deck, InkColor } from '@lorcana/shared';
 
 const SUPPORTED_SITES = ['dreamborn.ink', 'lorcanito.com', 'db.lorcanito.com', 'duels.ink', 'inkdecks.com'];
@@ -73,14 +74,7 @@ function DeckForm({ initial, onSubmit, onCancel, submitLabel }: {
 
   return (
     <form onSubmit={handleSubmit} className="ink-card p-4 sm:p-5 space-y-4">
-      {error && (
-        <div className="ink-error">
-          <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-          </svg>
-          <span>{error}</span>
-        </div>
-      )}
+      {error && <ErrorAlert message={error} />}
       <div>
         <label className="ink-label">Nom du deck *</label>
         <input type="text" required value={name} onChange={e => setName(e.target.value)}

@@ -2,6 +2,14 @@ import { Response } from 'express';
 import prisma from '../lib/prisma.js';
 import { AuthRequest } from '../middleware/auth.js';
 
+/** Clear the isDefault flag on all of a user's decks (before setting a new default). */
+async function unsetOtherDefaults(userId: string) {
+  await prisma.deck.updateMany({
+    where: { userId, isDefault: true },
+    data: { isDefault: false },
+  });
+}
+
 export async function listDecks(req: AuthRequest, res: Response) {
   const decks = await prisma.deck.findMany({
     where: { userId: req.userId },
@@ -26,10 +34,7 @@ export async function createDeck(req: AuthRequest, res: Response) {
 
   // If setting as default, unset other defaults first
   if (isDefault) {
-    await prisma.deck.updateMany({
-      where: { userId: req.userId!, isDefault: true },
-      data: { isDefault: false },
-    });
+    await unsetOtherDefaults(req.userId!);
   }
 
   const deck = await prisma.deck.create({
@@ -54,10 +59,7 @@ export async function updateDeck(req: AuthRequest, res: Response) {
   const { isDefault, ...data } = req.body;
 
   if (isDefault) {
-    await prisma.deck.updateMany({
-      where: { userId: req.userId!, isDefault: true },
-      data: { isDefault: false },
-    });
+    await unsetOtherDefaults(req.userId!);
   }
 
   const deck = await prisma.deck.update({
@@ -89,10 +91,7 @@ export async function setDefaultDeck(req: AuthRequest, res: Response) {
     return;
   }
 
-  await prisma.deck.updateMany({
-    where: { userId: req.userId!, isDefault: true },
-    data: { isDefault: false },
-  });
+  await unsetOtherDefaults(req.userId!);
   const deck = await prisma.deck.update({
     where: { id: req.params.id },
     data: { isDefault: true },

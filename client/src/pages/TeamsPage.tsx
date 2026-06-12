@@ -6,6 +6,7 @@ import { HelpButton } from '../components/ui/HelpButton.js';
 import { RoleBadge } from '../components/ui/RoleBadge.js';
 import { HollowLozenge } from '../components/ui/InkBadge.js';
 import { SkeletonRows } from '../components/ui/Skeleton.js';
+import { ErrorAlert } from '../components/ui/ErrorAlert.js';
 import { ProfileSubNav } from '../components/layout/ProfileSubNav.js';
 import type { TeamInvite } from '@lorcana/shared';
 
@@ -172,14 +173,7 @@ function CreateTeamForm({ onCreated, onCancel }: { onCreated: () => void; onCanc
     <form onSubmit={handleSubmit} className="ink-card p-4 sm:p-5 space-y-4">
       <h2 className="rubric-label">Nouvelle équipe</h2>
 
-      {error && (
-        <div className="ink-error">
-          <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-          </svg>
-          <span>{error}</span>
-        </div>
-      )}
+      {error && <ErrorAlert message={error} />}
 
       <div>
         <label className="ink-label">Nom *</label>

@@ -1,6 +1,6 @@
 import { z } from 'zod';
+import { inkColorEnum } from './shared.js';
 
-const inkColorEnum = z.enum(['AMBER', 'AMETHYST', 'EMERALD', 'RUBY', 'SAPPHIRE', 'STEEL']);
 const resultEnum = z.enum(['WIN', 'LOSS', 'DRAW']);
 
 const gameInputSchema = z.object({

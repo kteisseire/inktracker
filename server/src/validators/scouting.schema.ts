@@ -1,6 +1,5 @@
 import { z } from 'zod';
-
-const inkColorEnum = z.enum(['AMBER', 'AMETHYST', 'EMERALD', 'RUBY', 'SAPPHIRE', 'STEEL']);
+import { inkColorEnum } from './shared.js';
 
 export const createScoutReportSchema = z.object({
   teamId: z.string().uuid().optional().nullable(),

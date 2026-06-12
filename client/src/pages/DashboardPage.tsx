@@ -7,6 +7,7 @@ import { LogoIcon } from '../components/ui/Logo.js';
 import { HelpButton } from '../components/ui/HelpButton.js';
 import { SkeletonStatPanel, SkeletonRows } from '../components/ui/Skeleton.js';
 import { Reveal, FolioHero, CountUpPercent, DropCap } from '../components/ui/folio.js';
+import { StatCell } from '../components/ui/StatCell.js';
 import type { OverviewStats } from '@lorcana/shared';
 
 export function DashboardPage() {
@@ -47,9 +48,9 @@ export function DashboardPage() {
             </FolioHero>
           </Reveal>
           <Reveal i={2} as="div" className="ink-card sm:col-span-2 grid grid-cols-3 divide-x divide-rule">
-            <Figure label="Tournois" value={stats.totalTournaments} />
-            <Figure label="Rondes" value={stats.totalRounds} />
-            <Figure label="V / D / N" value={`${stats.wins}/${stats.losses}/${stats.draws}`} />
+            <StatCell label="Tournois" value={stats.totalTournaments} />
+            <StatCell label="Rondes" value={stats.totalRounds} />
+            <StatCell label="V / D / N" value={`${stats.wins}/${stats.losses}/${stats.draws}`} />
           </Reveal>
         </div>
       ) : null}
@@ -126,15 +127,6 @@ export function DashboardPage() {
           )}
         </section>
       )}
-    </div>
-  );
-}
-
-function Figure({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="px-3 py-4 sm:px-4 text-center">
-      <p className="text-[0.7rem] uppercase tracking-[0.12em] text-ink-500">{label}</p>
-      <p className="ink-num text-xl sm:text-2xl text-ink-100 mt-1.5">{value}</p>
     </div>
   );
 }

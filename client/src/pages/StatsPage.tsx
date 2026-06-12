@@ -6,6 +6,7 @@ import { DateFilterBar, useDateFilter } from '../components/ui/DateFilterBar.js'
 import { HelpButton } from '../components/ui/HelpButton.js';
 import { SkeletonStatPanel, SkeletonRows } from '../components/ui/Skeleton.js';
 import { Reveal, FolioHero, CountUpPercent, GildedDivider } from '../components/ui/folio.js';
+import { StatCell } from '../components/ui/StatCell.js';
 import type { OverviewStats, MatchupStat, DeckPerformance, GoingFirstStats } from '@lorcana/shared';
 
 export function StatsPage() {
@@ -63,9 +64,9 @@ export function StatsPage() {
                 <CountUpPercent value={overview.overallWinRate} animate={false} />
               </FolioHero>
               <div className="ink-card sm:col-span-2 grid grid-cols-3 divide-x divide-rule">
-                <Figure label="Tournois" value={overview.totalTournaments} />
-                <Figure label="Rondes" value={overview.totalRounds} />
-                <Figure label="V / D / N" value={`${overview.wins}/${overview.losses}/${overview.draws}`} />
+                <StatCell label="Tournois" value={overview.totalTournaments} />
+                <StatCell label="Rondes" value={overview.totalRounds} />
+                <StatCell label="V / D / N" value={`${overview.wins}/${overview.losses}/${overview.draws}`} />
               </div>
             </div>
           )}
@@ -200,15 +201,6 @@ export function StatsPage() {
           )}
         </Reveal>
       )}
-    </div>
-  );
-}
-
-function Figure({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="px-3 py-4 sm:px-4 text-center">
-      <p className="text-[0.7rem] uppercase tracking-[0.12em] text-ink-500">{label}</p>
-      <p className="ink-num text-xl sm:text-2xl text-ink-100 mt-1.5">{value}</p>
     </div>
   );
 }

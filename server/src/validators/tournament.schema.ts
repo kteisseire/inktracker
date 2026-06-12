@@ -1,6 +1,5 @@
 import { z } from 'zod';
-
-const inkColorEnum = z.enum(['AMBER', 'AMETHYST', 'EMERALD', 'RUBY', 'SAPPHIRE', 'STEEL']);
+import { inkColorEnum } from './shared.js';
 
 export const createTournamentSchema = z.object({
   name: z.string().min(1, 'Nom requis').max(200),

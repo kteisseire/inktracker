@@ -2,14 +2,14 @@
 
 ## Overview
 GlimmerLog (formerly InkTracker) is a Disney Lorcana TCG tournament tracking app.
-Full-stack TypeScript monorepo: React + Vite frontend, Express + Prisma backend, PostgreSQL (Neon).
+Full-stack TypeScript monorepo: React + Vite frontend, Express + Prisma backend, PostgreSQL (local).
 
 ## Tech Stack
-- **Frontend**: React 18, TypeScript, Vite 5, Tailwind CSS 3, React Router 6, TanStack Query 5
+- **Frontend**: React 18, TypeScript, Vite 5, Tailwind CSS 3, React Router 6, TanStack Query 5, react-helmet-async (SEO)
 - **Backend**: Express 4, TypeScript, Prisma 5, PostgreSQL
 - **Shared**: TypeScript types + constants package (`packages/shared`)
 - **Auth**: JWT + Google OAuth + Discord OAuth
-- **Hosting**: Vercel (client), Railway (server), Neon (database)
+- **Hosting**: Self-hosted on local Windows PC — Caddy (static client + reverse proxy), Node API as NSSM Windows service (GlimmerLogAPI), local PostgreSQL 17, Cloudflare Tunnel (HTTPS). See DEPLOY-WINDOWS-SELFHOST.md and docs/deploy-runbook.md. Deploy: `deploy\deploy.ps1` (admin PowerShell). NOT on Vercel/Railway/Neon anymore.
 - **PWA**: vite-plugin-pwa, Workbox (NetworkFirst for API, CacheFirst for fonts), React Query persistence to localStorage
 
 ## Monorepo Structure
@@ -54,6 +54,8 @@ controllers/
   admin.controller.ts              # Admin: list users, usage stats
   suggestion.controller.ts         # User suggestions CRUD
   ravensburger.controller.ts       # Ravensburger Play Hub API proxy (events, rounds, standings)
+  matchup-note.controller.ts       # MatchupNote CRUD (list, upsert by color combo, update by id, delete)
+  metagame.controller.ts           # Community metagame overview (all-users aggregation, anonymized)
 routes/
   index.ts                         # Main router: all routes under /api/v1
 middleware/
@@ -81,6 +83,8 @@ api/
   team.api.ts                      # Team API calls
   scouting.api.ts                  # Scout report API calls
   ravensburger.api.ts              # Ravensburger event data API calls
+  matchupNotes.api.ts              # Matchup notes CRUD API calls
+  metagame.api.ts                  # Metagame overview API call
 pages/
   DashboardPage.tsx                # Home: stats overview + recent tournaments
   TournamentsPage.tsx              # Tournament list (useQuery, offline-capable)
@@ -100,6 +104,7 @@ pages/
   HelpPage.tsx                     # Help documentation
   LoreCounterPage.tsx              # Lore counter tool
   TopCutCalculatorPage.tsx         # Top cut calculator tool
+  MetagamePage.tsx                 # Community metagame snapshot (aggregated, anonymized)
 components/
   layout/Header.tsx                # Navigation + auth status (GlimmerLog branding)
   layout/ProtectedRoute.tsx        # Auth-required route wrapper
@@ -114,6 +119,8 @@ components/
   GoogleSignInButton.tsx           # Google OAuth (renderButton, not prompt)
   DiscordSignInButton.tsx          # Discord OAuth
   LoreCounter.tsx                  # Lore damage counter overlay
+  RoundTimer.tsx                   # Countdown timer for tournament rounds (50 min default, configurable presets)
+  Seo.tsx                          # Centralized SEO tags via react-helmet-async (title, og, twitter, JSON-LD)
 context/AuthContext.tsx             # Auth state: user, token, login/logout/register
 hooks/
   useInstallPrompt.ts              # PWA beforeinstallprompt handler
@@ -156,22 +163,28 @@ types/
 /ravensburger   GET /events/:eventId, GET /events/:eventId/rounds
 /admin          GET /users, GET /stats
 /suggestions    GET list, POST create, DELETE /:id
+/matchup-notes  GET list (auth), POST create/upsert (auth), PUT /:id (auth), DELETE /:id (auth)
+                All routes require authentication. POST upserts by (userId, colorKey) — idempotent.
+/metagame       GET /overview?from=&to= (auth) — anonymized community aggregate; no user data exposed
 ```
 
 ## Database Models (Prisma)
 ```
-User             → tournaments, decks, teamMembers, scoutReports, suggestions
-Tournament       → rounds[], deck?, user
+User             → tournaments, decks, teamMembers, scoutReports, suggestions, matchupNotes
+Tournament       → rounds[], deck?, user (fields: archetypeName String? for deck archetype label)
 Round            → games[], tournament (fields: photoUrl for camera photos)
 Game             → round
-Deck             → user, tournaments[]
+Deck             → user, tournaments[] (fields: archetypeName String?)
 Team             → members[], invites[], scoutReports[], potentialDecks[]
 TeamMember       → team, user (roles: OWNER, ADMIN, MEMBER)
 TeamInvite       → team, user (status: PENDING, ACCEPTED, DECLINED)
-ScoutReport      → team?, reportedBy (unique per reporter+event+player)
+ScoutReport      → team?, reportedBy (unique per reporter+event+player; fields: archetypeName String?)
 PotentialDeck    → team?, reportedBy
 EventCache       → cached Ravensburger API responses
 Suggestion       → user?
+MatchupNote      → user (fields: opponentColors InkColor[], colorKey String, content String)
+                   Unique constraint: (userId, colorKey) — colorKey is sorted comma-joined colors
+                   e.g. "AMBER,STEEL". Upsert is the canonical write path (POST /matchup-notes).
 ```
 
 ## Enums
@@ -220,31 +233,71 @@ TeamRole: OWNER, ADMIN, MEMBER
 
 ## Environment Variables
 
-### Server (Railway)
+### Server — production (self-hosted Windows)
+Production env vars live in the NSSM service config (`AppEnvironmentExtra`), NOT in `server/.env`.
+To read them: `nssm get GlimmerLogAPI AppEnvironmentExtra` (admin PowerShell).
+
 ```
-DATABASE_URL          # Neon PostgreSQL connection string
-JWT_SECRET            # Min 32 chars
+DATABASE_URL          # postgresql://glimmer:***@localhost:5432/glimmerlog  (prod DB — glimmerlog, user glimmer)
+JWT_SECRET            # Min 32 chars (stored in NSSM)
 CLIENT_URL            # https://glimmerlog.com
 GOOGLE_CLIENT_ID      # Google OAuth
 DISCORD_CLIENT_ID     # Discord OAuth
-DISCORD_CLIENT_SECRET # Discord OAuth
+DISCORD_CLIENT_SECRET # Discord OAuth (stored in NSSM — never commit)
 DISCORD_REDIRECT_URI  # Discord callback URL
-RESEND_API_KEY        # Email sending
+RESEND_API_KEY        # Email sending (stored in NSSM — never commit)
 ADMIN_EMAILS          # Comma-separated admin email list
+PORT                  # 3001
+NODE_ENV              # production
 ```
 
-### Client (Vercel)
+> WARNING: `server/.env` is STALE (dates from March 2026, points to the old dev DB
+> `lorcana_tracker` with user `postgres`). Never use it for Prisma CLI ops in prod —
+> always set `DATABASE_URL` from NSSM first (deploy.ps1 does this automatically).
+
+### Client — production build
+Set as env vars before running `npm run build --workspace=client`:
 ```
-VITE_API_URL          # https://lorcana-server-production.up.railway.app/api/v1
-VITE_GOOGLE_CLIENT_ID # Google OAuth client ID
-VITE_DISCORD_CLIENT_ID # Discord OAuth client ID
+VITE_API_URL           # /api/v1  (same-origin via Caddy — no full URL needed)
+VITE_GOOGLE_CLIENT_ID  # 579520504030-1hltphn01kd65ft4keugfp102sgjns16.apps.googleusercontent.com
+VITE_DISCORD_CLIENT_ID # 1483223327827824833
 ```
+These values are hardcoded in `deploy/deploy.ps1` and `deploy/deploy-run-20260613.ps1`.
 
 ## Deployment
-- **Vercel** (client): auto-deploy on push, `vercel.json` for headers/rewrites
-- **Railway** (server): Build Command `npm run build:server`, Start Command `npm run start --workspace=server`, Watch Paths `/server/**`
-- `prisma db push` runs during build (in `build:server` script)
-- `.well-known/assetlinks.json` for Android TWA (Digital Asset Links)
+
+Production is **self-hosted on a local Windows PC** (not Vercel/Railway/Neon).
+See `docs/deploy-runbook.md` for the full step-by-step runbook.
+
+Architecture summary:
+- **GlimmerLogAPI** — NSSM Windows service running `node server\dist\index.js`, AppDirectory = repo `\server`
+- **GlimmerLogCaddy** — NSSM Windows service running `caddy run --config deploy\Caddyfile.localtest`
+  (Caddy listens on HTTP :8080; a Cloudflare Tunnel handles public HTTPS for glimmerlog.com)
+- **PostgreSQL 17** — local Windows service, database `glimmerlog`, user `glimmer`
+- Deploy script: `deploy\deploy.ps1` (run in admin PowerShell)
+
+> Note: `deploy/Caddyfile` is an OBSOLETE TEMPLATE with a hardcoded path `C:/glimmerlog/...`
+> that does not exist on this machine. The actual production config is `deploy/Caddyfile.localtest`.
+
+## Operational Gotchas
+
+See `docs/deploy-runbook.md` for full details. Key traps:
+
+1. **Stale `server/.env`**: The file points to the old dev DB (`lorcana_tracker`, user `postgres`).
+   Prisma CLI reads `server/.env` unless `DATABASE_URL` is defined in the shell environment.
+   `deploy.ps1` injects `DATABASE_URL` from NSSM before any Prisma step — do not skip this.
+
+2. **EPERM on `prisma generate` (Windows DLL lock)**: If `GlimmerLogAPI` is running when
+   `prisma generate` executes, it holds a file lock on `query_engine-windows.dll.node` in
+   `node_modules`. The build fails with an EPERM rename error. Always stop the service before
+   building, restart it in a `finally` block. `deploy.ps1` implements this pattern.
+
+3. **`prisma db push --accept-data-loss` in `build:server`**: The root `package.json`
+   `build:server` script runs `prisma db push --accept-data-loss` on every build. This is
+   dangerous — any destructive schema change would be applied silently in production without
+   confirmation. Additionally, migration history is incoherent (single init migration from
+   March 2026, DB evolved via db push since). `migrate deploy` is effectively a no-op.
+   Long-term: create a baseline migration and stop using db push in production.
 
 ## Coding Conventions
 - Language: French for UI strings, English for code/comments

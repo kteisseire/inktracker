@@ -1,0 +1,42 @@
+# Caddyfile — auto-hébergement Windows de GlimmerLog.
+# Caddy sert le SPA (client/dist) ET fait reverse-proxy vers l'API Express.
+# Même origine => pas de CORS, et HTTPS automatique (Let's Encrypt).
+#
+# Place ce fichier où tu veux (ex. C:\glimmerlog\Caddyfile) et lance Caddy avec.
+# ADAPTE les deux chemins absolus ci-dessous (root + le dossier dist).
+
+glimmerlog.com, www.glimmerlog.com {
+
+	# --- API : tout /api/* part vers le serveur Express local ---
+	handle /api/* {
+		reverse_proxy 127.0.0.1:3001
+	}
+
+	# --- Health check (optionnel, pratique pour tester) ---
+	handle /health {
+		reverse_proxy 127.0.0.1:3001
+	}
+
+	# --- Front : SPA React servi en statique ---
+	handle {
+		root * C:/glimmerlog/lorcana-app/client/dist
+		encode gzip
+		# Fallback SPA : toute route inconnue renvoie index.html (React Router)
+		try_files {path} /index.html
+		file_server
+	}
+
+	# Autorise les gros uploads photo (le serveur limite déjà à 5 Mo)
+	request_body {
+		max_size 6MB
+	}
+
+	# --- HTTPS ---
+	# Par défaut Caddy obtient le certificat via HTTP-01 (port 80 requis).
+	# Si Orange bloque le port 80 entrant, décommente le bloc DNS-01 plus bas
+	# (et lance la version de Caddy buildée avec le module Cloudflare).
+	#
+	# tls {
+	#	dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+	# }
+}

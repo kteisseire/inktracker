@@ -1,0 +1,37 @@
+# Caddyfile de PROD (auto-hebergement Windows derriere Cloudflare Tunnel).
+# Caddy ecoute en HTTP local sur :8080 ; le tunnel cloudflared pousse le
+# trafic public HTTPS de glimmerlog.com vers ici. Le HTTPS est gere par Cloudflare.
+# (Nom de fichier conserve pour ne pas reconfigurer le service Windows.)
+#
+# Gestion du cache PWA derriere Cloudflare :
+#   - index.html + service worker  -> no-cache (les deploiements sont vus immediatement)
+#   - /assets/* (fichiers hashes)  -> cache long immutable (le hash change a chaque build)
+
+:8080 {
+	# --- API ---
+	handle /api/* {
+		reverse_proxy 127.0.0.1:3001
+	}
+	handle /health {
+		reverse_proxy 127.0.0.1:3001
+	}
+
+	# --- Front (SPA) ---
+	handle {
+		root * "C:/Users/kevin/Documents/lorcana app/client/dist"
+		encode gzip
+
+		# Assets hashes : cache agressif (nom unique par build)
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+
+		# index.html et service worker : jamais cacher (sinon les MAJ ne passent pas)
+		@nocache {
+			path / /index.html /sw.js /registerSW.js /manifest.webmanifest
+		}
+		header @nocache Cache-Control "no-cache, no-store, must-revalidate"
+
+		try_files {path} /index.html
+		file_server
+	}
+}

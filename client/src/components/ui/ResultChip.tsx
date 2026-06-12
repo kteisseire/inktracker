@@ -11,6 +11,14 @@ export function resultColor(r: MatchResult): { text: string; bg: string } {
 
 const LETTER: Record<MatchResult, string> = { WIN: 'V', LOSS: 'D', DRAW: 'N' };
 
+/* Shared result-badge styles (label + classes), on the Lorcana tokens. One source of truth
+   for the per-round/per-game V/D/N chips across tournament views. */
+export const RESULT_STYLES: Record<string, { label: string; cls: string }> = {
+  WIN: { label: 'V', cls: 'bg-lorcana-emerald/12 text-lorcana-emerald' },
+  LOSS: { label: 'D', cls: 'bg-lorcana-ruby/12 text-lorcana-ruby' },
+  DRAW: { label: 'N', cls: 'bg-ink-700/40 text-ink-300' },
+};
+
 /* Fixed-width mono verdict glyph — a round of games reads like a match-history strip. */
 export function ResultChip({ result }: { result: MatchResult }) {
   const c = resultColor(result);

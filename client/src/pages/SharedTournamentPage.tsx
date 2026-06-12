@@ -2,15 +2,11 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getSharedTournament, listTournaments } from '../api/tournaments.api.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
+import { RESULT_STYLES } from '../components/ui/ResultChip.js';
 import { useAuth } from '../context/AuthContext.js';
 import type { Tournament, InkColor } from '@lorcana/shared';
 
 const FORMAT_LABELS: Record<string, string> = { BO1: 'Bo1', BO3: 'Bo3', BO5: 'Bo5' };
-const RESULT_STYLES: Record<string, { label: string; cls: string }> = {
-  WIN: { label: 'V', cls: 'bg-green-500/15 text-green-400' },
-  LOSS: { label: 'D', cls: 'bg-red-500/15 text-red-400' },
-  DRAW: { label: 'N', cls: 'bg-ink-700/50 text-ink-400' },
-};
 
 export function SharedTournamentPage() {
   const { shareId } = useParams<{ shareId: string }>();
@@ -124,9 +120,9 @@ export function SharedTournamentPage() {
         <div className="ink-card p-3 text-center">
           <p className="text-xs text-ink-500 mb-1">Bilan</p>
           <p className="text-sm font-medium">
-            <span className="text-green-400">{wins}V</span>{' '}
-            <span className="text-red-400">{losses}D</span>
-            {draws > 0 && <>{' '}<span className="text-ink-400">{draws}N</span></>}
+            <span className="text-lorcana-emerald">{wins}V</span>{' '}
+            <span className="text-lorcana-ruby">{losses}D</span>
+            {draws > 0 && <>{' '}<span className="text-ink-300">{draws}N</span></>}
           </p>
         </div>
         <div className="ink-card p-3 text-center">

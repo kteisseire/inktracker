@@ -14,17 +14,13 @@ import { listMyTeams } from '../api/team.api.js';
 import { INK_COLORS, getRecommendedSwissRounds, getRecommendedTopCut } from '@lorcana/shared';
 import type { Tournament, Round, Game, MatchResult, ScoutReport, InkColor, Team, PotentialDeck } from '@lorcana/shared';
 import { HelpButton } from '../components/ui/HelpButton.js';
+import { RecordLine, RESULT_STYLES } from '../components/ui/ResultChip.js';
 import { exportTournamentImage } from '../lib/exportTournamentImage.js';
 import { getQrCodeUrl } from '../lib/qrcode.js';
 
 const FORMAT_LABELS: Record<string, string> = { BO1: 'Bo1', BO3: 'Bo3', BO5: 'Bo5' };
 const TOPCUT_LABELS: Record<string, string> = { NONE: 'Aucun', TOP4: 'Top 4', TOP8: 'Top 8', TOP16: 'Top 16', TOP32: 'Top 32' };
 const TOPCUT_VALUES: Record<string, number> = { TOP4: 4, TOP8: 8, TOP16: 16, TOP32: 32 };
-const RESULT_STYLES: Record<string, { label: string; cls: string }> = {
-  WIN: { label: 'V', cls: 'bg-green-500/15 text-green-400' },
-  LOSS: { label: 'D', cls: 'bg-red-500/15 text-red-400' },
-  DRAW: { label: 'N', cls: 'bg-ink-700/50 text-ink-400' },
-};
 
 function binomial(n: number, k: number): number {
   if (k < 0 || k > n) return 0;
@@ -297,12 +293,7 @@ export function TournamentDetailPage() {
           {/* Bilan */}
           <div className="flex flex-col items-center justify-center py-3 px-2 gap-0.5">
             <span className="text-xs text-ink-600 uppercase tracking-wider">Bilan</span>
-            <span className="text-sm font-semibold">
-              <span className="text-green-400">{wins}</span>
-              <span className="text-ink-600 mx-0.5">-</span>
-              <span className="text-red-400">{losses}</span>
-              {draws > 0 && <><span className="text-ink-600 mx-0.5">-</span><span className="text-ink-400">{draws}</span></>}
-            </span>
+            <RecordLine wins={wins} losses={losses} draws={draws} />
           </div>
 
           {/* Format */}

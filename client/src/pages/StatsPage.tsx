@@ -7,6 +7,7 @@ import { HelpButton } from '../components/ui/HelpButton.js';
 import { SkeletonStatPanel, SkeletonRows } from '../components/ui/Skeleton.js';
 import { Reveal, FolioHero, CountUpPercent, GildedDivider } from '../components/ui/folio.js';
 import { StatCell } from '../components/ui/StatCell.js';
+import { WinRateBar } from '../components/ui/WinRateBar.js';
 import type { OverviewStats, MatchupStat, DeckPerformance, GoingFirstStats } from '@lorcana/shared';
 
 export function StatsPage() {
@@ -246,14 +247,3 @@ function CardList<T>({ items, keyOf, colorsOf, metaOf, render }: {
   );
 }
 
-function WinRateBar({ rate }: { rate: number }) {
-  const color = rate >= 60 ? 'bg-lorcana-emerald' : rate >= 45 ? 'bg-gold-400' : 'bg-lorcana-ruby';
-  return (
-    <div className="flex items-center gap-1.5 sm:gap-2">
-      <div className="w-12 sm:w-16 h-2 bg-ink-800 border border-rule rounded-full overflow-hidden">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${rate}%` }} />
-      </div>
-      <span className="ink-num text-xs text-ink-300">{rate}%</span>
-    </div>
-  );
-}

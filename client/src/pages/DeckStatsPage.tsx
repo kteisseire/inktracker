@@ -2,6 +2,8 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getDeckStatsById } from '../api/stats.api.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
+import { RecordLine } from '../components/ui/ResultChip.js';
+import { WinRateBar } from '../components/ui/WinRateBar.js';
 import { DateFilterBar, useDateFilter } from '../components/ui/DateFilterBar.js';
 import type { Deck, OverviewStats, MatchupStat, GoingFirstStats } from '@lorcana/shared';
 
@@ -112,11 +114,7 @@ export function DeckStatsPage() {
                       <tr key={m.opponentDeckColors.join('-')}>
                         <td className="px-4 py-3"><DeckBadges colors={m.opponentDeckColors as any} /></td>
                         <td className="text-center px-4 py-3 text-ink-300">{m.total}</td>
-                        <td className="text-center px-4 py-3">
-                          <span className="text-green-400">{m.wins}</span><span className="text-ink-600"> / </span>
-                          <span className="text-red-400">{m.losses}</span>
-                          {m.draws > 0 && <><span className="text-ink-600"> / </span><span className="text-ink-400">{m.draws}</span></>}
-                        </td>
+                        <td className="text-center px-4 py-3"><RecordLine wins={m.wins} losses={m.losses} draws={m.draws} /></td>
                         <td className="text-center px-4 py-3"><WinRateBar rate={m.winRate} /></td>
                       </tr>
                     ))}
@@ -131,12 +129,7 @@ export function DeckStatsPage() {
                       <span className="text-xs text-ink-500">{m.total} parties</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm">
-                        <span className="text-green-400">{m.wins}</span>
-                        <span className="text-ink-600">/</span>
-                        <span className="text-red-400">{m.losses}</span>
-                        {m.draws > 0 && <><span className="text-ink-600">/</span><span className="text-ink-400">{m.draws}</span></>}
-                      </span>
+                      <RecordLine wins={m.wins} losses={m.losses} draws={m.draws} />
                       <WinRateBar rate={m.winRate} />
                     </div>
                   </div>
@@ -166,11 +159,7 @@ export function DeckStatsPage() {
                           <Link to={`/tournaments/${h.id}`} className="font-medium text-ink-100 hover:text-gold-400 transition-colors">{h.name}</Link>
                           <div className="text-xs text-ink-500">{new Date(h.date).toLocaleDateString('fr-FR')}</div>
                         </td>
-                        <td className="text-center px-4 py-3">
-                          <span className="text-green-400">{h.wins}</span><span className="text-ink-600"> / </span>
-                          <span className="text-red-400">{h.losses}</span>
-                          {h.draws > 0 && <><span className="text-ink-600"> / </span><span className="text-ink-400">{h.draws}</span></>}
-                        </td>
+                        <td className="text-center px-4 py-3"><RecordLine wins={h.wins} losses={h.losses} draws={h.draws} /></td>
                         <td className="text-center px-4 py-3"><WinRateBar rate={h.winRate} /></td>
                         <td className="text-center px-4 py-3 font-medium text-gold-400">
                           {h.placement ? `#${h.placement}` : '—'}
@@ -191,11 +180,7 @@ export function DeckStatsPage() {
                       {h.placement && <span className="text-sm font-medium text-gold-400 shrink-0">#{h.placement}</span>}
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm">
-                        <span className="text-green-400">{h.wins}</span>
-                        <span className="text-ink-600">/</span>
-                        <span className="text-red-400">{h.losses}</span>
-                      </span>
+                      <RecordLine wins={h.wins} losses={h.losses} draws={h.draws} />
                       <WinRateBar rate={h.winRate} />
                     </div>
                   </div>
@@ -229,14 +214,3 @@ function StatCard({ label, value, highlight }: { label: string; value: string | 
   );
 }
 
-function WinRateBar({ rate }: { rate: number }) {
-  const color = rate >= 60 ? 'bg-green-500' : rate >= 45 ? 'bg-gold-400' : 'bg-red-400';
-  return (
-    <div className="flex items-center gap-1.5 sm:gap-2">
-      <div className="w-12 sm:w-16 h-2 bg-ink-800 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${rate}%` }} />
-      </div>
-      <span className="text-xs font-medium text-ink-300">{rate}%</span>
-    </div>
-  );
-}

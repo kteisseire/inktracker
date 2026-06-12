@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import prisma from '../lib/prisma.js';
 import { AuthRequest } from '../middleware/auth.js';
+import { calculateWinRate } from '../lib/stats.js';
 
 function dateFilter(req: AuthRequest) {
   const from = req.query.from as string | undefined;
@@ -34,7 +35,7 @@ export async function getOverview(req: AuthRequest, res: Response) {
   res.json({
     totalTournaments,
     totalRounds: total,
-    overallWinRate: total > 0 ? Math.round((wins / total) * 1000) / 10 : 0,
+    overallWinRate: calculateWinRate(wins, total),
     wins,
     losses,
     draws,
@@ -65,7 +66,7 @@ export async function getMatchups(req: AuthRequest, res: Response) {
       opponentDeckColors: key.split('/'),
       ...stats,
       total,
-      winRate: total > 0 ? Math.round((stats.wins / total) * 1000) / 10 : 0,
+      winRate: calculateWinRate(stats.wins, total),
     };
   });
 
@@ -102,7 +103,7 @@ export async function getDeckPerformance(req: AuthRequest, res: Response) {
       deckColors: key.split('/'),
       ...stats,
       total,
-      winRate: total > 0 ? Math.round((stats.wins / total) * 1000) / 10 : 0,
+      winRate: calculateWinRate(stats.wins, total),
     };
   });
 
@@ -126,8 +127,8 @@ export async function getGoingFirstStats(req: AuthRequest, res: Response) {
   const secondWins = second.filter(g => g.result === 'WIN').length;
 
   res.json({
-    firstWinRate: first.length > 0 ? Math.round((firstWins / first.length) * 1000) / 10 : 0,
-    secondWinRate: second.length > 0 ? Math.round((secondWins / second.length) * 1000) / 10 : 0,
+    firstWinRate: calculateWinRate(firstWins, first.length),
+    secondWinRate: calculateWinRate(secondWins, second.length),
     firstTotal: first.length,
     secondTotal: second.length,
   });
@@ -177,7 +178,7 @@ export async function getDeckStats(req: AuthRequest, res: Response) {
   const overview = {
     totalTournaments: tournaments.length,
     totalRounds,
-    overallWinRate: totalRounds > 0 ? Math.round((wins / totalRounds) * 1000) / 10 : 0,
+    overallWinRate: calculateWinRate(wins, totalRounds),
     wins,
     losses,
     draws,
@@ -195,7 +196,7 @@ export async function getDeckStats(req: AuthRequest, res: Response) {
   }
   const matchups = Array.from(matchupMap.entries()).map(([key, stats]) => {
     const total = stats.wins + stats.losses + stats.draws;
-    return { opponentDeckColors: key.split('/'), ...stats, total, winRate: total > 0 ? Math.round((stats.wins / total) * 1000) / 10 : 0 };
+    return { opponentDeckColors: key.split('/'), ...stats, total, winRate: calculateWinRate(stats.wins, total) };
   });
 
   // Going first
@@ -205,8 +206,8 @@ export async function getDeckStats(req: AuthRequest, res: Response) {
   const firstWins = first.filter(g => g.result === 'WIN').length;
   const secondWins = second.filter(g => g.result === 'WIN').length;
   const goingFirst = {
-    firstWinRate: first.length > 0 ? Math.round((firstWins / first.length) * 1000) / 10 : 0,
-    secondWinRate: second.length > 0 ? Math.round((secondWins / second.length) * 1000) / 10 : 0,
+    firstWinRate: calculateWinRate(firstWins, first.length),
+    secondWinRate: calculateWinRate(secondWins, second.length),
     firstTotal: first.length,
     secondTotal: second.length,
   };
@@ -222,7 +223,7 @@ export async function getDeckStats(req: AuthRequest, res: Response) {
       losses: t.rounds.filter(r => r.result === 'LOSS').length,
       draws: t.rounds.filter(r => r.result === 'DRAW').length,
       totalRounds: total,
-      winRate: total > 0 ? Math.round((w / total) * 1000) / 10 : 0,
+      winRate: calculateWinRate(w, total),
     };
   });
 
@@ -259,7 +260,7 @@ export async function getTournamentHistory(req: AuthRequest, res: Response) {
       losses: t.rounds.filter(r => r.result === 'LOSS').length,
       draws: t.rounds.filter(r => r.result === 'DRAW').length,
       totalRounds: total,
-      winRate: total > 0 ? Math.round((wins / total) * 1000) / 10 : 0,
+      winRate: calculateWinRate(wins, total),
     };
   });
 

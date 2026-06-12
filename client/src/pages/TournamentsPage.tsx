@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createPortal } from 'react-dom';
+import { useDismiss } from '../hooks/useDismiss.js';
 import { listTournaments, getTeamPresence, deleteTournament, shareTournament } from '../api/tournaments.api.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
 import { RecordLine } from '../components/ui/ResultChip.js';
@@ -18,17 +19,7 @@ function CardMenu({ tournament, onDeleted }: { tournament: Tournament; onDeleted
   const btnRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!open) return;
-    const handle = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (btnRef.current && !btnRef.current.contains(target)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
-    document.addEventListener('mousedown', handle);
-    document.addEventListener('keydown', onKey);
-    return () => { document.removeEventListener('mousedown', handle); document.removeEventListener('keydown', onKey); };
-  }, [open]);
+  useDismiss(open, btnRef, () => setOpen(false));
 
   const handleOpen = (e: React.MouseEvent) => {
     e.preventDefault();

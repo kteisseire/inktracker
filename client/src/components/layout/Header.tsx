@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect, } from 'react';
+import { useState, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.js';
+import { useDismiss } from '../../hooks/useDismiss.js';
 import { LogoIcon } from '../ui/Logo.js';
 
 function useBackTarget(): string | null {
@@ -113,16 +114,7 @@ function DesktopDropdown({ item, pathname }: { item: Extract<NavItem, { children
   const ref = useRef<HTMLDivElement>(null);
   const active = isGroupActive(item.children, pathname);
 
-  useEffect(() => {
-    if (!open) return;
-    const handle = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
-    document.addEventListener('mousedown', handle);
-    document.addEventListener('keydown', onKey);
-    return () => { document.removeEventListener('mousedown', handle); document.removeEventListener('keydown', onKey); };
-  }, [open]);
+  useDismiss(open, ref, () => setOpen(false));
 
   return (
     <div className="relative" ref={ref}>

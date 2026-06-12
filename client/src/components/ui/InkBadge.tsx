@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { INK_COLORS, type InkColor, type ScoutReport, type PotentialDeck, type Team } from '@lorcana/shared';
+import { type InkColor, type ScoutReport, type PotentialDeck, type Team } from '@lorcana/shared';
 import { INK_COLORS_CONFIG } from '../../lib/colors.js';
+import { InkColorGrid } from './InkColorGrid.js';
 
 /* ── Losange Lorcana (taille configurable) ── */
 function InkLozenge({ color, size = 16 }: { color: InkColor; size?: number }) {
@@ -212,11 +213,6 @@ export function ScoutPicker({ playerName, teams, eventId, existingColors, onSave
 
   const hasExisting = existingColors && existingColors.length > 0;
 
-  const toggle = (color: InkColor) => {
-    if (colors.includes(color)) setColors(colors.filter(c => c !== color));
-    else if (colors.length < 2) setColors([...colors, color]);
-  };
-
   const handleSave = async () => {
     if (colors.length === 0) return;
     setSaving(true);
@@ -265,51 +261,7 @@ export function ScoutPicker({ playerName, teams, eventId, existingColors, onSave
 
             <div className="space-y-2">
               <p className="text-xs text-ink-500 font-medium uppercase tracking-wide">Couleurs (2 max)</p>
-              <div className="grid grid-cols-6 gap-1">
-                {INK_COLORS.map(color => {
-                  const config = INK_COLORS_CONFIG[color];
-                  const isSelected = colors.includes(color);
-                  const isDisabled = !isSelected && colors.length >= 2;
-                  const hex = config.hex;
-                  return (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => toggle(color)}
-                      disabled={isDisabled}
-                      className="flex flex-col items-center gap-1 py-2 rounded-xl transition-all duration-200 active:scale-95"
-                      style={{
-                        opacity: isDisabled ? 0.2 : isSelected ? 1 : 0.45,
-                        background: isSelected ? `${hex}12` : 'transparent',
-                        border: `1px solid ${isSelected ? `${hex}50` : 'transparent'}`,
-                      }}
-                    >
-                      <svg viewBox="0 0 25.83 32" style={{ width: 22, height: 28, filter: isSelected ? `drop-shadow(0 0 2px ${hex}60)` : 'none', transition: 'filter 0.2s' }}>
-                        {isSelected ? (
-                          <>
-                            <path d="M12.91 0 0 16l12.91 16 12.91-16Z" fill={hex} opacity="0.25" />
-                            <path d="M12.91 0 0 16l12.91 16 12.91-16ZM1.28 16 12.91 1.59 24.54 16 12.91 30.41Z" fill={hex} />
-                            <path d="m21.99 16-9.08 11.25L3.83 16l9.08-11.25Z" fill={hex} />
-                          </>
-                        ) : (
-                          <path d="M12.91 0 0 16l12.91 16 12.91-16ZM1.28 16 12.91 1.59 24.54 16 12.91 30.41Z" fill={hex} />
-                        )}
-                      </svg>
-                      <span style={{
-                        fontSize: '0.55rem',
-                        fontWeight: isSelected ? 600 : 400,
-                        letterSpacing: '0.06em',
-                        textTransform: 'uppercase',
-                        color: isSelected ? hex : 'rgba(255,255,255,0.35)',
-                        transition: 'color 0.2s',
-                        lineHeight: 1,
-                      }}>
-                        {config.label.slice(0, 4)}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+              <InkColorGrid selected={colors} onChange={setColors} max={2} shadowBlur={2} shadowOpacity="60" htmlDisabled />
             </div>
 
             {teams.length > 1 && (

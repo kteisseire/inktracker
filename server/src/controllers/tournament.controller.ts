@@ -153,6 +153,13 @@ export async function createTournament(req: AuthRequest, res: Response) {
   const { myDeckColors, myDeckLink, deckId, ...rest } = req.body;
   let resolvedDeckId = deckId || null;
 
+  // Ownership : un deckId fourni par le client doit appartenir à l'utilisateur
+  // (sinon on exposerait le deck d'autrui via l'include de getTournament).
+  if (resolvedDeckId) {
+    const owned = await prisma.deck.findFirst({ where: { id: resolvedDeckId, userId: req.userId! }, select: { id: true } });
+    if (!owned) { res.status(400).json({ error: 'Deck invalide' }); return; }
+  }
+
   // Auto-create or find matching deck if no deckId provided
   if (!resolvedDeckId && myDeckColors && myDeckColors.length > 0) {
     // Look for an existing deck with the same colors (and link if provided)
@@ -210,6 +217,12 @@ export async function updateTournament(req: AuthRequest, res: Response) {
   const data = { ...req.body };
   if (data.date) data.date = new Date(data.date);
 
+  // Ownership du deckId à la mise à jour aussi.
+  if (data.deckId) {
+    const owned = await prisma.deck.findFirst({ where: { id: data.deckId, userId: req.userId! }, select: { id: true } });
+    if (!owned) { res.status(400).json({ error: 'Deck invalide' }); return; }
+  }
+
   const tournament = await prisma.tournament.update({
     where: { id: req.params.id },
     data,
@@ -262,7 +275,17 @@ export async function getSharedTournament(req: Request, res: Response) {
     include: {
       rounds: {
         orderBy: [{ isTopCut: 'asc' as const }, { roundNumber: 'asc' as const }],
-        include: { games: { orderBy: { gameNumber: 'asc' as const } } },
+        // select explicite : on EXCLUT les champs privés du joueur (notes
+        // personnelles, photoUrl base64 de la feuille de match) du partage public.
+        select: {
+          id: true,
+          roundNumber: true,
+          isTopCut: true,
+          opponentName: true,
+          opponentDeckColors: true,
+          result: true,
+          games: { orderBy: { gameNumber: 'asc' as const } },
+        },
       },
       user: { select: { username: true } },
     },

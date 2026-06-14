@@ -217,13 +217,18 @@ TeamRole: OWNER, ADMIN, MEMBER
 - Results cached in EventCache table
 
 ### Security
-- Mass assignment protection: whitelisted fields in controllers
+- Mass assignment protection: Zod `.parse()` strips unknown keys + whitelisted fields in controllers
+- Ownership checks (IDOR) on every user resource incl. `deckId` on tournament create/update
+- Public share (`/tournaments/shared/:shareId`) uses an explicit `select` excluding private `notes`/`photoUrl`
 - Open redirect protection via `safeRedirect()` helper
-- Rate limiting on auth endpoints (15 req/15min)
+- Rate limiting via `middleware/rateLimit.ts` (real client IP via `CF-Connecting-IP`): auth 15/15min, `/decks/colors` 20/min, `/metagame/overview` 30/min
+- `app.set('trust proxy', 1)` — required so rate-limit keys by real IP behind Cloudflare→Caddy (else 127.0.0.1 for everyone)
 - Admin emails from env var `ADMIN_EMAILS`
 - JWT secret minimum 32 chars
-- Helmet + CORS + CSP (Vercel headers)
+- Helmet: COOP `same-origin-allow-popups` (Google popup). CSP + X-Frame-Options/nosniff/Referrer-Policy are set by **Caddy** (`deploy/Caddyfile.localtest`), since Caddy serves the HTML (not the API). NOT Vercel anymore.
+- `photoUrl` validated as `data:image/(jpeg|png|webp);base64,` and bounded (~4MB); `notes`/`opponentName` length-bounded
 - Permissions-Policy: camera=(self) for mobile photo capture
+- SSRF: `/decks/colors` extraction uses a strict hostname allowlist (exact match)
 
 ### Photo Capture (Rounds)
 - Photos stored as base64 in `photoUrl` field (PostgreSQL text)

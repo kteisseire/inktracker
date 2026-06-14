@@ -4,14 +4,19 @@ import { listDecks, getDeck, createDeck, updateDeck, deleteDeck, setDefaultDeck 
 import { authMiddleware } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { validate } from '../middleware/validate.js';
+import { makeLimiter } from '../middleware/rateLimit.js';
 import { createDeckSchema, updateDeckSchema, extractColorsSchema } from '../validators/deck.schema.js';
 
 const router = Router();
 
 router.use(authMiddleware);
 
+// L'extraction déclenche une requête sortante du serveur vers un site externe :
+// on limite pour éviter l'abus/amplification (SSRF déjà muselé par l'allowlist).
+const extractLimiter = makeLimiter({ windowMs: 60 * 1000, max: 20, message: 'Trop d\'extractions, réessayez dans une minute.' });
+
 // Deck color extraction from URL
-router.post('/colors', validate(extractColorsSchema), asyncHandler(extractDeckColors));
+router.post('/colors', extractLimiter, validate(extractColorsSchema), asyncHandler(extractDeckColors));
 
 // Deck CRUD
 router.get('/', asyncHandler(listDecks));

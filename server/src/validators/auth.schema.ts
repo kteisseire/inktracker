@@ -27,3 +27,15 @@ export const resetPasswordSchema = z.object({
   token: z.string().min(1, 'Token requis'),
   password: z.string().min(8, 'Minimum 8 caractères'),
 });
+
+// Profil : champs optionnels (le contrôleur n'applique que ceux fournis), mais
+// validés en format/longueur quand présents.
+export const updateProfileSchema = z.object({
+  username: z.string().min(3, 'Minimum 3 caractères').max(30).optional(),
+  email: z.string().email('Email invalide').optional(),
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().optional(),
+  newPassword: z.string().min(8, 'Minimum 8 caractères'),
+});

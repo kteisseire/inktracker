@@ -512,7 +512,7 @@ export function TournamentDetailPage() {
                   </p>
                 </>
               ) : (
-                <p className="text-sm text-red-400 text-center py-4">Erreur lors de la génération du lien</p>
+                <p className="text-sm text-loss text-center py-4">Erreur lors de la génération du lien</p>
               )}
             </div>
           </div>
@@ -1082,7 +1082,7 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
                   {d.isTopCut ? 'TC' : 'R'}{d.roundNumber} vs <span className="text-ink-200">{d.opponentName}</span>
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className={d.result === 'WIN' ? 'text-green-400' : d.result === 'LOSS' ? 'text-red-400' : 'text-ink-400'}>
+                  <span className={d.result === 'WIN' ? 'text-win' : d.result === 'LOSS' ? 'text-loss' : 'text-ink-400'}>
                     {d.result === 'WIN' ? 'V' : d.result === 'LOSS' ? 'D' : 'N'} {d.gamesWon}-{d.gamesLost}
                   </span>
                   <span className="text-ink-600">
@@ -1289,7 +1289,7 @@ function StandingsView({ standings, roundNumber, username, scoutMap, possibleDec
               return (
                 <tr key={s.rank} className={me ? 'bg-gold-400/10 border-l-2 border-l-gold-400' : teammate ? 'bg-blue-500/5' : s.rank <= 3 ? 'bg-gold-400/5' : ''}>
                   <td className="text-center px-3 py-2.5 font-bold text-ink-500">{s.rank}</td>
-                  <td className={`px-3 py-2.5 font-medium max-w-[250px] ${me ? 'text-gold-400' : teammate ? 'text-blue-400' : 'text-ink-100'}`}>
+                  <td className={`px-3 py-2.5 font-medium max-w-[250px] ${me ? 'text-gold-400' : teammate ? 'text-info' : 'text-ink-100'}`}>
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="truncate">{s.playerName}</span>
                       <ScoutDeckBadges scout={scout} possibleDecks={possibleDecks.get(s.playerName.toLowerCase())} />
@@ -1320,7 +1320,7 @@ function StandingsView({ standings, roundNumber, username, scoutMap, possibleDec
               <span className="text-sm font-bold text-ink-500 w-6 text-center shrink-0">{s.rank}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <span className={`font-medium text-sm truncate ${me ? 'text-gold-400' : teammate ? 'text-blue-400' : 'text-ink-100'}`}>{s.playerName}</span>
+                  <span className={`font-medium text-sm truncate ${me ? 'text-gold-400' : teammate ? 'text-info' : 'text-ink-100'}`}>{s.playerName}</span>
                   <ScoutDeckBadges scout={scout} possibleDecks={possibleDecks.get(s.playerName.toLowerCase())} />
                   {teams.length > 0 && (
                     <ScoutPicker playerName={s.playerName} teams={teams} eventId={eventId} existingColors={scout?.deckColors} onSaved={onScout} />
@@ -1415,7 +1415,7 @@ function MatchesView({ matches, roundNumber, username, scoutMap, possibleDecks, 
             <div key={m.matchId} className={`ink-card px-3 sm:px-4 py-3 flex items-center justify-between ${byeIsMe ? 'border-gold-500/30 bg-gold-400/5' : byeIsTeam ? 'border-blue-500/30 bg-blue-500/5' : ''}`}>
               <div className="flex items-center gap-2">
                 {m.table > 0 && <span className="text-xs text-ink-600">T{m.table}</span>}
-                <span className={`font-medium text-sm ${byeIsMe ? 'text-gold-400' : byeIsTeam ? 'text-blue-400' : 'text-ink-100'}`}>{p1?.playerName || 'Inconnu'}</span>
+                <span className={`font-medium text-sm ${byeIsMe ? 'text-gold-400' : byeIsTeam ? 'text-info' : 'text-ink-100'}`}>{p1?.playerName || 'Inconnu'}</span>
               </div>
               <span className="text-xs text-ink-500 bg-ink-800/50 px-2 py-0.5 rounded-full">BYE</span>
             </div>
@@ -1433,7 +1433,7 @@ function MatchesView({ matches, roundNumber, username, scoutMap, possibleDecks, 
               <div className="flex-1 flex items-center gap-2 min-w-0">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1 min-w-0">
-                    <span className={`text-sm truncate ${isMe(p1?.playerName || '') ? 'font-bold text-gold-400' : isTeammate(p1?.playerName || '') ? 'font-bold text-blue-400' : p1Wins ? 'font-bold text-green-400' : 'text-ink-300'}`}>
+                    <span className={`text-sm truncate ${isMe(p1?.playerName || '') ? 'font-bold text-gold-400' : isTeammate(p1?.playerName || '') ? 'font-bold text-info' : p1Wins ? 'font-bold text-win' : 'text-ink-300'}`}>
                       {p1?.playerName || 'Inconnu'}
                     </span>
                     {p1 && <ScoutDeckBadges scout={scout1} possibleDecks={possibleDecks.get(p1.playerName.toLowerCase())} />}
@@ -1442,11 +1442,11 @@ function MatchesView({ matches, roundNumber, username, scoutMap, possibleDecks, 
                 <span className="text-sm font-bold text-ink-500 shrink-0">
                   {m.isDraw ? 'Nul' : (
                     <>
-                      <span className={p1Wins ? 'text-green-400' : 'text-ink-400'}>
+                      <span className={p1Wins ? 'text-win' : 'text-ink-400'}>
                         {p1Wins ? m.gamesWonByWinner : m.gamesWonByLoser ?? 0}
                       </span>
                       <span className="text-ink-600 mx-0.5">–</span>
-                      <span className={p2Wins ? 'text-green-400' : 'text-ink-400'}>
+                      <span className={p2Wins ? 'text-win' : 'text-ink-400'}>
                         {p2Wins ? m.gamesWonByWinner : m.gamesWonByLoser ?? 0}
                       </span>
                     </>
@@ -1455,7 +1455,7 @@ function MatchesView({ matches, roundNumber, username, scoutMap, possibleDecks, 
                 <div className="flex-1 min-w-0 text-right">
                   <div className="flex items-center gap-1 min-w-0 justify-end">
                     {p2 && <ScoutDeckBadges scout={scout2} possibleDecks={possibleDecks.get(p2.playerName.toLowerCase())} />}
-                    <span className={`text-sm truncate ${isMe(p2?.playerName || '') ? 'font-bold text-gold-400' : isTeammate(p2?.playerName || '') ? 'font-bold text-blue-400' : p2Wins ? 'font-bold text-green-400' : 'text-ink-300'}`}>
+                    <span className={`text-sm truncate ${isMe(p2?.playerName || '') ? 'font-bold text-gold-400' : isTeammate(p2?.playerName || '') ? 'font-bold text-info' : p2Wins ? 'font-bold text-win' : 'text-ink-300'}`}>
                       {p2?.playerName || 'Inconnu'}
                     </span>
                   </div>
@@ -1562,11 +1562,11 @@ function MatchDetailModal({ match: m, roundNumber, isMe, getScout, possibleDecks
               <span className="text-xl font-bold text-ink-400">Nul</span>
             ) : (
               <>
-                <span className={`text-2xl font-bold ${p1Wins ? 'text-green-400' : 'text-ink-400'}`}>
+                <span className={`text-2xl font-bold ${p1Wins ? 'text-win' : 'text-ink-400'}`}>
                   {p1Wins ? m.gamesWonByWinner : m.gamesWonByLoser ?? 0}
                 </span>
                 <span className="text-xl text-ink-600 mx-2">–</span>
-                <span className={`text-2xl font-bold ${p2Wins ? 'text-green-400' : 'text-ink-400'}`}>
+                <span className={`text-2xl font-bold ${p2Wins ? 'text-win' : 'text-ink-400'}`}>
                   {p2Wins ? m.gamesWonByWinner : m.gamesWonByLoser ?? 0}
                 </span>
               </>
@@ -1850,11 +1850,11 @@ function InlineScoutSection({ name, isWinner, isCurrentUser, scout, potentialDec
     <div className={`rounded-xl p-3.5 space-y-3 ${isCurrentUser ? 'bg-gold-500/10 border border-gold-500/20' : 'bg-ink-800/50 border border-ink-700/30'}`}>
       {/* Player name */}
       <div className="flex items-center gap-2">
-        <span className={`text-sm font-medium truncate ${isCurrentUser ? 'text-gold-400' : isWinner ? 'text-green-400 font-bold' : 'text-ink-200'}`}>
+        <span className={`text-sm font-medium truncate ${isCurrentUser ? 'text-gold-400' : isWinner ? 'text-win font-bold' : 'text-ink-200'}`}>
           {name}
         </span>
         {isWinner && (
-          <span className="text-[10px] font-semibold text-green-400 bg-green-500/15 px-1.5 py-0.5 rounded-full shrink-0">V</span>
+          <span className="text-[10px] font-semibold text-win bg-win/15 px-1.5 py-0.5 rounded-full shrink-0">V</span>
         )}
         {scout && existingColors.length > 0 && (
           <span className="text-[10px] text-ink-500 ml-auto shrink-0">par {scout.reportedBy.username}</span>
@@ -1986,7 +1986,7 @@ function TeammateRounds({ eventLink, myUsername }: { eventLink: string; myUserna
   return (
     <div className="space-y-3">
       <h2 className="ink-section-title flex items-center gap-2">
-        <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+        <svg className="w-4 h-4 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
         Rondes coéquipiers
       </h2>
 
@@ -1998,7 +1998,7 @@ function TeammateRounds({ eventLink, myUsername }: { eventLink: string; myUserna
             onClick={() => setSelectedMember(selectedMember === name ? null : name)}
             className={`px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
               selectedMember === name
-                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                ? 'bg-blue-500/20 text-info border border-blue-500/30'
                 : 'bg-ink-800/50 text-ink-400 border border-ink-700/30 hover:text-ink-200'
             }`}
           >
@@ -2012,10 +2012,10 @@ function TeammateRounds({ eventLink, myUsername }: { eventLink: string; myUserna
         <div className="space-y-2">
           {/* Record summary */}
           <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-ink-900/50 text-sm">
-            <span className="text-blue-400 font-medium">{selectedMember}</span>
+            <span className="text-info font-medium">{selectedMember}</span>
             <span className="text-ink-600">—</span>
-            <span className="text-green-400 font-bold">{wins}V</span>
-            <span className="text-red-400 font-bold">{losses}D</span>
+            <span className="text-win font-bold">{wins}V</span>
+            <span className="text-loss font-bold">{losses}D</span>
             {draws > 0 && <span className="text-ink-400 font-bold">{draws}N</span>}
           </div>
 
@@ -2060,7 +2060,7 @@ function LoadingStep({ label, done }: { label: string; done: boolean }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3 ink-card">
       {done ? (
-        <svg className="w-5 h-5 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5 text-win shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
         </svg>
       ) : (
@@ -2078,8 +2078,8 @@ function SyncDiffRow({ label, current, incoming }: { label: string; current: str
     <div className="flex items-start gap-3 py-1.5 px-3 rounded-lg bg-ink-900/50">
       <span className="text-ink-500 font-medium w-16 shrink-0">{label}</span>
       <div className="min-w-0 flex-1">
-        <div className="text-red-400/70 line-through truncate text-xs">{current}</div>
-        <div className="text-green-400 truncate">{incoming}</div>
+        <div className="text-loss/70 line-through truncate text-xs">{current}</div>
+        <div className="text-win truncate">{incoming}</div>
       </div>
     </div>
   );
@@ -2104,9 +2104,9 @@ function TopCutProgress({ playerCount, swissRounds, topCutSize, swissWins, swiss
 
   let statusLabel: string;
   let statusColor: string;
-  if (isSafe) { statusLabel = 'Qualifié'; statusColor = 'text-green-400'; }
+  if (isSafe) { statusLabel = 'Qualifié'; statusColor = 'text-win'; }
   else if (isBubble) { statusLabel = 'Bubble'; statusColor = 'text-gold-400'; }
-  else if (isEliminated || tournamentDone) { statusLabel = 'Éliminé'; statusColor = 'text-red-400'; }
+  else if (isEliminated || tournamentDone) { statusLabel = 'Éliminé'; statusColor = 'text-loss'; }
   else {
     statusLabel = canReachSafe ? `${safePoints - currentPoints} pts pour qualif. sûre` : `${bubblePoints - currentPoints} pts pour bubble`;
     statusColor = 'text-ink-400';
@@ -2116,7 +2116,7 @@ function TopCutProgress({ playerCount, swissRounds, topCutSize, swissWins, swiss
   const progress = maxPoints > 0 ? Math.min(currentPoints / maxPoints, 1) : 1;
   const bubbleProgress = maxPoints > 0 ? bubblePoints / maxPoints : 0;
   const safeProgress = maxPoints > 0 ? safePoints / maxPoints : 0;
-  const barColor = isSafe ? 'bg-green-500' : isBubble ? 'bg-gold-400' : isEliminated ? 'bg-red-400' : 'bg-lorcana-sapphire';
+  const barColor = isSafe ? 'bg-win' : isBubble ? 'bg-gold-400' : isEliminated ? 'bg-loss' : 'bg-lorcana-sapphire';
   const hasBubble = bubblePoints < safePoints;
 
   return (
@@ -2127,16 +2127,16 @@ function TopCutProgress({ playerCount, swissRounds, topCutSize, swissWins, swiss
       </div>
       <div className="relative h-4 rounded-full bg-ink-800/60 overflow-hidden border border-ink-700/30">
         {hasBubble && <div className="absolute inset-y-0 left-0 bg-gold-400/8" style={{ left: `${bubbleProgress * 100}%`, width: `${(safeProgress - bubbleProgress) * 100}%` }} />}
-        <div className="absolute inset-y-0 bg-green-500/8" style={{ left: 0, width: `${bubbleProgress * 100}%` }} />
+        <div className="absolute inset-y-0 bg-win/8" style={{ left: 0, width: `${bubbleProgress * 100}%` }} />
         <div className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${progress * 100}%`, opacity: 0.9 }} />
         {hasBubble && <div className="absolute inset-y-0 w-[2px] z-10" style={{ left: `${bubbleProgress * 100}%` }}><div className="w-full h-full bg-gold-400/50" /></div>}
-        <div className="absolute inset-y-0 w-[2px] z-10" style={{ left: `${safeProgress * 100}%` }}><div className="w-full h-full bg-green-400/50" /></div>
+        <div className="absolute inset-y-0 w-[2px] z-10" style={{ left: `${safeProgress * 100}%` }}><div className="w-full h-full bg-win/50" /></div>
       </div>
       <div className="flex items-center justify-between">
         <span className="text-sm font-bold text-ink-100 tabular-nums">{currentPoints} <span className="text-xs font-normal text-ink-500">pts</span></span>
         <div className="flex items-center gap-3 text-xs text-ink-500">
           {hasBubble && <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-gold-400/40 border border-gold-400/30 inline-block" />Bubble <span className="font-semibold text-gold-400 tabular-nums">{bubblePoints}</span></span>}
-          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-green-500/40 border border-green-500/30 inline-block" />Qualif. <span className="font-semibold text-green-400 tabular-nums">{safePoints}</span></span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-win/40 border border-win/30 inline-block" />Qualif. <span className="font-semibold text-win tabular-nums">{safePoints}</span></span>
           <span className="text-ink-600 tabular-nums">/ {maxPoints}</span>
         </div>
       </div>
@@ -2199,9 +2199,9 @@ function RoundCard({ round, tournamentId, format, onDelete, scoutMap, possibleDe
           <div className="flex items-center gap-2 sm:gap-3 shrink-0 relative z-10">
             {games.length > 0 && (
               <span className="font-bold text-base sm:text-lg">
-                <span className="text-green-400">{gamesWon}</span>
+                <span className="text-win">{gamesWon}</span>
                 <span className="text-ink-600">–</span>
-                <span className="text-red-400">{gamesLost}</span>
+                <span className="text-loss">{gamesLost}</span>
               </span>
             )}
             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${result.cls}`}>{result.label}</span>

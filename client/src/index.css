@@ -30,6 +30,12 @@
     --ink-950: 8 6 15;
     --ink-haze: 20 16 42;
     --rule: rgba(39,32,64,0.6);
+
+    /* Couleurs de statut (victoire / défaite / info) — mode SOMBRE : tons clairs
+       lisibles sur fond sombre (green-400 / red-400 / blue-400). */
+    --win: 74 222 128;
+    --loss: 248 113 113;
+    --info: 96 165 250;
   }
 
   /* Mode PARCHEMIN (clair) — rampe INVERSÉE et réchauffée. Les positions sémantiques
@@ -63,6 +69,10 @@
     --accent-700: 80 62 4;
     --accent-ink: 250 244 230;
     --rule-gold: rgba(119,92,6,0.45);
+    /* Statut en mode CLAIR : tons sombres lisibles sur parchemin (vérifiés WCAG). */
+    --win: 22 101 52;    /* green-800 — contraste ~5.3 */
+    --loss: 185 28 28;   /* red-700 — contraste ~4.9 */
+    --info: 29 78 216;   /* blue-700 — contraste ~5.0 */
   }
 
   /* No faux-bold ever: Marcellus ships a single 400 weight; without this guard
@@ -282,6 +292,25 @@
    Motion layer (Codex Vivant) — compositor-only, reduced-motion + fail-open safe.
    Keyframes + reveal mechanism live OUTSIDE @layer so they always apply.
    ============================================================ */
+
+/* Mode CLAIR — lisibilité des verts/rouges génériques (messages de succès/erreur,
+   stats, états) sur parchemin. Non-layered pour primer sur les utilitaires Tailwind.
+   Les composants dédiés utilisent déjà les tokens win/loss ; ceci couvre le reste.
+   N'affecte PAS les encres Lorcana (amber/amethyst/emerald/ruby/sapphire/steel). */
+:root[data-mode="light"] .text-green-400,
+:root[data-mode="light"] .text-green-500,
+:root[data-mode="light"] .text-emerald-200,
+:root[data-mode="light"] .text-emerald-400 { color: rgb(var(--win)); }
+:root[data-mode="light"] .text-red-400,
+:root[data-mode="light"] .text-red-500,
+:root[data-mode="light"] .text-red-300,
+:root[data-mode="light"] .text-red-200 { color: rgb(var(--loss)); }
+:root[data-mode="light"] .text-sky-200,
+:root[data-mode="light"] .text-blue-400 { color: rgb(var(--info)); }
+/* Classes d'alerte (couleur figée via @apply) */
+:root[data-mode="light"] .ink-error { color: rgb(var(--loss)); }
+:root[data-mode="light"] .ink-alert-success { color: rgb(var(--win)); }
+:root[data-mode="light"] .ink-alert-info { color: rgb(var(--info)); }
 
 /* Décor de thème (ThemeBackdrop) — dérive très lent, compositor-only.
    La règle reduced-motion globale neutralise ces animations. */

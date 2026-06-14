@@ -34,6 +34,10 @@ export default {
           700: 'rgb(var(--accent-700) / <alpha-value>)',
           ink: 'rgb(var(--accent-ink) / <alpha-value>)', // warm dark label text ON gold buttons
         },
+        // Statut sémantique, mode-aware (clair sur sombre / sombre sur parchemin)
+        win: 'rgb(var(--win) / <alpha-value>)',
+        loss: 'rgb(var(--loss) / <alpha-value>)',
+        info: 'rgb(var(--info) / <alpha-value>)',
         // Codex Illuminé tokens
         rule: 'var(--rule)',        // solid default divider — mode-aware (dark: indigo @60%, light: warm ink)
         'rule-gold': 'var(--rule-gold)', // active/selected/terminator hairline (thémé)

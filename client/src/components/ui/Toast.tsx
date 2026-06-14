@@ -13,8 +13,8 @@ const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
 const ICONS = { success: Check, error: AlertTriangle, info: Info };
 const ACCENTS: Record<ToastType, string> = {
-  success: 'text-lorcana-emerald',
-  error: 'text-lorcana-ruby',
+  success: 'text-win',
+  error: 'text-loss',
   info: 'text-gold-400',
 };
 

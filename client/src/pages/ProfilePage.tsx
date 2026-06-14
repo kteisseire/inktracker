@@ -4,6 +4,7 @@ import { updateProfile, changePassword } from '../api/auth.api.js';
 import { HelpButton } from '../components/ui/HelpButton.js';
 import { ProfileSubNav } from '../components/layout/ProfileSubNav.js';
 import { ThemePicker } from '../components/ui/ThemePicker.js';
+import { useTheme } from '../context/ThemeContext.js';
 
 export function ProfilePage() {
   const { user, updateUser, logout } = useAuth();
@@ -75,13 +76,38 @@ export function ProfilePage() {
 }
 
 function ThemeSection() {
+  const [open, setOpen] = useState(false);
+  const { theme } = useTheme();
+
   return (
-    <div className="ink-card p-4 sm:p-5 space-y-3">
-      <div>
-        <p className="text-xs font-semibold text-ink-500 uppercase tracking-wider">Thème</p>
-        <p className="text-xs text-ink-500 mt-1">S'applique à toute l'app et au compteur de lore.</p>
-      </div>
-      <ThemePicker />
+    <div className="ink-card overflow-hidden">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-ink-800/30"
+      >
+        <div className="flex items-center gap-3">
+          <svg className="w-4 h-4 text-ink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
+          <div>
+            <span className="text-sm font-medium text-ink-200">Thème</span>
+            <span className="ml-2 text-xs text-ink-500">{theme.name}</span>
+          </div>
+        </div>
+        <svg
+          className={`w-4 h-4 text-ink-500 transition-transform ${open ? 'rotate-180' : ''}`}
+          fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="px-4 pb-4 space-y-3 border-t border-ink-800/50 pt-4">
+          <p className="text-xs text-ink-500">S'applique à toute l'app et au compteur de lore.</p>
+          <ThemePicker />
+        </div>
+      )}
     </div>
   );
 }

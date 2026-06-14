@@ -6,6 +6,8 @@ import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persist
 import { AuthProvider, useAuth } from './context/AuthContext.js';
 import { ThemeProvider } from './context/ThemeContext.js';
 import { ThemeBackdrop } from './components/ui/ThemeBackdrop.js';
+import { ToastProvider } from './components/ui/Toast.js';
+import { ConfirmProvider } from './components/ui/ConfirmDialog.js';
 import { Header } from './components/layout/Header.js';
 import { BottomNav } from './components/layout/BottomNav.js';
 import { ProtectedRoute } from './components/layout/ProtectedRoute.js';
@@ -121,9 +123,13 @@ export default function App() {
         <PersistQueryClientProvider client={queryClient} persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}>
           <BrowserRouter>
             <AuthProvider>
-              <OfflineBanner />
-              <AppRoutes />
-              <InstallBanner />
+              <ToastProvider>
+                <ConfirmProvider>
+                  <OfflineBanner />
+                  <AppRoutes />
+                  <InstallBanner />
+                </ConfirmProvider>
+              </ToastProvider>
             </AuthProvider>
           </BrowserRouter>
         </PersistQueryClientProvider>

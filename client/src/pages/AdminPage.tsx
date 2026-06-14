@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { listUsers } from '../api/admin.api.js';
 import { listSuggestions, deleteSuggestion, type Suggestion } from '../api/suggestion.api.js';
 import { ProfileSubNav } from '../components/layout/ProfileSubNav.js';
+import { useConfirm } from '../components/ui/ConfirmDialog.js';
 import type { AdminUserInfo } from '@lorcana/shared';
 
 function formatRelative(dateStr: string): string {
@@ -24,6 +25,7 @@ export function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tab, setTab] = useState<'users' | 'suggestions'>('users');
+  const confirm = useConfirm();
 
   useEffect(() => {
     Promise.all([
@@ -36,7 +38,13 @@ export function AdminPage() {
   }, []);
 
   const handleDeleteSuggestion = async (id: string) => {
-    if (!confirm('Supprimer cette suggestion ?')) return;
+    const ok = await confirm({
+      title: 'Supprimer la suggestion',
+      message: 'Supprimer cette suggestion ?',
+      confirmLabel: 'Supprimer',
+      danger: true,
+    });
+    if (!ok) return;
     await deleteSuggestion(id);
     setSuggestions(prev => prev.filter(s => s.id !== id));
   };

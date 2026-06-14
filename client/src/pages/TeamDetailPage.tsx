@@ -9,6 +9,7 @@ import {
   generateInviteCode,
 } from '../api/team.api.js';
 import { getQrCodeUrl } from '../lib/qrcode.js';
+import { useConfirm } from '../components/ui/ConfirmDialog.js';
 import type { Team, TeamMember, TeamInvite, TeamRole } from '@lorcana/shared';
 
 const ROLE_LABELS: Record<string, string> = { OWNER: 'Propriétaire', ADMIN: 'Admin', MEMBER: 'Membre' };
@@ -78,6 +79,7 @@ export function TeamDetailPage() {
 function TeamHeader({ team, isOwner, isAdmin, onUpdated, onDeleted }: {
   team: Team; isOwner: boolean; isAdmin: boolean; onUpdated: () => void; onDeleted: () => void;
 }) {
+  const confirm = useConfirm();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(team.name);
   const [description, setDescription] = useState(team.description || '');
@@ -100,7 +102,13 @@ function TeamHeader({ team, isOwner, isAdmin, onUpdated, onDeleted }: {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Supprimer cette équipe ? Tous les membres seront retirés.')) return;
+    const ok = await confirm({
+      title: 'Supprimer l\'équipe',
+      message: 'Supprimer cette équipe ? Tous les membres seront retirés. Cette action est définitive.',
+      confirmLabel: 'Supprimer',
+      danger: true,
+    });
+    if (!ok) return;
     await deleteTeam(team.id);
     onDeleted();
   };
@@ -371,6 +379,7 @@ function PendingInvites({ invites, teamId, onChanged }: { invites: TeamInvite[];
 function MembersList({ members, teamId, isOwner, isAdmin, currentUserId, onChanged }: {
   members: TeamMember[]; teamId: string; isOwner: boolean; isAdmin: boolean; currentUserId: string; onChanged: () => void;
 }) {
+  const confirm = useConfirm();
   const handleRoleChange = async (memberId: string, newRole: TeamRole) => {
     await updateMemberRole(teamId, memberId, newRole);
     onChanged();
@@ -378,8 +387,13 @@ function MembersList({ members, teamId, isOwner, isAdmin, currentUserId, onChang
 
   const handleRemove = async (member: TeamMember) => {
     const isSelf = member.userId === currentUserId;
-    const msg = isSelf ? 'Quitter cette équipe ?' : `Retirer ${member.user.username} de l'équipe ?`;
-    if (!confirm(msg)) return;
+    const ok = await confirm({
+      title: isSelf ? 'Quitter l\'équipe' : 'Retirer le membre',
+      message: isSelf ? 'Quitter cette équipe ?' : `Retirer ${member.user.username} de l'équipe ?`,
+      confirmLabel: isSelf ? 'Quitter' : 'Retirer',
+      danger: true,
+    });
+    if (!ok) return;
     await removeMember(teamId, member.id);
     onChanged();
   };

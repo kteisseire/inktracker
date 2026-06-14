@@ -8,6 +8,8 @@ import { DeckBadges } from '../components/ui/InkBadge.js';
 import { RecordLine } from '../components/ui/ResultChip.js';
 import { HelpButton } from '../components/ui/HelpButton.js';
 import { SkeletonRows } from '../components/ui/Skeleton.js';
+import { useToast } from '../components/ui/Toast.js';
+import { useConfirm } from '../components/ui/ConfirmDialog.js';
 import { Reveal } from '../components/ui/folio.js';
 import type { Tournament } from '@lorcana/shared';
 
@@ -18,6 +20,8 @@ function CardMenu({ tournament, onDeleted }: { tournament: Tournament; onDeleted
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const confirm = useConfirm();
 
   useDismiss(open, btnRef, () => setOpen(false));
 
@@ -35,18 +39,25 @@ function CardMenu({ tournament, onDeleted }: { tournament: Tournament; onDeleted
     try {
       const shareId = await shareTournament(tournament.id);
       await navigator.clipboard.writeText(`${window.location.origin}/t/${shareId}`);
-      alert('Lien copié !');
-    } catch { alert('Erreur lors du partage'); }
+      toast('Lien copié !', 'success');
+    } catch { toast('Erreur lors du partage', 'error'); }
   };
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setOpen(false);
-    if (!confirm(`Supprimer « ${tournament.name} » ?`)) return;
+    const ok = await confirm({
+      title: 'Supprimer le tournoi',
+      message: `Supprimer « ${tournament.name} » et toutes ses rondes ? Cette action est définitive.`,
+      confirmLabel: 'Supprimer',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await deleteTournament(tournament.id);
       onDeleted(tournament.id);
-    } catch { alert('Erreur lors de la suppression'); }
+      toast('Tournoi supprimé', 'success');
+    } catch { toast('Erreur lors de la suppression', 'error'); }
   };
 
   return (

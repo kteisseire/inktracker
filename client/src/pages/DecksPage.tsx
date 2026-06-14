@@ -7,6 +7,9 @@ import { InkColorPicker } from '../components/ui/InkColorPicker.js';
 import { HelpButton } from '../components/ui/HelpButton.js';
 import { SkeletonRows } from '../components/ui/Skeleton.js';
 import { ErrorAlert } from '../components/ui/ErrorAlert.js';
+import { DropdownMenu } from '../components/ui/DropdownMenu.js';
+import { useConfirm } from '../components/ui/ConfirmDialog.js';
+import { useToast } from '../components/ui/Toast.js';
 import type { Deck, InkColor } from '@lorcana/shared';
 
 const SUPPORTED_SITES = ['dreamborn.ink', 'lorcanito.com', 'db.lorcanito.com', 'duels.ink', 'inkdecks.com'];
@@ -121,6 +124,8 @@ function DeckForm({ initial, onSubmit, onCancel, submitLabel }: {
 
 export function DecksPage() {
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
+  const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
 
@@ -144,8 +149,15 @@ export function DecksPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Supprimer ce deck ?')) return;
+    const ok = await confirm({
+      title: 'Supprimer le deck',
+      message: 'Supprimer ce deck ?',
+      confirmLabel: 'Supprimer',
+      danger: true,
+    });
+    if (!ok) return;
     await deleteDeck(id); reloadDecks();
+    toast('Deck supprimé', 'success');
   };
 
   const handleSetDefault = async (id: string) => { await setDefaultDeck(id); reloadDecks(); };
@@ -215,12 +227,15 @@ export function DecksPage() {
                   )}
                 </div>
               </div>
-              <div className="relative z-10 flex flex-wrap items-center gap-x-3 gap-y-1 shrink-0" onClick={e => e.stopPropagation()}>
-                {!deck.isDefault && (
-                  <button onClick={() => handleSetDefault(deck.id)} className="text-xs text-gold-500 hover:text-gold-300 transition-colors font-medium">Défaut</button>
-                )}
-                <button onClick={() => { setEditingDeck(deck); setShowForm(false); }} className="text-xs text-ink-400 hover:text-ink-200 transition-colors">Modifier</button>
-                <button onClick={() => handleDelete(deck.id)} className="text-xs text-lorcana-ruby/70 hover:text-lorcana-ruby transition-colors">Supprimer</button>
+              <div className="relative z-10 shrink-0">
+                <DropdownMenu
+                  label={`Actions pour ${deck.name}`}
+                  items={[
+                    ...(!deck.isDefault ? [{ label: 'Définir par défaut', onClick: () => handleSetDefault(deck.id) }] : []),
+                    { label: 'Modifier', onClick: () => { setEditingDeck(deck); setShowForm(false); } },
+                    { label: 'Supprimer', onClick: () => handleDelete(deck.id), danger: true },
+                  ]}
+                />
               </div>
             </div>
           ))}

@@ -14,6 +14,9 @@ import { listMyTeams } from '../api/team.api.js';
 import { INK_COLORS, getRecommendedSwissRounds, getRecommendedTopCut } from '@lorcana/shared';
 import type { Tournament, Round, Game, MatchResult, ScoutReport, InkColor, Team, PotentialDeck } from '@lorcana/shared';
 import { HelpButton } from '../components/ui/HelpButton.js';
+import { DropdownMenu } from '../components/ui/DropdownMenu.js';
+import { useToast } from '../components/ui/Toast.js';
+import { useConfirm } from '../components/ui/ConfirmDialog.js';
 import { RecordLine, RESULT_STYLES } from '../components/ui/ResultChip.js';
 import { exportTournamentImage } from '../lib/exportTournamentImage.js';
 import { getQrCodeUrl } from '../lib/qrcode.js';
@@ -57,6 +60,8 @@ type Tab = 'rounds' | 'bracket';
 export function TournamentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const confirm = useConfirm();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>('rounds');
@@ -149,12 +154,18 @@ export function TournamentDetailPage() {
   }, [roundsScoutMap, roundsPotentialDecks]);
 
   const handleDeleteTournament = async () => {
-    if (!confirm('Supprimer ce tournoi et toutes ses rondes ?')) return;
+    const ok = await confirm({
+      title: 'Supprimer le tournoi',
+      message: 'Supprimer ce tournoi et toutes ses rondes ? Cette action est définitive.',
+      confirmLabel: 'Supprimer',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await deleteTournament(id!);
       navigate('/tournaments');
     } catch (err: any) {
-      alert(`Erreur lors de la suppression : ${err?.response?.data?.error || err?.message || 'Erreur inconnue'}`);
+      toast(`Erreur : ${err?.response?.data?.error || err?.message || 'suppression impossible'}`, 'error');
     }
   };
 
@@ -181,7 +192,13 @@ export function TournamentDetailPage() {
   };
 
   const handleDeleteRound = async (roundId: string) => {
-    if (!confirm('Supprimer cette ronde ?')) return;
+    const ok = await confirm({
+      title: 'Supprimer la ronde',
+      message: 'Supprimer cette ronde ?',
+      confirmLabel: 'Supprimer',
+      danger: true,
+    });
+    if (!ok) return;
     await deleteRound(id!, roundId);
     reload();
   };
@@ -1834,74 +1851,6 @@ function InlineScoutSection({ name, isWinner, isCurrentUser, scout, potentialDec
 
       {saving && (
         <p className="text-[10px] text-gold-400/60 text-center">Enregistrement...</p>
-      )}
-    </div>
-  );
-}
-
-function DropdownMenu({ items }: { items: { label: string; onClick: () => void; danger?: boolean }[] }) {
-  const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handle = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node) &&
-          btnRef.current && !btnRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handle);
-    return () => document.removeEventListener('mousedown', handle);
-  }, [open]);
-
-  const handleOpen = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!open && btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setPos({ top: rect.bottom + 4, left: rect.right - 160 });
-    }
-    setOpen(o => !o);
-  };
-
-  return (
-    <div className="relative shrink-0">
-      <button
-        ref={btnRef}
-        type="button"
-        onClick={handleOpen}
-        className="flex items-center justify-center w-8 h-8 rounded-lg bg-gold-500/15 text-gold-400 hover:bg-gold-500/25 transition-colors"
-      >
-        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-          <circle cx="12" cy="5" r="2" />
-          <circle cx="12" cy="12" r="2" />
-          <circle cx="12" cy="19" r="2" />
-        </svg>
-      </button>
-      {open && createPortal(
-        <div
-          ref={menuRef}
-          className="fixed z-[9999] bg-ink-900 border border-ink-700/50 rounded-xl shadow-xl shadow-ink-950/50 py-1 overflow-hidden"
-          style={{ top: pos.top, left: pos.left, width: '160px' }}
-        >
-          {items.map(item => (
-            <button
-              key={item.label}
-              type="button"
-              onClick={e => { e.stopPropagation(); setOpen(false); item.onClick(); }}
-              className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                item.danger
-                  ? 'text-lorcana-ruby/80 hover:bg-lorcana-ruby/10 hover:text-lorcana-ruby'
-                  : 'text-ink-200 hover:bg-ink-800/50'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>,
-        document.body
       )}
     </div>
   );

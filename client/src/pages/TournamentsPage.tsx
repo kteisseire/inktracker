@@ -11,6 +11,7 @@ import { HelpButton } from '../components/ui/HelpButton.js';
 import { SkeletonRows } from '../components/ui/Skeleton.js';
 import { useToast } from '../components/ui/Toast.js';
 import { useConfirm } from '../components/ui/ConfirmDialog.js';
+import { getQrCodeUrl } from '../lib/qrcode.js';
 import { Reveal } from '../components/ui/folio.js';
 import type { Tournament } from '@lorcana/shared';
 
@@ -24,6 +25,10 @@ function CardMenu({ tournament, onDeleted }: { tournament: Tournament; onDeleted
   const navigate = useNavigate();
   const { toast } = useToast();
   const confirm = useConfirm();
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   // Inclure le panneau (portail) dans les zones "intérieures" : sinon le mousedown
   // sur un item ferme le menu avant que son onClick ne se déclenche.
@@ -40,11 +45,25 @@ function CardMenu({ tournament, onDeleted }: { tournament: Tournament; onDeleted
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setOpen(false);
+    setShareModalOpen(true);
+    if (shareUrl) return; // déjà généré
+    setShareLoading(true);
     try {
       const shareId = await shareTournament(tournament.id);
-      await navigator.clipboard.writeText(`${window.location.origin}/t/${shareId}`);
-      toast('Lien copié !', 'success');
-    } catch { toast('Erreur lors du partage', 'error'); }
+      setShareUrl(`${window.location.origin}/t/${shareId}`);
+    } catch {
+      toast('Erreur lors du partage', 'error');
+      setShareModalOpen(false);
+    } finally {
+      setShareLoading(false);
+    }
+  };
+
+  const handleCopyShareUrl = async () => {
+    if (!shareUrl) return;
+    await navigator.clipboard.writeText(shareUrl);
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2000);
   };
 
   const handleDelete = async (e: React.MouseEvent) => {
@@ -96,6 +115,56 @@ function CardMenu({ tournament, onDeleted }: { tournament: Tournament; onDeleted
             <Trash2 className="w-4 h-4" strokeWidth={1.8} />
             Supprimer
           </button>
+        </div>,
+        document.body
+      )}
+
+      {/* Modale de partage avec QR code (identique au partage dans un tournoi) */}
+      {shareModalOpen && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center" onClick={() => setShareModalOpen(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative w-full sm:max-w-sm bg-ink-900 border border-ink-700/50 rounded-t-2xl sm:rounded-2xl shadow-2xl p-5 sm:p-6" onClick={e => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setShareModalOpen(false)}
+              className="absolute top-3 right-3 p-2 rounded-lg text-ink-500 hover:text-ink-300 hover:bg-ink-800/50 transition-colors"
+              aria-label="Fermer"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <div className="space-y-4">
+              <h3 className="text-base font-semibold text-ink-100 truncate pr-6">Partager « {tournament.name} »</h3>
+              {shareLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold-400" />
+                </div>
+              ) : shareUrl ? (
+                <>
+                  <div className="flex justify-center">
+                    <img src={getQrCodeUrl(shareUrl)} alt="QR Code" className="w-48 h-48 rounded-xl" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={shareUrl}
+                      className="flex-1 bg-ink-800/50 border border-ink-700/50 rounded-xl text-sm text-ink-300 px-3 py-2.5 focus:outline-none select-all"
+                      onClick={e => (e.target as HTMLInputElement).select()}
+                    />
+                    <button
+                      onClick={handleCopyShareUrl}
+                      className="shrink-0 px-3 py-2.5 rounded-xl bg-gold-500/20 text-gold-400 hover:bg-gold-500/30 text-sm font-medium transition-colors"
+                    >
+                      {shareCopied ? 'Copié !' : 'Copier'}
+                    </button>
+                  </div>
+                  <p className="text-xs text-ink-500 text-center">
+                    Toute personne avec ce lien pourra voir votre tournoi
+                  </p>
+                </>
+              ) : null}
+            </div>
+          </div>
         </div>,
         document.body
       )}

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { listDecks, createDeck, updateDeck, deleteDeck, setDefaultDeck, extractDeckColors } from '../api/deck.api.js';
 import { DeckBadges, HollowLozenge } from '../components/ui/InkBadge.js';
@@ -149,7 +149,6 @@ export function DecksPage() {
   };
 
   const handleSetDefault = async (id: string) => { await setDefaultDeck(id); reloadDecks(); };
-  const navigate = useNavigate();
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -192,13 +191,14 @@ export function DecksPage() {
           {decks.map(deck => (
             <div
               key={deck.id}
-              onClick={() => navigate(`/decks/${deck.id}/stats`)}
               data-active={deck.isDefault ? 'true' : undefined}
-              className="status-rail row-tappable flex items-start gap-3 pl-4 pr-3 py-3.5 cursor-pointer hover:bg-ink-800/40 transition-colors"
+              className="group status-rail row-tappable flex items-start gap-3 pl-4 pr-3 py-3.5 relative hover:bg-ink-800/40 transition-colors"
             >
+              {/* Toute la ligne ouvre les stats du deck (lien étiré) */}
+              <Link to={`/decks/${deck.id}/stats`} className="card-hit" aria-label={`Statistiques de ${deck.name}`} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                  <span className="font-display text-[0.95rem] tracking-[0.02em] text-ink-100 truncate">{deck.name}</span>
+                  <span className="font-display text-[0.95rem] tracking-[0.02em] text-ink-100 group-hover:text-gold-400 transition-colors truncate">{deck.name}</span>
                   {deck.archetypeName && (
                     <span className="text-xs text-ink-500 truncate">{deck.archetypeName}</span>
                   )}
@@ -209,13 +209,13 @@ export function DecksPage() {
                 <div className="flex items-center gap-2">
                   <DeckBadges colors={deck.colors as any} />
                   {deck.link && (
-                    <a href={deck.link} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-ink-500 hover:text-ink-300 transition-colors shrink-0">
+                    <a href={deck.link} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="relative z-10 text-ink-500 hover:text-ink-300 transition-colors shrink-0">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                     </a>
                   )}
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 shrink-0" onClick={e => e.stopPropagation()}>
+              <div className="relative z-10 flex flex-wrap items-center gap-x-3 gap-y-1 shrink-0" onClick={e => e.stopPropagation()}>
                 {!deck.isDefault && (
                   <button onClick={() => handleSetDefault(deck.id)} className="text-xs text-gold-500 hover:text-gold-300 transition-colors font-medium">Défaut</button>
                 )}

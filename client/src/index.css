@@ -237,6 +237,16 @@
     @apply absolute left-0 top-1 bottom-1 w-[3px] rounded-full bg-ink-600;
   }
 
+  /* Lien étiré : un <Link> transparent qui couvre toute la carte/ligne pour la
+     rendre entièrement cliquable (accessible, clavier + ouverture nouvel onglet).
+     Le parent doit être `relative` ; les enfants interactifs passent en `relative z-10`. */
+  .card-hit {
+    @apply absolute inset-0 z-0 rounded-xl;
+  }
+  .card-hit:focus-visible {
+    @apply outline-none ring-2 ring-gold-400/50;
+  }
+
   /* Voile d'accent réutilisable (background-image, n'écrase pas le background-color
      pose par Tailwind) — pour header / nav / surfaces translucides. */
   .tint-accent {

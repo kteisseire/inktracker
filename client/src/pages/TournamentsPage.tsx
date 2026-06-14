@@ -107,14 +107,16 @@ function TournamentCard({ tournament, presence, onDeleted }: {
   const date = new Date(tournament.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 
   return (
-    <div className="ink-card-hover overflow-hidden group">
+    <div className="ink-card-hover overflow-hidden group relative">
+      {/* Toute la carte est cliquable (lien étiré) — le menu passe au-dessus */}
+      <Link to={`/tournaments/${tournament.id}`} className="card-hit" aria-label={tournament.name} />
       <div className="p-4">
         {/* Line 1: name + placement medal + menu */}
         <div className="flex items-center justify-between gap-2 mb-1">
-          <Link to={`/tournaments/${tournament.id}`} className="font-display text-[0.95rem] tracking-[0.02em] text-ink-100 group-hover:text-gold-400 transition-colors truncate leading-tight flex-1">
+          <span className="font-display text-[0.95rem] tracking-[0.02em] text-ink-100 group-hover:text-gold-400 transition-colors truncate leading-tight flex-1">
             {tournament.name}
-          </Link>
-          <div className="flex items-center gap-1.5 shrink-0">
+          </span>
+          <div className="flex items-center gap-1.5 shrink-0 relative z-10">
             {tournament.placement && (
               <span className="ink-num text-xs text-gold-400 bg-gold-500/10 px-2 py-0.5 rounded-full">
                 #{tournament.placement}{tournament.playerCount ? `/${tournament.playerCount}` : ''}

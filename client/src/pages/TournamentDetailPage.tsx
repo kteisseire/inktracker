@@ -2209,7 +2209,9 @@ function RoundCard({ round, tournamentId, format, onDelete, scoutMap, possibleDe
   } : undefined);
 
   return (
-    <div className="ink-card overflow-hidden cursor-pointer transition-all duration-200 hover:border-gold-500/25" onClick={() => navigate(`/tournaments/${tournamentId}/rounds/${round.id}/edit`)}>
+    <div className="ink-card overflow-hidden transition-all duration-200 hover:border-gold-500/25 relative group">
+      {/* Toute la carte de ronde ouvre l'édition (lien étiré) */}
+      <Link to={`/tournaments/${tournamentId}/rounds/${round.id}/edit`} className="card-hit" aria-label={`Modifier la ronde ${round.roundNumber}`} />
       <div className="px-3 sm:px-4 py-3 border-b border-ink-800/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -2217,7 +2219,7 @@ function RoundCard({ round, tournamentId, format, onDelete, scoutMap, possibleDe
             <span className="font-medium text-ink-100 truncate">{round.opponentName || 'Inconnu'}</span>
             <ScoutDeckBadges scout={displayScout} possibleDecks={round.opponentName ? possibleDecks.get(round.opponentName.toLowerCase()) : undefined} />
           </div>
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 relative z-10">
             {games.length > 0 && (
               <span className="font-bold text-base sm:text-lg">
                 <span className="text-green-400">{gamesWon}</span>
@@ -2249,7 +2251,7 @@ function RoundPhoto({ photoUrl }: { photoUrl: string }) {
   return (
     <>
       <div
-        className="px-3 sm:px-4 py-2 border-t border-ink-800/50 cursor-pointer"
+        className="relative z-10 px-3 sm:px-4 py-2 border-t border-ink-800/50 cursor-pointer"
         onClick={(e) => { e.stopPropagation(); setExpanded(true); }}
       >
         <img src={photoUrl} alt="Photo de ronde" className="w-16 h-16 object-cover rounded-lg hover:opacity-80 transition-opacity" />

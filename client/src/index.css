@@ -53,6 +53,16 @@
     /* Vignette claire + voile doré (le fond sombre des thèmes de sets est ignoré
        en mode clair, c'est applyThemeToRoot qui pose le bon --app-bg). */
     --app-bg: radial-gradient(ellipse 120% 80% at 50% -10%, rgba(180,150,70,0.16) 0%, transparent 60%);
+    /* Accent "or ancien" — defauts pre-paint pour le theme par defaut (React
+       pose ensuite les valeurs exactes du theme actif via applyThemeToRoot).
+       Doré SOMBRE pour rester lisible en texte sur parchemin. */
+    --accent-300: 145 112 8;
+    --accent-400: 119 92 6;
+    --accent-500: 104 81 5;
+    --accent-600: 92 71 5;
+    --accent-700: 80 62 4;
+    --accent-ink: 250 244 230;
+    --rule-gold: rgba(119,92,6,0.45);
   }
 
   /* No faux-bold ever: Marcellus ships a single 400 weight; without this guard

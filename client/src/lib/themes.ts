@@ -302,32 +302,46 @@ function lightAppBg(accentRgb: [number, number, number]): string {
   return `radial-gradient(ellipse 120% 80% at 50% -10%, rgba(${r},${g},${b},0.14) 0%, transparent 60%)`;
 }
 
-// Variables CSS app-wide dérivées d'un thème + du mode. La luminosité du 400 est
-// clampée pour rester lisible en texte sur fond sombre comme clair.
+// Variables CSS app-wide dérivées d'un thème + du mode.
 export function appVarsForTheme(theme: Theme, mode: ThemeMode = 'dark'): Record<string, string> {
-  if (theme.id === 'default') {
-    const vars = { ...DEFAULT_APP_VARS };
-    if (mode === 'light') vars['--app-bg'] = lightAppBg([245, 197, 66]);
-    return vars;
+  // ─── Mode SOMBRE ───────────────────────────────────────────────────────
+  // Accent CLAIR (texte lumineux sur fond sombre). Inchangé.
+  if (mode === 'dark') {
+    if (theme.id === 'default') return { ...DEFAULT_APP_VARS };
+    const [h, s, l] = rgbToHsl(hexToRgb(theme.appAccent));
+    const base = Math.min(Math.max(l, 0.5), 0.66);
+    const rgb = (lum: number) => hslToRgb([h, s, lum]).join(' ');
+    const [r4, g4, b4] = hslToRgb([h, s, base]);
+    const ink = hslToRgb([h, Math.min(s, 0.3), 0.1]).join(' ');
+    return {
+      '--accent-300': rgb(Math.min(base + 0.12, 0.85)),
+      '--accent-400': rgb(base),
+      '--accent-500': rgb(base - 0.12),
+      '--accent-600': rgb(base - 0.2),
+      '--accent-700': rgb(base - 0.3),
+      '--accent-ink': ink,
+      '--rule-gold': `rgba(${r4},${g4},${b4},0.40)`,
+      '--app-bg': theme.bgOverlay ? `${theme.bgOverlay}, ${theme.bg}` : theme.bg,
+    };
   }
-  const [h, s, l] = rgbToHsl(hexToRgb(theme.appAccent));
-  const base = Math.min(Math.max(l, 0.5), 0.66); // équivalent de la zone gold-400
-  const rgb = (lum: number) => hslToRgb([h, s, lum]).join(' ');
-  const [r4, g4, b4] = hslToRgb([h, s, base]);
-  // Texte sur boutons accent : très sombre ET désaturé (comme le doré d'origine
-  // #2a2008, quasi neutre) — sinon un accent saturé donne un texte criard.
-  const ink = hslToRgb([h, Math.min(s, 0.3), 0.1]).join(' ');
+
+  // ─── Mode CLAIR (parchemin) ────────────────────────────────────────────
+  // Accent SOMBRE et saturé (or ancien) pour rester lisible en texte sur
+  // parchemin ; texte crème sur les boutons accent. Vaut aussi pour "default".
+  const [h, s] = rgbToHsl(hexToRgb(theme.appAccent));
+  const sat = Math.min(Math.max(s, 0.55), 0.95); // garde une teinte franche, pas boueuse
+  const rgb = (lum: number) => hslToRgb([h, sat, lum]).join(' ');
+  const [r4, g4, b4] = hslToRgb([h, sat, 0.245]);
+  // Luminosités validées au contraste WCAG sur parchemin (texte ≥4.5, display ≥3).
   return {
-    '--accent-300': rgb(Math.min(base + 0.12, 0.85)),
-    '--accent-400': rgb(base),
-    '--accent-500': rgb(base - 0.12),
-    '--accent-600': rgb(base - 0.2),
-    '--accent-700': rgb(base - 0.3),
-    '--accent-ink': ink,
-    '--rule-gold': `rgba(${r4},${g4},${b4},0.40)`,
-    '--app-bg': mode === 'light'
-      ? lightAppBg([r4, g4, b4])
-      : (theme.bgOverlay ? `${theme.bgOverlay}, ${theme.bg}` : theme.bg),
+    '--accent-300': rgb(0.30), // gros chiffres / display (seuil contraste large)
+    '--accent-400': rgb(0.245), // accent texte principal + fond des boutons
+    '--accent-500': rgb(0.215), // rubriques (petit texte) — contraste renforcé
+    '--accent-600': rgb(0.19),
+    '--accent-700': rgb(0.165),
+    '--accent-ink': '250 244 230', // crème : texte sur boutons accent sombres
+    '--rule-gold': `rgba(${r4},${g4},${b4},0.45)`,
+    '--app-bg': lightAppBg([r4, g4, b4]),
   };
 }
 

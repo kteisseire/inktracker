@@ -5,6 +5,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { AuthProvider, useAuth } from './context/AuthContext.js';
 import { ThemeProvider } from './context/ThemeContext.js';
+import { ThemeBackdrop } from './components/ui/ThemeBackdrop.js';
 import { Header } from './components/layout/Header.js';
 import { BottomNav } from './components/layout/BottomNav.js';
 import { ProtectedRoute } from './components/layout/ProtectedRoute.js';
@@ -116,6 +117,7 @@ export default function App() {
   return (
     <HelmetProvider>
       <ThemeProvider>
+        <ThemeBackdrop />
         <PersistQueryClientProvider client={queryClient} persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}>
           <BrowserRouter>
             <AuthProvider>

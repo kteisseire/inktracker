@@ -31,7 +31,7 @@ export function LandingPage() {
       <section className="text-center max-w-3xl mx-auto px-2">
         <div className="flex justify-center mb-6">
           <div className="relative">
-            <LogoIcon className="w-20 h-20 sm:w-24 sm:h-24 drop-shadow-[0_0_24px_rgba(212,163,36,0.3)]" />
+            <LogoIcon className="w-20 h-20 sm:w-24 sm:h-24 drop-shadow-[0_0_24px_rgb(var(--accent-500)/0.35)]" />
             <div className="absolute inset-0 w-20 h-20 sm:w-24 sm:h-24 bg-gold-400/10 rounded-full blur-2xl -z-10" />
           </div>
         </div>

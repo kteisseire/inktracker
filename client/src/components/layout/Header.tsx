@@ -167,7 +167,7 @@ export function Header() {
   const nav = user ? AUTH_NAV : PUBLIC_NAV;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-rule bg-ink-950/95 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-rule bg-ink-950/95 tint-accent backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 h-14 grid grid-cols-[2.5rem_1fr_2.5rem] md:flex md:items-center md:justify-between items-center">
         {/* Left: back button */}
         <div className="flex items-center">

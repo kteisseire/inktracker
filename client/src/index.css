@@ -128,9 +128,13 @@
 
 @layer components {
   /* ---- Surfaces ---- */
+  /* Toutes les surfaces reçoivent un voile d'accent du thème (très faible) en plus
+     du fond d'encre : c'est ce qui fait "baigner" toute l'app dans la couleur du set. */
   .ink-card {
     /* opaque (no glass/blur), solid rule border that survives bright halls, no glow */
-    @apply bg-ink-900/95 border border-rule rounded-xl shadow-card;
+    @apply border border-rule rounded-xl shadow-card;
+    background-color: rgb(var(--ink-900) / 0.95);
+    background-image: linear-gradient(0deg, rgb(var(--accent-400) / 0.035), rgb(var(--accent-400) / 0.035));
   }
 
   .ink-card-hover {
@@ -233,9 +237,17 @@
     @apply absolute left-0 top-1 bottom-1 w-[3px] rounded-full bg-ink-600;
   }
 
+  /* Voile d'accent réutilisable (background-image, n'écrase pas le background-color
+     pose par Tailwind) — pour header / nav / surfaces translucides. */
+  .tint-accent {
+    background-image: linear-gradient(0deg, rgb(var(--accent-400) / 0.05), rgb(var(--accent-400) / 0.05));
+  }
+
   /* Faint field boundary for ruled groups on long pages — no border, no blur */
   .section-wash {
-    @apply bg-ink-900/40 rounded-xl p-4 sm:p-5;
+    @apply rounded-xl p-4 sm:p-5;
+    background-color: rgb(var(--ink-900) / 0.4);
+    background-image: linear-gradient(0deg, rgb(var(--accent-400) / 0.04), rgb(var(--accent-400) / 0.04));
   }
 
   /* ---- Folio display scale (Codex Vivant) ---- */
@@ -260,6 +272,14 @@
    Motion layer (Codex Vivant) — compositor-only, reduced-motion + fail-open safe.
    Keyframes + reveal mechanism live OUTSIDE @layer so they always apply.
    ============================================================ */
+
+/* Décor de thème (ThemeBackdrop) — dérive très lent, compositor-only.
+   La règle reduced-motion globale neutralise ces animations. */
+@keyframes theme-drift { from { transform: translateY(0) rotate(0deg); } to { transform: translateY(-22px) rotate(8deg); } }
+@keyframes theme-bloom-pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: 0.7; } }
+.theme-float { animation: theme-drift 18s ease-in-out infinite alternate; will-change: transform; }
+.theme-bloom { animation: theme-bloom-pulse 22s ease-in-out infinite; will-change: transform, opacity; }
+.theme-bloom--slow { animation-duration: 30s; }
 
 @keyframes rise-in { from { opacity: 0.001; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes draw-rail { from { transform: scaleY(0); } to { transform: scaleY(1); } }

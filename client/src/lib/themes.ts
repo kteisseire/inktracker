@@ -21,6 +21,11 @@ export interface Theme {
 }
 
 export const THEME_STORAGE_KEY = 'glimmerlog_lore_theme';
+export const MODE_STORAGE_KEY = 'glimmerlog_app_mode';
+
+// Mode d'affichage, orthogonal au thème de set : "dark" (Codex sombre, défaut)
+// ou "light" (parchemin clair). Le thème de set fournit l'accent dans les deux modes.
+export type ThemeMode = 'dark' | 'light';
 
 export const THEMES: Theme[] = [
   {
@@ -290,10 +295,21 @@ function hslToRgb([h, s, l]: [number, number, number]): [number, number, number]
   return [Math.round(hue(h + 1 / 3) * 255), Math.round(hue(h) * 255), Math.round(hue(h - 1 / 3) * 255)];
 }
 
-// Variables CSS app-wide dérivées d'un thème. La luminosité du 400 est clampée
-// pour rester lisible en texte sur fond sombre et en fond sous texte sombre.
-export function appVarsForTheme(theme: Theme): Record<string, string> {
-  if (theme.id === 'default') return { ...DEFAULT_APP_VARS };
+// Fond de page en mode clair : vignette parchemin teintée par l'accent du set
+// (on ignore le dégradé sombre du set, incompatible avec le parchemin).
+function lightAppBg(accentRgb: [number, number, number]): string {
+  const [r, g, b] = accentRgb;
+  return `radial-gradient(ellipse 120% 80% at 50% -10%, rgba(${r},${g},${b},0.14) 0%, transparent 60%)`;
+}
+
+// Variables CSS app-wide dérivées d'un thème + du mode. La luminosité du 400 est
+// clampée pour rester lisible en texte sur fond sombre comme clair.
+export function appVarsForTheme(theme: Theme, mode: ThemeMode = 'dark'): Record<string, string> {
+  if (theme.id === 'default') {
+    const vars = { ...DEFAULT_APP_VARS };
+    if (mode === 'light') vars['--app-bg'] = lightAppBg([245, 197, 66]);
+    return vars;
+  }
   const [h, s, l] = rgbToHsl(hexToRgb(theme.appAccent));
   const base = Math.min(Math.max(l, 0.5), 0.66); // équivalent de la zone gold-400
   const rgb = (lum: number) => hslToRgb([h, s, lum]).join(' ');
@@ -309,12 +325,15 @@ export function appVarsForTheme(theme: Theme): Record<string, string> {
     '--accent-700': rgb(base - 0.3),
     '--accent-ink': ink,
     '--rule-gold': `rgba(${r4},${g4},${b4},0.40)`,
-    '--app-bg': theme.bgOverlay ? `${theme.bgOverlay}, ${theme.bg}` : theme.bg,
+    '--app-bg': mode === 'light'
+      ? lightAppBg([r4, g4, b4])
+      : (theme.bgOverlay ? `${theme.bgOverlay}, ${theme.bg}` : theme.bg),
   };
 }
 
-export function applyThemeToRoot(theme: Theme): void {
-  const vars = appVarsForTheme(theme);
+export function applyThemeToRoot(theme: Theme, mode: ThemeMode = 'dark'): void {
   const root = document.documentElement;
+  root.setAttribute('data-mode', mode);
+  const vars = appVarsForTheme(theme, mode);
   for (const [key, value] of Object.entries(vars)) root.style.setProperty(key, value);
 }

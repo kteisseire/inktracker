@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Trophy, Layers, BarChart3, Sparkles, Scissors, Gem, CalendarDays, ChevronRight, Plus, type LucideIcon } from 'lucide-react';
 import { getOverview } from '../api/stats.api.js';
 import { listTournaments } from '../api/tournaments.api.js';
-import { DeckBadges, HollowLozenge } from '../components/ui/InkBadge.js';
+import { DeckBadges } from '../components/ui/InkBadge.js';
 import { LogoIcon } from '../components/ui/Logo.js';
 import { HelpButton } from '../components/ui/HelpButton.js';
 import { SkeletonStatPanel, SkeletonRows } from '../components/ui/Skeleton.js';
@@ -32,8 +33,8 @@ export function DashboardPage() {
           <h1 className="font-display text-2xl sm:text-3xl text-ink-50 tracking-[0.03em]">Tableau de bord</h1>
           <HelpButton sections={['Tournois', 'Statistiques']} />
         </div>
-        <Link to="/tournaments/new" className="ink-btn-primary text-sm px-4 py-2 shrink-0">
-          + Nouveau
+        <Link to="/tournaments/new" className="ink-btn-primary text-sm px-4 py-2 shrink-0 inline-flex items-center gap-1.5">
+          <Plus className="w-4 h-4" strokeWidth={2.2} /> Nouveau
         </Link>
       </Reveal>
 
@@ -85,17 +86,23 @@ export function DashboardPage() {
       {!isEmpty && (
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="rubric-label">Tournois récents</h2>
-            <Link to="/tournaments" className="text-gold-400 text-xs hover:text-gold-300 transition-colors">Voir tout</Link>
+            <h2 className="rubric-label flex items-center gap-1.5"><Trophy className="w-3.5 h-3.5" strokeWidth={2} /> Tournois récents</h2>
+            <Link to="/tournaments" className="text-gold-400 text-xs hover:text-gold-300 transition-colors inline-flex items-center gap-0.5">
+              Voir tout <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
 
           {loading ? (
             <SkeletonRows count={3} />
           ) : recentTournaments.length === 0 ? (
             <div className="section-wash flex flex-col items-center text-center py-10 gap-3">
-              <HollowLozenge size={26} />
-              <p className="text-ink-400 text-sm">Aucun tournoi enregistré pour l'instant.</p>
-              <Link to="/tournaments/new" className="ink-btn-primary text-sm px-4 py-2">Créer un tournoi</Link>
+              <span className="grid place-items-center w-14 h-14 rounded-2xl bg-gold-400/10 text-gold-400 shadow-edge-lit">
+                <Trophy className="w-7 h-7" strokeWidth={1.6} />
+              </span>
+              <p className="text-ink-400 text-sm max-w-xs">Aucun tournoi enregistré pour l'instant. Lancez-vous et suivez vos performances.</p>
+              <Link to="/tournaments/new" className="ink-btn-primary text-sm px-4 py-2 inline-flex items-center gap-1.5">
+                <Plus className="w-4 h-4" strokeWidth={2.2} /> Créer un tournoi
+              </Link>
             </div>
           ) : (
             <div className="ink-card divide-y divide-rule overflow-hidden">
@@ -110,9 +117,10 @@ export function DashboardPage() {
                 >
                   <div className="min-w-0 flex-1">
                     <h3 className="font-display text-ink-100 truncate text-[0.95rem] tracking-[0.02em]">{t.name}</h3>
-                    <p className="text-xs text-ink-400 mt-0.5">
+                    <p className="text-xs text-ink-400 mt-0.5 flex items-center gap-1">
+                      <CalendarDays className="w-3.5 h-3.5 text-ink-500 shrink-0" strokeWidth={1.8} />
                       <span className="ink-num">{new Date(t.date).toLocaleDateString('fr-FR')}</span>
-                      {t.location && <span className="text-ink-500"> · {t.location}</span>}
+                      {t.location && <span className="text-ink-500 truncate"> · {t.location}</span>}
                     </p>
                   </div>
                   <div className="flex items-center gap-2.5 shrink-0">
@@ -131,23 +139,22 @@ export function DashboardPage() {
   );
 }
 
-function FeatureIcon({ name }: { name: string }) {
-  const p = { className: 'w-5 h-5', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', strokeWidth: 1.7 };
-  switch (name) {
-    case 'trophy': return <svg {...p}><path strokeLinecap="round" strokeLinejoin="round" d="M5 3h14l-1.4 8.4A5 5 0 0112.6 16h-.8a5 5 0 01-5-4.6L5 3zM8 16h8m-4 0v4m-3 0h6" /></svg>;
-    case 'cards': return <svg {...p}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>;
-    case 'chart': return <svg {...p}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>;
-    case 'lore': return <svg {...p}><path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>;
-    case 'cut': return <svg {...p}><path strokeLinecap="round" strokeLinejoin="round" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z" /></svg>;
-    case 'diamond': return <svg {...p}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3l9 9-9 9-9-9 9-9z" /></svg>;
-    default: return null;
-  }
-}
+const FEATURE_ICONS: Record<string, LucideIcon> = {
+  trophy: Trophy,
+  cards: Layers,
+  chart: BarChart3,
+  lore: Sparkles,
+  cut: Scissors,
+  diamond: Gem,
+};
 
 function Feature({ icon, title, description }: { icon: string; title: string; description: string }) {
+  const Icon = FEATURE_ICONS[icon] ?? Sparkles;
   return (
-    <div className="flex gap-3 p-3 rounded-md bg-ink-800/30">
-      <span className="text-gold-400 shrink-0 mt-0.5"><FeatureIcon name={icon} /></span>
+    <div className="flex gap-3 p-3 rounded-lg bg-ink-800/30 border border-rule/60 hover:border-rule-gold transition-colors">
+      <span className="shrink-0 grid place-items-center w-9 h-9 rounded-lg bg-gold-400/10 text-gold-400">
+        <Icon className="w-[18px] h-[18px]" strokeWidth={1.8} />
+      </span>
       <div>
         <h3 className="text-sm font-semibold text-ink-100">{title}</h3>
         <p className="text-xs sm:text-sm text-ink-500 mt-0.5">{description}</p>

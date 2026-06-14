@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.js';
 import { useDismiss } from '../../hooks/useDismiss.js';
 import { LogoIcon } from '../ui/Logo.js';
+import { ModeToggle } from '../ui/ModeToggle.js';
 
 function useBackTarget(): string | null {
   const { pathname } = useLocation();
@@ -192,8 +193,10 @@ export function Header() {
           </span>
         </Link>
 
-        {/* Mobile right spacer */}
-        <div className="md:hidden" />
+        {/* Mobile right: bascule de mode */}
+        <div className="md:hidden flex items-center justify-end">
+          <ModeToggle />
+        </div>
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-1">
@@ -207,6 +210,7 @@ export function Header() {
             ))}
           </nav>
           <div className="w-px h-5 bg-rule mx-2" />
+          <ModeToggle />
           {user ? (
             <div className="flex items-center gap-0.5">
               {USER_NAV.map(item => (

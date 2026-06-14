@@ -14,6 +14,45 @@
     --accent-ink: 42 32 8;
     --rule-gold: rgba(245,197,66,0.40);
     --app-bg: radial-gradient(ellipse 120% 80% at 50% -10%, rgba(46,30,86,0.32) 0%, transparent 60%);
+
+    /* Mode SOMBRE (défaut) — rampe d'encre d'origine (950 = fond, 50 = texte vif) */
+    --ink-50:  238 237 245;
+    --ink-100: 216 213 234;
+    --ink-200: 180 174 212;
+    --ink-300: 142 134 184;
+    --ink-400: 107 97 154;
+    --ink-500: 78 70 120;
+    --ink-600: 56 48 90;
+    --ink-700: 39 32 64;
+    --ink-800: 26 21 48;
+    --ink-850: 19 15 38;
+    --ink-900: 14 11 30;
+    --ink-950: 8 6 15;
+    --ink-haze: 20 16 42;
+    --rule: rgba(39,32,64,0.6);
+  }
+
+  /* Mode PARCHEMIN (clair) — rampe INVERSÉE et réchauffée. Les positions sémantiques
+     sont conservées : 950 = fond de page (parchemin), 900 = carte (ivoire, plus claire),
+     100/50 = texte (encre sombre). Toute l'app bascule sans changer un seul className. */
+  :root[data-mode="light"] {
+    --ink-950: 233 222 198;  /* fond de page — parchemin chaud */
+    --ink-900: 244 236 217;  /* carte ivoire (plus claire que le fond → relief) */
+    --ink-850: 238 229 206;  /* champ de saisie */
+    --ink-800: 224 211 182;  /* survol / remplissage subtil */
+    --ink-700: 205 188 152;  /* filets / bordures */
+    --ink-600: 168 148 110;  /* désactivé */
+    --ink-500: 124 105 74;   /* texte secondaire / placeholder */
+    --ink-400: 96 80 56;     /* libellés / texte tertiaire */
+    --ink-300: 74 61 42;     /* texte de corps atténué */
+    --ink-200: 54 44 30;     /* texte de corps */
+    --ink-100: 40 32 22;     /* texte principal — encre */
+    --ink-50:  26 19 11;     /* encre la plus dense (titres) */
+    --ink-haze: 240 231 210;
+    --rule: rgba(90,72,40,0.22); /* filet chaud, discret sur parchemin */
+    /* Vignette claire + voile doré (le fond sombre des thèmes de sets est ignoré
+       en mode clair, c'est applyThemeToRoot qui pose le bon --app-bg). */
+    --app-bg: radial-gradient(ellipse 120% 80% at 50% -10%, rgba(180,150,70,0.16) 0%, transparent 60%);
   }
 
   /* No faux-bold ever: Marcellus ships a single 400 weight; without this guard

@@ -22,6 +22,8 @@
     <meta name="twitter:image" content="https://glimmerlog.com/logo.png" />
     <!-- Enables reveal animations only once JS is present; pre-JS content stays fully visible (no FOUC) -->
     <script>document.documentElement.dataset.animReady = '1';</script>
+    <!-- Applique le mode d'affichage avant le paint pour éviter un flash sombre→clair -->
+    <script>try{var m=localStorage.getItem('glimmerlog_app_mode');if(m==='light')document.documentElement.setAttribute('data-mode','light');}catch(e){}</script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body class="bg-ink-950 text-ink-100">

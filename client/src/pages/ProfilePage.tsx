@@ -5,6 +5,7 @@ import { HelpButton } from '../components/ui/HelpButton.js';
 import { ProfileSubNav } from '../components/layout/ProfileSubNav.js';
 import { ThemePicker } from '../components/ui/ThemePicker.js';
 import { useTheme } from '../context/ThemeContext.js';
+import { Sun, Moon } from 'lucide-react';
 
 export function ProfilePage() {
   const { user, updateUser, logout } = useAuth();
@@ -77,7 +78,7 @@ export function ProfilePage() {
 
 function ThemeSection() {
   const [open, setOpen] = useState(false);
-  const { theme } = useTheme();
+  const { theme, mode, setMode } = useTheme();
 
   return (
     <div className="ink-card overflow-hidden">
@@ -103,9 +104,33 @@ function ThemeSection() {
       </button>
 
       {open && (
-        <div className="px-4 pb-4 space-y-3 border-t border-ink-800/50 pt-4">
-          <p className="text-xs text-ink-500">S'applique à toute l'app et au compteur de lore.</p>
-          <ThemePicker />
+        <div className="px-4 pb-4 space-y-4 border-t border-ink-800/50 pt-4">
+          {/* Mode d'affichage */}
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-ink-200">Affichage</p>
+              <p className="text-xs text-ink-500 mt-0.5">Sombre ou parchemin clair.</p>
+            </div>
+            <div className="flex rounded-lg border border-rule overflow-hidden shrink-0">
+              <button
+                onClick={() => setMode('dark')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${mode === 'dark' ? 'bg-gold-400/15 text-gold-300' : 'text-ink-400 hover:text-ink-200'}`}
+              >
+                <Moon className="w-3.5 h-3.5" /> Sombre
+              </button>
+              <button
+                onClick={() => setMode('light')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-l border-rule transition-colors ${mode === 'light' ? 'bg-gold-400/15 text-gold-300' : 'text-ink-400 hover:text-ink-200'}`}
+              >
+                <Sun className="w-3.5 h-3.5" /> Parchemin
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs text-ink-500 mb-2">Thème — s'applique à toute l'app et au compteur de lore.</p>
+            <ThemePicker />
+          </div>
         </div>
       )}
     </div>

@@ -67,7 +67,7 @@ export function CornerFlourish({ draw = false }: { draw?: boolean }) {
       className={`corner-flourish absolute top-1.5 right-1.5 w-3 h-3 ${draw ? 'is-drawing' : ''}`}
       viewBox="0 0 12 12"
     >
-      <path pathLength={1} d="M12 0 H4 M12 0 V8" fill="none" stroke="rgba(245,197,66,0.4)" strokeWidth={1} />
+      <path pathLength={1} d="M12 0 H4 M12 0 V8" fill="none" stroke="var(--rule-gold)" strokeWidth={1} />
     </svg>
   );
 }

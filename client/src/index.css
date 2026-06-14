@@ -3,6 +3,19 @@
 @tailwind utilities;
 
 @layer base {
+  /* Thème actif (ThemeContext) — défauts = palette Codex Illuminé d'origine.
+     Triplets RGB pour les modificateurs d'opacité Tailwind. */
+  :root {
+    --accent-300: 252 216 121;
+    --accent-400: 245 197 66;
+    --accent-500: 212 163 36;
+    --accent-600: 184 137 26;
+    --accent-700: 138 102 19;
+    --accent-ink: 42 32 8;
+    --rule-gold: rgba(245,197,66,0.40);
+    --app-bg: radial-gradient(ellipse 120% 80% at 50% -10%, rgba(46,30,86,0.32) 0%, transparent 60%);
+  }
+
   /* No faux-bold ever: Marcellus ships a single 400 weight; without this guard
      `font-bold` on a display element synth-bolds into a smear. */
   html {
@@ -13,16 +26,16 @@
 
   body {
     @apply bg-ink-950 text-ink-100 antialiased;
-    /* Codex Illuminé: one restrained top vignette over the void — no AI 3-radial mesh */
-    background-image: radial-gradient(ellipse 120% 80% at 50% -10%, rgba(46,30,86,0.32) 0%, transparent 60%);
+    /* Fond piloté par le thème actif (défaut : vignette Codex Illuminé) */
+    background-image: var(--app-bg);
     background-attachment: fixed;
     min-height: 100vh;
     min-height: 100dvh;
   }
 
   ::selection {
-    background-color: rgba(245,197,66,0.28);
-    color: #fcd879;
+    background-color: rgb(var(--accent-400) / 0.28);
+    color: rgb(var(--accent-300));
   }
 
   /* Minimum touch target on mobile — raised to 44px for tappable rows */
@@ -79,7 +92,7 @@
   .ink-card-hero {
     /* the ONE edge-lit surface: a 1px gold catch-light on the top edge only */
     @apply bg-ink-900/95 border border-rule rounded-xl relative;
-    box-shadow: 0 2px 16px rgba(8,6,15,0.55), inset 0 1px 0 rgba(245,197,66,0.18);
+    box-shadow: 0 2px 16px rgba(8,6,15,0.55), inset 0 1px 0 rgb(var(--accent-400) / 0.18);
   }
 
   /* ---- Buttons ---- */

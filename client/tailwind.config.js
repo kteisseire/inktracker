@@ -21,17 +21,19 @@ export default {
           950: '#08060f',
           haze: '#14102a', // warm pane fill for section-wash + solid fallback behind blur
         },
+        // "gold" est désormais l'accent du thème actif (variables CSS posées par
+        // ThemeContext, défauts = palette dorée d'origine dans index.css :root)
         gold: {
-          300: '#fcd879',
-          400: '#f5c542',
-          500: '#d4a324',
-          600: '#b8891a',
-          700: '#8a6613',
-          ink: '#2a2008', // warm dark label text ON gold buttons
+          300: 'rgb(var(--accent-300) / <alpha-value>)',
+          400: 'rgb(var(--accent-400) / <alpha-value>)',
+          500: 'rgb(var(--accent-500) / <alpha-value>)',
+          600: 'rgb(var(--accent-600) / <alpha-value>)',
+          700: 'rgb(var(--accent-700) / <alpha-value>)',
+          ink: 'rgb(var(--accent-ink) / <alpha-value>)', // warm dark label text ON gold buttons
         },
         // Codex Illuminé tokens
         rule: 'rgba(39,32,64,0.6)',        // solid default divider (ink-700 @ 60%) — never vanishes in bright light
-        'rule-gold': 'rgba(245,197,66,0.40)', // active/selected/terminator hairline
+        'rule-gold': 'var(--rule-gold)', // active/selected/terminator hairline (thémé)
         lorcana: {
           amber: '#F5A623',
           amethyst: '#9B59B6',
@@ -68,7 +70,7 @@ export default {
         // Tinted to the void — never gold glow at rest
         'card': '0 2px 16px rgba(8,6,15,0.55)',
         'card-hover': '0 6px 28px rgba(8,6,15,0.7)',
-        'edge-lit': 'inset 0 1px 0 rgba(245,197,66,0.18)', // single top-edge catch-light (hero/modal only)
+        'edge-lit': 'inset 0 1px 0 rgb(var(--accent-400) / 0.18)', // single top-edge catch-light (hero/modal only)
       },
     },
   },

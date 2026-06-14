@@ -136,6 +136,16 @@ la base a évolué via `db push` depuis. `migrate deploy` est donc de facto un n
 2. Remplacer `db push --accept-data-loss` par `migrate deploy` dans `build:server`.
 3. Pour chaque nouvelle évolution du schéma : `npx prisma migrate dev --name <nom>` en dev, puis `migrate deploy` en prod.
 
+### Piège 4 — Builder le client dans ce repo = publication IMMÉDIATE en prod
+
+Caddy sert `client/dist` **directement depuis ce repo** (pas de copie de déploiement).
+Tout `npm run build --workspace=client` remplace donc instantanément le front servi sur
+glimmerlog.com — y compris un build de vérification de code non reviewé, ou un build
+lancé **sans** `VITE_GOOGLE_CLIENT_ID`/`VITE_DISCORD_CLIENT_ID` (ce qui casse les logins
+OAuth en prod jusqu'au build suivant). Règles :
+- Ne jamais builder le client dans ce repo juste « pour vérifier que ça compile » — utiliser `npx tsc -b client` seul.
+- Si un build complet est nécessaire, toujours fournir les trois variables `VITE_*` (voir `deploy/deploy.ps1`).
+
 ---
 
 ## 3. Procédure de déploiement pas-à-pas

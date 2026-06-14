@@ -1,214 +1,11 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { THEMES } from '../lib/themes.js';
+import { useTheme } from '../context/ThemeContext.js';
 
 const MAX_LORE = 20;
 const GROUP_DELAY_MS = 3000;
 const DEFAULT_TIMER = 50 * 60;
 
-// ─── Thèmes ────────────────────────────────────────────────────────────────
-interface Theme {
-  id: string;
-  name: string;
-  bg: string;           // background CSS du container
-  bgOverlay?: string;   // overlay en plus (radial gradient)
-  separator: string;    // couleur de la ligne séparateur
-  separatorGlow: string;// gradient complet de la ligne
-  pill: string;         // background de la pilule centrale
-  pillBorder: string;   // border de la pilule
-  meAccent: string;     // couleur accent joueur "moi"
-  oppAccent: string;    // couleur accent joueur "adversaire"
-  stars?: boolean;      // étoiles décoratives
-  particles?: 'bubbles' | 'sparks' | 'none';
-  labelFont?: string;   // classe tailwind pour les labels
-}
-
-const THEMES: Theme[] = [
-  {
-    id: 'default',
-    name: 'Défaut',
-    bg: 'radial-gradient(ellipse at 50% 50%, #1a1035 0%, #0c0a14 70%)',
-    separator: 'rgba(212,175,55,0.5)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.3) 30%, rgba(212,175,55,0.5) 50%, rgba(212,175,55,0.3) 70%, transparent 100%)',
-    pill: '#0f0c1e',
-    pillBorder: 'rgba(212,175,55,0.2)',
-    meAccent: '#5ba8d8',
-    oppAccent: '#d85b5b',
-    stars: true,
-  },
-  // S1 — The First Chapter : Great Illuminary, six encres fondatrices, éclats d'encre colorée
-  {
-    id: 'set1',
-    name: 'The First Chapter',
-    bg: 'radial-gradient(ellipse at 50% 30%, #1c1030 0%, #100820 55%, #180810 100%)',
-    bgOverlay: 'radial-gradient(ellipse at 70% 80%, rgba(180,20,30,0.12) 0%, transparent 50%)',
-    separator: 'rgba(245,178,2,0.65)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(1,137,196,0.3) 20%, rgba(245,178,2,0.7) 50%, rgba(211,8,47,0.3) 80%, transparent 100%)',
-    pill: '#110d20',
-    pillBorder: 'rgba(245,178,2,0.35)',
-    meAccent: '#0189C4',
-    oppAccent: '#D3082F',
-    stars: true,
-  },
-  // S2 — Rise of the Floodborn : inondation d'encre chaotique, tourbillons violets/sombres
-  {
-    id: 'set2',
-    name: 'Rise of the Floodborn',
-    bg: 'radial-gradient(ellipse at 40% 60%, #1e0a30 0%, #08041a 55%, #040210 100%)',
-    bgOverlay: 'radial-gradient(ellipse at 60% 30%, rgba(120,40,200,0.2) 0%, transparent 55%)',
-    separator: 'rgba(160,80,220,0.55)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(80,20,160,0.4) 20%, rgba(180,100,240,0.7) 50%, rgba(80,20,160,0.4) 80%, transparent 100%)',
-    pill: '#0d0820',
-    pillBorder: 'rgba(150,70,210,0.35)',
-    meAccent: '#9060e8',
-    oppAccent: '#e040b0',
-    stars: false,
-    particles: 'bubbles',
-  },
-  // S3 — Into the Inklands : exploration, montagnes, forêts, pierres anciennes
-  {
-    id: 'set3',
-    name: 'Into the Inklands',
-    bg: 'linear-gradient(155deg, #0a1a0c 0%, #081520 45%, #0e1808 100%)',
-    bgOverlay: 'radial-gradient(ellipse at 30% 70%, rgba(30,90,20,0.25) 0%, transparent 55%)',
-    separator: 'rgba(60,180,90,0.55)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(30,120,50,0.3) 20%, rgba(80,200,100,0.65) 50%, rgba(30,120,50,0.3) 80%, transparent 100%)',
-    pill: '#071410',
-    pillBorder: 'rgba(40,140,60,0.35)',
-    meAccent: '#38b060',
-    oppAccent: '#d4a820',
-    stars: false,
-  },
-  // S4 — Ursula's Return : ténèbres, tentacules, palais opulent, fumée violette/cyan
-  {
-    id: 'set4',
-    name: "Ursula's Return",
-    bg: 'radial-gradient(ellipse at 50% 90%, #080318 0%, #030208 65%, #000000 100%)',
-    bgOverlay: 'radial-gradient(ellipse at 30% 50%, rgba(100,0,160,0.18) 0%, transparent 50%)',
-    separator: 'rgba(180,0,220,0.5)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(80,0,160,0.3) 20%, rgba(200,0,240,0.6) 50%, rgba(0,160,200,0.3) 80%, transparent 100%)',
-    pill: '#040212',
-    pillBorder: 'rgba(160,0,200,0.3)',
-    meAccent: '#c000e8',
-    oppAccent: '#00c8e8',
-    stars: true,
-    particles: 'bubbles',
-  },
-  // S5 — Shimmering Skies : festival, feux d'artifice, ciel nocturne festif
-  {
-    id: 'set5',
-    name: 'Shimmering Skies',
-    bg: 'linear-gradient(170deg, #080520 0%, #0a0830 40%, #120530 100%)',
-    bgOverlay: 'radial-gradient(ellipse at 50% 20%, rgba(120,60,220,0.2) 0%, transparent 55%)',
-    separator: 'rgba(255,210,60,0.65)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(255,80,160,0.35) 15%, rgba(255,210,60,0.75) 50%, rgba(80,160,255,0.35) 85%, transparent 100%)',
-    pill: '#08051e',
-    pillBorder: 'rgba(255,190,50,0.35)',
-    meAccent: '#70c0ff',
-    oppAccent: '#ff5090',
-    stars: true,
-    particles: 'sparks',
-  },
-  // S6 — Azurite Sea : haute mer, pirates, bleus profonds, or nautique
-  {
-    id: 'set6',
-    name: 'Azurite Sea',
-    bg: 'linear-gradient(185deg, #020c1e 0%, #040f28 45%, #030a18 100%)',
-    bgOverlay: 'radial-gradient(ellipse at 50% 100%, rgba(0,50,120,0.45) 0%, transparent 55%)',
-    separator: 'rgba(40,160,220,0.55)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(10,80,160,0.35) 20%, rgba(50,180,230,0.7) 50%, rgba(180,140,30,0.25) 80%, transparent 100%)',
-    pill: '#030c1e',
-    pillBorder: 'rgba(30,130,210,0.4)',
-    meAccent: '#28a8e0',
-    oppAccent: '#d4a830',
-    stars: false,
-    particles: 'bubbles',
-  },
-  // S7 — Archazia's Island : mystère ancien, hibou, symboles dual-encre, jungle tropicale
-  {
-    id: 'set7',
-    name: "Archazia's Island",
-    bg: 'linear-gradient(145deg, #0e100a 0%, #121808 45%, #0a0e10 100%)',
-    bgOverlay: 'radial-gradient(ellipse at 60% 40%, rgba(180,130,20,0.12) 0%, transparent 50%)',
-    separator: 'rgba(200,160,40,0.55)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(140,100,20,0.3) 20%, rgba(220,170,50,0.65) 50%, rgba(60,120,40,0.3) 80%, transparent 100%)',
-    pill: '#0c0e08',
-    pillBorder: 'rgba(170,130,30,0.35)',
-    meAccent: '#d4a828',
-    oppAccent: '#60a838',
-    stars: false,
-  },
-  // S8 — Reign of Jafar : désert, sablier surréaliste, palais de marbre/or, torches
-  {
-    id: 'set8',
-    name: 'Reign of Jafar',
-    bg: 'radial-gradient(ellipse at 50% 20%, #1e0800 0%, #0c0400 55%, #000000 100%)',
-    bgOverlay: 'radial-gradient(ellipse at 50% 5%, rgba(220,80,0,0.22) 0%, transparent 45%)',
-    separator: 'rgba(220,100,10,0.6)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(160,50,0,0.35) 20%, rgba(240,120,10,0.7) 50%, rgba(200,170,30,0.3) 80%, transparent 100%)',
-    pill: '#0f0400',
-    pillBorder: 'rgba(200,80,0,0.35)',
-    meAccent: '#e87010',
-    oppAccent: '#d4c030',
-    stars: false,
-  },
-  // S9 — Fabled : Grand Illuminary, storybook classique, Mickey, dorure, nostalgie
-  {
-    id: 'set9',
-    name: 'Fabled',
-    bg: 'radial-gradient(ellipse at 50% 40%, #1e1608 0%, #120e04 60%, #0e0a02 100%)',
-    bgOverlay: 'radial-gradient(ellipse at 50% 0%, rgba(220,180,60,0.1) 0%, transparent 55%)',
-    separator: 'rgba(220,185,80,0.65)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(180,140,40,0.35) 20%, rgba(230,195,80,0.75) 50%, rgba(180,140,40,0.35) 80%, transparent 100%)',
-    pill: '#120e04',
-    pillBorder: 'rgba(210,170,60,0.4)',
-    meAccent: '#e8c050',
-    oppAccent: '#e07840',
-    stars: true,
-  },
-  // S10 — Whispers in the Well : film noir, grotte, lumière unique, fantômes, puits mystique
-  {
-    id: 'set10',
-    name: 'Whispers in the Well',
-    bg: 'radial-gradient(ellipse at 40% 55%, #0a0614 0%, #040208 65%, #000000 100%)',
-    bgOverlay: 'radial-gradient(ellipse at 60% 40%, rgba(60,10,100,0.2) 0%, transparent 45%)',
-    separator: 'rgba(150,90,210,0.55)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(70,20,130,0.3) 15%, rgba(170,110,230,0.55) 38%, rgba(210,240,255,0.75) 50%, rgba(170,110,230,0.55) 62%, rgba(70,20,130,0.3) 85%, transparent 100%)',
-    pill: '#060310',
-    pillBorder: 'rgba(130,70,190,0.35)',
-    meAccent: '#b070e0',
-    oppAccent: '#50c8d8',
-    stars: false,
-    particles: 'sparks',
-  },
-  // S11 — Winterspell : hiver, flocons, cristaux de glace, Elsa, magie glacée
-  {
-    id: 'set11',
-    name: 'Winterspell',
-    bg: 'linear-gradient(165deg, #04081a 0%, #060c20 50%, #030810 100%)',
-    bgOverlay: 'radial-gradient(ellipse at 50% 0%, rgba(140,200,255,0.1) 0%, transparent 55%)',
-    separator: 'rgba(160,215,255,0.55)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(100,170,230,0.35) 20%, rgba(190,230,255,0.75) 50%, rgba(100,170,230,0.35) 80%, transparent 100%)',
-    pill: '#040810',
-    pillBorder: 'rgba(140,205,255,0.3)',
-    meAccent: '#90d0f8',
-    oppAccent: '#a8e8d8',
-    stars: true,
-    particles: 'sparks',
-  },
-  // S12 — Wilds Unknown : jungle nuit, lucioles, vignes, Pixar/Disney en territoire sauvage
-  {
-    id: 'set12',
-    name: 'Wilds Unknown',
-    bg: 'linear-gradient(170deg, #020a04 0%, #04120a 30%, #061508 60%, #030e05 100%)',
-    bgOverlay: 'radial-gradient(ellipse at 50% 60%, rgba(20,80,10,0.35) 0%, transparent 65%)',
-    separator: 'rgba(180,230,80,0.5)',
-    separatorGlow: 'linear-gradient(90deg, transparent 0%, rgba(80,160,20,0.3) 20%, rgba(180,230,80,0.65) 50%, rgba(80,160,20,0.3) 80%, transparent 100%)',
-    pill: '#030b04',
-    pillBorder: 'rgba(120,200,40,0.3)',
-    meAccent: '#8de84a',
-    oppAccent: '#e8b84a',
-    stars: false,
-  },
-];
 
 // ─── Fonds décoratifs par set ─────────────────────────────────────────────
 
@@ -573,6 +370,39 @@ function Set12Background() {
   );
 }
 
+// S13 — Attack of the Vine! : vignes monstrueuses qui grimpent, nuit urbaine, lueurs Monstres & Cie
+function Set13Background() {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+      {/* Lueur urbaine bleutée en haut (Monstropolis la nuit) */}
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% -10%, rgba(70,130,220,0.14) 0%, transparent 45%)' }} />
+      {/* Vignes qui grimpent depuis le bas */}
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice" style={{ opacity: 0.1 }}>
+        <path d="M40 800 C60 700, 20 620, 55 530 C85 455, 50 380, 80 310 C100 260, 85 220, 95 180" stroke="#4ab838" strokeWidth="4" fill="none" strokeLinecap="round"/>
+        <path d="M350 800 C330 710, 370 640, 340 555 C315 485, 350 410, 325 345 C310 305, 320 270, 312 235" stroke="#3da030" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+        <path d="M200 800 C215 740, 185 690, 205 630 C222 580, 198 535, 212 490" stroke="#56c844" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+        {/* Vrilles */}
+        <path d="M55 530 C90 520, 105 545, 88 560 C75 572, 60 560, 70 548" stroke="#4ab838" strokeWidth="2" fill="none"/>
+        <path d="M340 555 C305 545, 292 572, 310 585 C323 594, 336 582, 327 570" stroke="#3da030" strokeWidth="2" fill="none"/>
+        {/* Feuilles */}
+        <path d="M80 310 C108 295, 122 310, 104 328 C90 340, 74 330, 80 310 Z" fill="#2f8a26"/>
+        <path d="M325 345 C297 332, 285 348, 302 364 C315 375, 330 364, 325 345 Z" fill="#2f8a26"/>
+        <path d="M212 490 C238 480, 248 495, 232 509 C220 519, 206 509, 212 490 Z" fill="#349430"/>
+      </svg>
+      {/* Spores lumineuses (vert Mike / bleu Sulli) */}
+      {Array.from({ length: 14 }).map((_, i) => (
+        <div key={i} className="absolute rounded-full" style={{
+          width: i % 3 === 0 ? 3 : 2, height: i % 3 === 0 ? 3 : 2,
+          left: `${(i * 59 + 13) % 86 + 7}%`, top: `${(i * 43 + 17) % 75 + 15}%`,
+          background: i % 4 === 0 ? '#58a8e8' : '#7ade5a',
+          opacity: 0.3 + (i % 4) * 0.1,
+          boxShadow: `0 0 ${4 + (i % 3) * 3}px 1px ${i % 4 === 0 ? '#4080c8' : '#50b040'}`,
+        }} />
+      ))}
+    </div>
+  );
+}
+
 // ─── Particules décoratives ────────────────────────────────────────────────
 function Particles({ type }: { type: 'bubbles' | 'sparks' }) {
   const items = Array.from({ length: 12 });
@@ -679,7 +509,6 @@ interface LoreCounterProps {
   matchInfo?: MatchInfo;
 }
 
-const THEME_STORAGE_KEY = 'glimmerlog_lore_theme';
 const TIMER_SIDE_KEY = 'glimmerlog_timer_side';
 
 // ─── Composant principal ───────────────────────────────────────────────────
@@ -692,7 +521,7 @@ export function LoreCounter({ onClose, onNextGame, initialState, timerState, onT
   const [showMenu, setShowMenu] = useState(false);
   const [editingTimer, setEditingTimer] = useState(false);
   const [timerInput, setTimerInput] = useState('50:00');
-  const [themeId, setThemeId] = useState(() => localStorage.getItem(THEME_STORAGE_KEY) ?? 'default');
+  const { themeId, theme, setThemeId } = useTheme(); // thème partagé avec toute l'app
   const [timerSide, setTimerSide] = useState<'left' | 'right'>(() => (localStorage.getItem(TIMER_SIDE_KEY) as 'left' | 'right') ?? 'right');
   const [winner, setWinner] = useState<'me' | 'opponent' | null>(initialState?.winner ?? null);
   const winnerRef = useRef<'me' | 'opponent' | null>(initialState?.winner ?? null);
@@ -702,8 +531,6 @@ export function LoreCounter({ onClose, onNextGame, initialState, timerState, onT
   const [extraTurns, setExtraTurns] = useState<number | null>(null); // null = inactif, sinon tours joués (max 5)
   const myLoreRef = useRef(initialState?.myLore ?? 0);
   const opponentLoreRef = useRef(initialState?.opponentLore ?? 0);
-
-  const theme = THEMES.find(t => t.id === themeId) ?? THEMES[0];
 
   // Timer
   const [localTimerSeconds, setLocalTimerSeconds] = useState(DEFAULT_TIMER);
@@ -809,6 +636,7 @@ export function LoreCounter({ onClose, onNextGame, initialState, timerState, onT
       {theme.id === 'set10' && <Set10Background />}
       {theme.id === 'set11' && <Set11Background />}
       {theme.id === 'set12' && <Set12Background />}
+      {theme.id === 'set13' && <Set13Background />}
 
       {/* Winner overlay */}
       {winner && (
@@ -1358,7 +1186,6 @@ export function LoreCounter({ onClose, onNextGame, initialState, timerState, onT
                   key={t.id}
                   onClick={() => {
                     setThemeId(t.id);
-                    localStorage.setItem(THEME_STORAGE_KEY, t.id);
                     setShowThemes(false);
                   }}
                   className="relative rounded-2xl overflow-hidden transition-all active:scale-95 text-left"

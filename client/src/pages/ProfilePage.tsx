@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext.js';
 import { updateProfile, changePassword } from '../api/auth.api.js';
 import { HelpButton } from '../components/ui/HelpButton.js';
 import { ProfileSubNav } from '../components/layout/ProfileSubNav.js';
+import { ThemePicker } from '../components/ui/ThemePicker.js';
 
 export function ProfilePage() {
   const { user, updateUser, logout } = useAuth();
@@ -50,6 +51,9 @@ export function ProfilePage() {
           </div>
         </div>
 
+        {/* Groupe : Thème de l'app */}
+        <ThemeSection />
+
         {/* Groupe : Informations personnelles */}
         <ProfileForm user={user} onUpdate={updateUser} />
 
@@ -66,6 +70,18 @@ export function ProfilePage() {
         </button>
 
       </div>
+    </div>
+  );
+}
+
+function ThemeSection() {
+  return (
+    <div className="ink-card p-4 sm:p-5 space-y-3">
+      <div>
+        <p className="text-xs font-semibold text-ink-500 uppercase tracking-wider">Thème</p>
+        <p className="text-xs text-ink-500 mt-1">S'applique à toute l'app et au compteur de lore.</p>
+      </div>
+      <ThemePicker />
     </div>
   );
 }

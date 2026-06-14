@@ -17,6 +17,7 @@ import { HelpButton } from '../components/ui/HelpButton.js';
 import { DropdownMenu } from '../components/ui/DropdownMenu.js';
 import { useToast } from '../components/ui/Toast.js';
 import { useConfirm } from '../components/ui/ConfirmDialog.js';
+import { ExternalLink } from 'lucide-react';
 import { RecordLine, RESULT_STYLES } from '../components/ui/ResultChip.js';
 import { exportTournamentImage } from '../lib/exportTournamentImage.js';
 import { getQrCodeUrl } from '../lib/qrcode.js';
@@ -286,6 +287,18 @@ export function TournamentDetailPage() {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {hasEventLink && (
+              <a
+                href={tournament.eventLink!}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-ink-300 bg-ink-800/50 hover:text-gold-300 hover:bg-ink-800 transition-colors"
+                title="Ouvrir le tournoi sur Ravensburger Play Hub pour saisir vos résultats"
+              >
+                <ExternalLink className="w-3.5 h-3.5" strokeWidth={2} />
+                <span className="hidden sm:inline">Play Hub</span>
+              </a>
+            )}
+            {hasEventLink && (
               <button
                 onClick={handleRefreshEvent}
                 disabled={refreshing}
@@ -379,24 +392,20 @@ export function TournamentDetailPage() {
         />
       )}
 
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-ink-800/50 sticky top-14 z-30 bg-ink-950/95 backdrop-blur-md -mx-3 sm:-mx-4 px-3 sm:px-4">
+      {/* Tabs — segmented control arrondi (cohérent avec le reste de l'app) */}
+      <div className="inline-flex p-0.5 rounded-lg border border-rule bg-ink-900/40">
         <button
           onClick={() => setTab('rounds')}
-          className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
-            tab === 'rounds'
-              ? 'text-gold-400 border-gold-500'
-              : 'text-ink-400 border-transparent hover:text-ink-200'
+          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+            tab === 'rounds' ? 'bg-gold-400/15 text-gold-300' : 'text-ink-400 hover:text-ink-200'
           }`}
         >
           Mes rondes
         </button>
         <button
           onClick={() => setTab('bracket')}
-          className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
-            tab === 'bracket'
-              ? 'text-gold-400 border-gold-500'
-              : 'text-ink-400 border-transparent hover:text-ink-200'
+          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+            tab === 'bracket' ? 'bg-gold-400/15 text-gold-300' : 'text-ink-400 hover:text-ink-200'
           }`}
         >
           Arbre du tournoi
@@ -1478,6 +1487,10 @@ function MatchesView({ matches, roundNumber, username, scoutMap, possibleDecks, 
   );
 }
 
+// Dernier choix du toggle "Je ne sais pas qui joue quel deck" — persiste pour
+// éviter de devoir le décocher à chaque match quand on connaît déjà les decks.
+const SCOUT_UNCERTAIN_KEY = 'glimmerlog_scout_uncertain';
+
 function MatchDetailModal({ match: m, roundNumber, isMe, getScout, possibleDecks, teams, eventId, onScout, onPotentialDecks, onClose }: {
   match: EventMatch;
   roundNumber: number;
@@ -1501,13 +1514,23 @@ function MatchDetailModal({ match: m, roundNumber, isMe, getScout, possibleDecks
   const p1Potentials = possibleDecks.get(p1Name.toLowerCase()) || [];
   const p2Potentials = possibleDecks.get(p2Name.toLowerCase()) || [];
 
-  // Rules for default checkbox state:
-  // - No data at all → checked (uncertain)
-  // - At least one certain deck → unchecked
-  // - At least one player with potential decks → unchecked (we have info to refine)
+  // État par défaut de la case "Je ne sais pas qui joue quel deck" :
+  // - Si ce match a déjà des données (deck certain ou potentiels) → décoché (on sait).
+  // - Sinon → on reprend le DERNIER choix de l'utilisateur (persiste). Ainsi, quand
+  //   on connaît tout le monde et qu'on décoche une fois, ça reste décoché ensuite,
+  //   au lieu de devoir le refaire à chaque match.
   const hasCertainScout = (scout1?.deckColors?.length ?? 0) > 0 || (scout2?.deckColors?.length ?? 0) > 0;
   const hasPotentials = p1Potentials.length > 0 || p2Potentials.length > 0;
-  const [uncertainMode, setUncertainMode] = useState(hasCertainScout || hasPotentials ? false : true);
+  const [uncertainMode, setUncertainMode] = useState(() => {
+    if (hasCertainScout || hasPotentials) return false;
+    const stored = localStorage.getItem(SCOUT_UNCERTAIN_KEY);
+    return stored === null ? true : stored === '1';
+  });
+  const toggleUncertain = () => setUncertainMode(v => {
+    const next = !v;
+    localStorage.setItem(SCOUT_UNCERTAIN_KEY, next ? '1' : '0');
+    return next;
+  });
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -1554,7 +1577,7 @@ function MatchDetailModal({ match: m, roundNumber, isMe, getScout, possibleDecks
         {/* Mode toggle */}
         <button
           type="button"
-          onClick={() => setUncertainMode(!uncertainMode)}
+          onClick={toggleUncertain}
           className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors ${
             uncertainMode
               ? 'bg-amber-500/10 border border-amber-500/20 text-amber-400'

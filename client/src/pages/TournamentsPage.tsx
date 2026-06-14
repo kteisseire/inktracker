@@ -20,11 +20,14 @@ function CardMenu({ tournament, onDeleted }: { tournament: Tournament; onDeleted
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const confirm = useConfirm();
 
-  useDismiss(open, btnRef, () => setOpen(false));
+  // Inclure le panneau (portail) dans les zones "intérieures" : sinon le mousedown
+  // sur un item ferme le menu avant que son onClick ne se déclenche.
+  useDismiss(open, [btnRef, menuRef], () => setOpen(false));
 
   const handleOpen = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -73,6 +76,7 @@ function CardMenu({ tournament, onDeleted }: { tournament: Tournament; onDeleted
       </button>
       {open && createPortal(
         <div
+          ref={menuRef}
           className="fixed bg-ink-900 border border-rule rounded-lg shadow-card-hover py-1 z-[200]"
           style={{ top: pos.top, left: pos.left, width: 160 }}
         >

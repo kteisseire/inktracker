@@ -39,7 +39,9 @@ function Tab({ item, pathname }: { item: TabItem; pathname: string }) {
   );
 }
 
-const NAV_BAR = 'fixed bottom-0 inset-x-0 z-50 border-t border-rule bg-ink-950/95 tint-accent backdrop-blur-md safe-area-pb shadow-[0_-4px_24px_rgba(8,6,15,0.5)]';
+// md:hidden — sur PC la navigation est dans le Header ; la barre du bas ne doit
+// pas s'afficher en double ni passer par-dessus le contenu.
+const NAV_BAR = 'md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-rule bg-ink-950/95 tint-accent backdrop-blur-md safe-area-pb shadow-[0_-4px_24px_rgba(8,6,15,0.5)]';
 
 export function BottomNav() {
   const { user } = useAuth();

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link2, X, LogOut, Pencil, Trash2, UserPlus, QrCode, Check, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.js';
 import {
   getTeam, updateTeam, deleteTeam,
@@ -10,6 +11,7 @@ import {
 } from '../api/team.api.js';
 import { getQrCodeUrl } from '../lib/qrcode.js';
 import { useConfirm } from '../components/ui/ConfirmDialog.js';
+import { useToast } from '../components/ui/Toast.js';
 import type { Team, TeamMember, TeamInvite, TeamRole } from '@lorcana/shared';
 
 const ROLE_LABELS: Record<string, string> = { OWNER: 'Propriétaire', ADMIN: 'Admin', MEMBER: 'Membre' };
@@ -24,6 +26,8 @@ export function TeamDetailPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  const { toast } = useToast();
 
   const { data: team = null, isLoading: loading } = useQuery({
     queryKey: ['team', id],
@@ -49,17 +53,17 @@ export function TeamDetailPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
-      <TeamHeader team={team} isOwner={isOwner} isAdmin={isAdmin} onUpdated={reload} onDeleted={() => navigate('/teams')} />
+      <TeamHeader team={team} isOwner={isOwner} isAdmin={isAdmin} onUpdated={reload} onDeleted={() => navigate('/teams')} onToast={toast} />
 
       {/* QR Invite link */}
-      {isAdmin && <InviteLink teamId={team.id} />}
+      {isAdmin && <InviteLink teamId={team.id} onToast={toast} />}
 
       {/* Invite section */}
-      {isAdmin && <InviteSection teamId={team.id} onInvited={reload} />}
+      {isAdmin && <InviteSection teamId={team.id} onInvited={reload} onToast={toast} />}
 
       {/* Pending invites (visible to admin) */}
       {isAdmin && team.invites && team.invites.length > 0 && (
-        <PendingInvites invites={team.invites} teamId={team.id} onChanged={reload} />
+        <PendingInvites invites={team.invites} teamId={team.id} onChanged={reload} onToast={toast} />
       )}
 
       {/* Members */}
@@ -70,14 +74,15 @@ export function TeamDetailPage() {
         isAdmin={isAdmin}
         currentUserId={user?.id || ''}
         onChanged={reload}
+        onToast={toast}
       />
     </div>
   );
 }
 
 // ─── Header ───
-function TeamHeader({ team, isOwner, isAdmin, onUpdated, onDeleted }: {
-  team: Team; isOwner: boolean; isAdmin: boolean; onUpdated: () => void; onDeleted: () => void;
+function TeamHeader({ team, isOwner, isAdmin, onUpdated, onDeleted, onToast }: {
+  team: Team; isOwner: boolean; isAdmin: boolean; onUpdated: () => void; onDeleted: () => void; onToast: (msg: string, type: 'success' | 'error') => void;
 }) {
   const confirm = useConfirm();
   const [editing, setEditing] = useState(false);
@@ -93,6 +98,7 @@ function TeamHeader({ team, isOwner, isAdmin, onUpdated, onDeleted }: {
     try {
       await updateTeam(team.id, { name: name.trim(), description: description.trim() || undefined });
       setEditing(false);
+      onToast('Équipe modifiée', 'success');
       onUpdated();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Erreur');
@@ -109,8 +115,12 @@ function TeamHeader({ team, isOwner, isAdmin, onUpdated, onDeleted }: {
       danger: true,
     });
     if (!ok) return;
-    await deleteTeam(team.id);
-    onDeleted();
+    try {
+      await deleteTeam(team.id);
+      onDeleted();
+    } catch {
+      onToast('Erreur lors de la suppression', 'error');
+    }
   };
 
   if (editing) {
@@ -148,13 +158,23 @@ function TeamHeader({ team, isOwner, isAdmin, onUpdated, onDeleted }: {
           </p>
         </div>
         {isAdmin && (
-          <div className="flex items-center gap-2 shrink-0">
-            <button onClick={() => setEditing(true)} className="text-xs text-ink-400 hover:text-gold-400 transition-colors">
-              Modifier
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={() => setEditing(true)}
+              className="p-2 rounded-lg text-ink-500 hover:text-gold-400 hover:bg-ink-800/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50"
+              aria-label="Modifier l'équipe"
+              title="Modifier"
+            >
+              <Pencil className="w-4 h-4" strokeWidth={1.8} />
             </button>
             {isOwner && (
-              <button onClick={handleDelete} className="text-xs text-red-400/70 hover:text-red-400 transition-colors">
-                Supprimer
+              <button
+                onClick={handleDelete}
+                className="p-2 rounded-lg text-ink-500 hover:text-lorcana-ruby hover:bg-lorcana-ruby/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lorcana-ruby/30"
+                aria-label="Supprimer l'équipe"
+                title="Supprimer"
+              >
+                <Trash2 className="w-4 h-4" strokeWidth={1.8} />
               </button>
             )}
           </div>
@@ -165,7 +185,7 @@ function TeamHeader({ team, isOwner, isAdmin, onUpdated, onDeleted }: {
 }
 
 // ─── Invite Link (QR Code) ───
-function InviteLink({ teamId }: { teamId: string }) {
+function InviteLink({ teamId, onToast }: { teamId: string; onToast: (msg: string, type: 'success' | 'error') => void }) {
   const [open, setOpen] = useState(false);
   const [inviteUrl, setInviteUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -188,6 +208,7 @@ function InviteLink({ teamId }: { teamId: string }) {
   const handleCopy = async () => {
     await navigator.clipboard.writeText(inviteUrl);
     setCopied(true);
+    onToast('Lien copié !', 'success');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -197,9 +218,7 @@ function InviteLink({ teamId }: { teamId: string }) {
         onClick={handleOpen}
         className="ink-card p-4 sm:p-5 w-full flex items-center justify-center gap-2 text-sm font-medium text-ink-300 hover:text-gold-400 hover:border-gold-500/20 transition-colors"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-        </svg>
+        <QrCode className="w-5 h-5" strokeWidth={1.8} />
         Lien d'invitation
       </button>
 
@@ -208,10 +227,8 @@ function InviteLink({ teamId }: { teamId: string }) {
           <div className="ink-card p-5 sm:p-6 max-w-sm w-full space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-ink-200">Inviter via QR code</h3>
-              <button onClick={() => setOpen(false)} className="text-ink-500 hover:text-ink-300 transition-colors">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+              <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg text-ink-500 hover:text-ink-300 hover:bg-ink-800/50 transition-colors">
+                <X className="w-5 h-5" strokeWidth={2} />
               </button>
             </div>
 
@@ -241,13 +258,13 @@ function InviteLink({ teamId }: { teamId: string }) {
                   />
                   <button
                     onClick={handleCopy}
-                    className={`shrink-0 text-xs font-medium px-3 py-2 rounded-lg transition-colors ${
+                    className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg transition-colors ${
                       copied
-                        ? 'bg-green-500/15 text-green-400'
+                        ? 'bg-lorcana-emerald/15 text-lorcana-emerald'
                         : 'bg-ink-800/80 text-ink-300 hover:text-gold-400'
                     }`}
                   >
-                    {copied ? 'Copié !' : 'Copier'}
+                    {copied ? <><Check className="w-3.5 h-3.5" strokeWidth={2.2} /> Copié !</> : <><Link2 className="w-3.5 h-3.5" strokeWidth={2} /> Copier</>}
                   </button>
                 </div>
               </>
@@ -262,13 +279,12 @@ function InviteLink({ teamId }: { teamId: string }) {
 }
 
 // ─── Invite Section ───
-function InviteSection({ teamId, onInvited }: { teamId: string; onInvited: () => void }) {
+function InviteSection({ teamId, onInvited, onToast }: { teamId: string; onInvited: () => void; onToast: (msg: string, type: 'success' | 'error') => void }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<{ id: string; username: string }[]>([]);
   const [searching, setSearching] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     if (query.trim().length < 2) { setResults([]); return; }
@@ -287,10 +303,9 @@ function InviteSection({ teamId, onInvited }: { teamId: string; onInvited: () =>
   const handleInvite = async (username: string) => {
     setSending(true);
     setError('');
-    setSuccess('');
     try {
       await inviteMember(teamId, username);
-      setSuccess(`Invitation envoyée à ${username}`);
+      onToast(`Invitation envoyée à ${username}`, 'success');
       setQuery('');
       setResults([]);
       onInvited();
@@ -303,16 +318,15 @@ function InviteSection({ teamId, onInvited }: { teamId: string; onInvited: () =>
 
   return (
     <div className="ink-card p-4 sm:p-5 space-y-3">
-      <h2 className="text-sm font-semibold text-ink-300 uppercase tracking-wide">Inviter un joueur</h2>
+      <h2 className="text-sm font-semibold text-ink-300 uppercase tracking-wide flex items-center gap-1.5"><UserPlus className="w-4 h-4" strokeWidth={2} /> Inviter un joueur</h2>
 
       {error && <div className="ink-error">{error}</div>}
-      {success && <div className="text-sm text-green-400 bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2">{success}</div>}
 
       <div className="relative">
         <input
           type="text"
           value={query}
-          onChange={e => { setQuery(e.target.value); setSuccess(''); setError(''); }}
+          onChange={e => { setQuery(e.target.value); setError(''); }}
           className="ink-input"
           placeholder="Rechercher un pseudo..."
         />
@@ -348,10 +362,15 @@ function InviteSection({ teamId, onInvited }: { teamId: string; onInvited: () =>
 }
 
 // ─── Pending Invites ───
-function PendingInvites({ invites, teamId, onChanged }: { invites: TeamInvite[]; teamId: string; onChanged: () => void }) {
+function PendingInvites({ invites, teamId, onChanged, onToast }: { invites: TeamInvite[]; teamId: string; onChanged: () => void; onToast: (msg: string, type: 'success' | 'error') => void }) {
   const handleCancel = async (inviteId: string) => {
-    await cancelInvite(teamId, inviteId);
-    onChanged();
+    try {
+      await cancelInvite(teamId, inviteId);
+      onToast('Invitation annulée', 'success');
+      onChanged();
+    } catch {
+      onToast('Erreur lors de l\'annulation', 'error');
+    }
   };
 
   return (
@@ -365,9 +384,11 @@ function PendingInvites({ invites, teamId, onChanged }: { invites: TeamInvite[];
           </div>
           <button
             onClick={() => handleCancel(inv.id)}
-            className="text-xs text-red-400/70 hover:text-red-400 transition-colors"
+            className="p-1.5 rounded-lg text-ink-500 hover:text-lorcana-ruby hover:bg-lorcana-ruby/10 transition-colors"
+            aria-label="Annuler l'invitation"
+            title="Annuler"
           >
-            Annuler
+            <X className="w-4 h-4" strokeWidth={2} />
           </button>
         </div>
       ))}
@@ -376,13 +397,18 @@ function PendingInvites({ invites, teamId, onChanged }: { invites: TeamInvite[];
 }
 
 // ─── Members List ───
-function MembersList({ members, teamId, isOwner, isAdmin, currentUserId, onChanged }: {
-  members: TeamMember[]; teamId: string; isOwner: boolean; isAdmin: boolean; currentUserId: string; onChanged: () => void;
+function MembersList({ members, teamId, isOwner, isAdmin, currentUserId, onChanged, onToast }: {
+  members: TeamMember[]; teamId: string; isOwner: boolean; isAdmin: boolean; currentUserId: string; onChanged: () => void; onToast: (msg: string, type: 'success' | 'error') => void;
 }) {
   const confirm = useConfirm();
   const handleRoleChange = async (memberId: string, newRole: TeamRole) => {
-    await updateMemberRole(teamId, memberId, newRole);
-    onChanged();
+    try {
+      await updateMemberRole(teamId, memberId, newRole);
+      onToast('Rôle mis à jour', 'success');
+      onChanged();
+    } catch {
+      onToast('Erreur lors de la mise à jour du rôle', 'error');
+    }
   };
 
   const handleRemove = async (member: TeamMember) => {
@@ -394,8 +420,13 @@ function MembersList({ members, teamId, isOwner, isAdmin, currentUserId, onChang
       danger: true,
     });
     if (!ok) return;
-    await removeMember(teamId, member.id);
-    onChanged();
+    try {
+      await removeMember(teamId, member.id);
+      onToast(isSelf ? 'Vous avez quitté l\'équipe' : `${member.user.username} retiré`, 'success');
+      onChanged();
+    } catch {
+      onToast('Erreur lors de la suppression', 'error');
+    }
   };
 
   return (
@@ -444,17 +475,14 @@ function MembersList({ members, teamId, isOwner, isAdmin, currentUserId, onChang
                 {canRemove && (
                   <button
                     onClick={() => handleRemove(m)}
-                    className="text-xs text-red-400/60 hover:text-red-400 transition-colors"
-                    title={isSelf ? 'Quitter' : 'Retirer'}
+                    className="p-1.5 rounded-lg text-ink-500 hover:text-lorcana-ruby hover:bg-lorcana-ruby/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lorcana-ruby/30"
+                    title={isSelf ? 'Quitter l\'équipe' : 'Retirer'}
+                    aria-label={isSelf ? 'Quitter l\'équipe' : `Retirer ${m.user.username}`}
                   >
                     {isSelf ? (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                      </svg>
+                      <LogOut className="w-4 h-4" strokeWidth={2} />
                     ) : (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      <X className="w-4 h-4" strokeWidth={2} />
                     )}
                   </button>
                 )}

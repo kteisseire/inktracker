@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Layers, ExternalLink, Check } from 'lucide-react';
 import { listDecks, createDeck, updateDeck, deleteDeck, setDefaultDeck, extractDeckColors } from '../api/deck.api.js';
-import { DeckBadges, HollowLozenge } from '../components/ui/InkBadge.js';
+import { DeckBadges } from '../components/ui/InkBadge.js';
 import { InkColorPicker } from '../components/ui/InkColorPicker.js';
 import { HelpButton } from '../components/ui/HelpButton.js';
 import { SkeletonRows } from '../components/ui/Skeleton.js';
@@ -97,7 +98,7 @@ function DeckForm({ initial, onSubmit, onCancel, submitLabel }: {
           )}
           {!linkLoading && linkSuccess && (
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-lorcana-emerald">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+              <Check className="w-4 h-4" strokeWidth={2.5} />
             </span>
           )}
         </div>
@@ -140,12 +141,14 @@ export function DecksPage() {
     const isFirst = decks.length === 0;
     await createDeck({ name: data.name, colors: data.colors, link: data.link || undefined, archetypeName: data.archetypeName.trim() || undefined, isDefault: isFirst });
     setShowForm(false); reloadDecks();
+    toast('Deck créé', 'success');
   };
 
   const handleUpdate = async (data: DeckFormData) => {
     if (!editingDeck) return;
     await updateDeck(editingDeck.id, { name: data.name, colors: data.colors, link: data.link || undefined, archetypeName: data.archetypeName.trim() || undefined });
     setEditingDeck(null); reloadDecks();
+    toast('Deck modifié', 'success');
   };
 
   const handleDelete = async (id: string) => {
@@ -193,7 +196,9 @@ export function DecksPage() {
         <SkeletonRows count={4} />
       ) : decks.length === 0 && !showForm ? (
         <div className="section-wash flex flex-col items-center text-center py-12 gap-3">
-          <HollowLozenge size={26} />
+          <span className="grid place-items-center w-14 h-14 rounded-2xl bg-gold-400/10 text-gold-400 shadow-edge-lit">
+            <Layers className="w-7 h-7" strokeWidth={1.6} />
+          </span>
           <p className="font-display text-lg text-ink-50 tracking-[0.02em]">Aucun deck enregistré</p>
           <p className="text-sm text-ink-500 max-w-sm">Créez votre premier deck pour le sélectionner rapidement dans vos tournois.</p>
           <button onClick={() => setShowForm(true)} className="ink-btn-primary text-sm px-4 py-2 mt-1">Créer un deck</button>
@@ -222,7 +227,7 @@ export function DecksPage() {
                   <DeckBadges colors={deck.colors as any} />
                   {deck.link && (
                     <a href={deck.link} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="relative z-10 text-ink-500 hover:text-ink-300 transition-colors shrink-0">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                      <ExternalLink className="w-3.5 h-3.5" strokeWidth={2} />
                     </a>
                   )}
                 </div>
@@ -259,7 +264,7 @@ export function DecksPage() {
               <p className="text-[11px] text-ink-500 mt-1 leading-snug">{site.description}</p>
               <span className="inline-flex items-center gap-1 text-[11px] text-gold-500/60 group-hover:text-gold-400 mt-2 transition-colors">
                 Ouvrir
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                <ExternalLink className="w-3 h-3" strokeWidth={2} />
               </span>
             </a>
           ))}

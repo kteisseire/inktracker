@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { BarChart3, NotebookPen, X } from 'lucide-react';
 import { getOverview, getMatchups, getDeckPerformance, getGoingFirstStats, getTournamentHistory } from '../api/stats.api.js';
 import { listMatchupNotes, upsertMatchupNote, deleteMatchupNote } from '../api/matchupNotes.api.js';
-import { DeckBadges, HollowLozenge } from '../components/ui/InkBadge.js';
+import { DeckBadges } from '../components/ui/InkBadge.js';
 import { RecordLine } from '../components/ui/ResultChip.js';
 import { DateFilterBar, useDateFilter } from '../components/ui/DateFilterBar.js';
 import { HelpButton } from '../components/ui/HelpButton.js';
@@ -217,9 +218,11 @@ export function StatsPage() {
 
           {overview && overview.totalRounds === 0 && (
             <div className="section-wash flex flex-col items-center text-center py-12 gap-3">
-              <HollowLozenge size={26} />
+              <span className="grid place-items-center w-14 h-14 rounded-2xl bg-gold-400/10 text-gold-400 shadow-edge-lit">
+                <BarChart3 className="w-7 h-7" strokeWidth={1.6} />
+              </span>
               <p className="font-display text-lg text-ink-50 tracking-[0.02em]">Pas encore de données</p>
-              <p className="text-ink-500 text-sm">
+              <p className="text-ink-500 text-sm max-w-xs">
                 {dateFilter.filterMode !== 'all'
                   ? 'Aucun tournoi trouvé pour cette période.'
                   : 'Enregistrez des tournois pour voir vos statistiques !'}
@@ -327,7 +330,7 @@ function MatchupNoteButton({ colors, note }: { colors: InkColor[]; note: Matchup
             : 'border-rule text-ink-500 hover:text-gold-400 hover:border-gold-500/40'
         }`}
       >
-        <span className="text-sm">{note ? '📝' : '✎'}</span>
+        <NotebookPen className="w-4 h-4" strokeWidth={1.8} />
       </button>
 
       {open && createPortal(
@@ -339,9 +342,7 @@ function MatchupNoteButton({ colors, note }: { colors: InkColor[]; note: Matchup
               onClick={() => setOpen(false)}
               className="absolute top-3 right-3 p-2 rounded-lg text-ink-500 hover:text-ink-300 hover:bg-ink-800/50 transition-colors"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X className="w-5 h-5" strokeWidth={2} />
             </button>
             <div className="space-y-3">
               <div>

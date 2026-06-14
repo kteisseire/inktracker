@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
+import { TrendingUp } from 'lucide-react';
 import { getMetagameOverview } from '../api/metagame.api.js';
-import { DeckBadges, HollowLozenge } from '../components/ui/InkBadge.js';
+import { DeckBadges } from '../components/ui/InkBadge.js';
 import { WinRateBar } from '../components/ui/WinRateBar.js';
 import { DateFilterBar, useDateFilter } from '../components/ui/DateFilterBar.js';
 import { SkeletonRows } from '../components/ui/Skeleton.js';
@@ -66,9 +67,11 @@ export function MetagamePage() {
         </Reveal>
       ) : (
         <div className="section-wash flex flex-col items-center text-center py-12 gap-3">
-          <HollowLozenge size={26} />
+          <span className="grid place-items-center w-14 h-14 rounded-2xl bg-gold-400/10 text-gold-400 shadow-edge-lit">
+            <TrendingUp className="w-7 h-7" strokeWidth={1.6} />
+          </span>
           <p className="font-display text-lg text-ink-50 tracking-[0.02em]">Pas encore assez de données</p>
-          <p className="text-ink-500 text-sm">
+          <p className="text-ink-500 text-sm max-w-xs">
             {dateFilter.filterMode !== 'all'
               ? 'Aucune combinaison de decks ne dépasse le seuil minimum pour cette période.'
               : 'Le métagame communautaire s\'affichera dès que suffisamment de rondes auront été enregistrées.'}

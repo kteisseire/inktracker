@@ -199,8 +199,13 @@ export function TournamentDetailPage() {
       danger: true,
     });
     if (!ok) return;
-    await deleteRound(id!, roundId);
-    reload();
+    try {
+      await deleteRound(id!, roundId);
+      toast('Ronde supprimée', 'success');
+      reload();
+    } catch (err: any) {
+      toast(`Erreur : ${err?.response?.data?.error || 'suppression impossible'}`, 'error');
+    }
   };
 
   const [refreshing, setRefreshing] = useState(false);

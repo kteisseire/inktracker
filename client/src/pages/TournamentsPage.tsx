@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createPortal } from 'react-dom';
+import { Trophy, Pencil, Share2, Trash2, Users, RefreshCw, Plus, MoreVertical } from 'lucide-react';
 import { useDismiss } from '../hooks/useDismiss.js';
 import { listTournaments, getTeamPresence, deleteTournament, shareTournament } from '../api/tournaments.api.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
@@ -68,9 +69,7 @@ function CardMenu({ tournament, onDeleted }: { tournament: Tournament; onDeleted
         className="touch-compact p-1.5 rounded-md text-ink-500 hover:text-ink-200 hover:bg-ink-700/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50"
         aria-label="Actions"
       >
-        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-          <circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" />
-        </svg>
+        <MoreVertical className="w-4 h-4" strokeWidth={2} />
       </button>
       {open && createPortal(
         <div
@@ -79,24 +78,18 @@ function CardMenu({ tournament, onDeleted }: { tournament: Tournament; onDeleted
         >
           <button onClick={e => { e.stopPropagation(); navigate(`/tournaments/${tournament.id}/edit`); setOpen(false); }}
             className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-ink-300 hover:text-ink-100 hover:bg-ink-800/50 transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828 15.828a2 2 0 01-1.414.586H9v-1.414a2 2 0 01.586-1.414z" />
-            </svg>
+            <Pencil className="w-4 h-4" strokeWidth={1.8} />
             Modifier
           </button>
           <button onClick={handleShare}
             className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-ink-300 hover:text-ink-100 hover:bg-ink-800/50 transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-            </svg>
+            <Share2 className="w-4 h-4" strokeWidth={1.8} />
             Partager
           </button>
           <div className="my-1 ink-divider" />
           <button onClick={handleDelete}
             className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-300 hover:text-red-200 hover:bg-lorcana-ruby/10 transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
+            <Trash2 className="w-4 h-4" strokeWidth={1.8} />
             Supprimer
           </button>
         </div>,
@@ -151,9 +144,7 @@ function TournamentCard({ tournament, presence, onDeleted }: {
           <div className="flex items-center gap-2.5 shrink-0">
             {presence && (
               <span className="flex items-center gap-1 text-xs text-lorcana-sapphire">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+                <Users className="w-3.5 h-3.5" strokeWidth={2} />
                 <span className="ink-num">{presence.count}</span>
               </span>
             )}
@@ -201,27 +192,25 @@ export function TournamentsPage() {
             className="touch-compact p-1.5 mb-1 rounded-md text-ink-500 hover:text-gold-400 hover:bg-ink-800/50 transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50"
             aria-label="Rafraîchir"
           >
-            <svg className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
+            <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} strokeWidth={2} />
           </button>
           <span className="mb-1"><HelpButton sections={['Tournois']} /></span>
         </div>
-        <Link to="/tournaments/new" className="ink-btn-primary text-sm px-4 py-2 shrink-0 mb-1">+ Nouveau</Link>
+        <Link to="/tournaments/new" className="ink-btn-primary text-sm px-4 py-2 shrink-0 mb-1 inline-flex items-center gap-1.5"><Plus className="w-4 h-4" strokeWidth={2.2} /> Nouveau</Link>
       </Reveal>
 
       {isLoading ? (
         <SkeletonRows count={6} />
       ) : tournaments.length === 0 ? (
-        <div className="section-wash p-8 sm:p-12 text-center">
-          <div className="w-12 h-12 rounded-full bg-gold-500/10 flex items-center justify-center mx-auto mb-4">
-            <svg className="w-6 h-6 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 3h14l-1.4 8.4A5 5 0 0112.6 16h-.8a5 5 0 01-5-4.6L5 3zM8 16h8m-4 0v4m-3 0h6" />
-            </svg>
-          </div>
+        <div className="section-wash flex flex-col items-center text-center py-12 gap-3">
+          <span className="grid place-items-center w-14 h-14 rounded-2xl bg-gold-400/10 text-gold-400 shadow-edge-lit">
+            <Trophy className="w-7 h-7" strokeWidth={1.6} />
+          </span>
           <p className="font-display text-lg text-ink-50 tracking-[0.02em]">Aucun tournoi enregistré</p>
-          <p className="mt-1 text-sm text-ink-400">Commencez par créer votre premier tournoi.</p>
-          <Link to="/tournaments/new" className="ink-btn-primary inline-block mt-5 px-6 py-2.5 text-sm">+ Créer un tournoi</Link>
+          <p className="text-sm text-ink-400 max-w-xs">Commencez par créer votre premier tournoi.</p>
+          <Link to="/tournaments/new" className="ink-btn-primary inline-flex items-center gap-1.5 mt-1 px-6 py-2.5 text-sm">
+            <Plus className="w-4 h-4" strokeWidth={2.2} /> Créer un tournoi
+          </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

@@ -1,5 +1,6 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useToast } from '../components/ui/Toast.js';
 import { createRound, updateRound } from '../api/matches.api.js';
 import { getTournament } from '../api/tournaments.api.js';
 import { extractEventId } from '../api/ravensburger.api.js';
@@ -53,6 +54,7 @@ export function NewMatchPage() {
   const { tournamentId, roundId } = useParams<{ tournamentId: string; roundId?: string }>();
   const isEdit = !!roundId;
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState('');
@@ -308,6 +310,7 @@ export function NewMatchPage() {
         }
       }
 
+      toast(isEdit ? 'Ronde modifiée' : 'Ronde ajoutée', 'success');
       navigate(`/tournaments/${tournamentId}`);
     } catch (err: any) {
       setError(err.response?.data?.error || (isEdit ? 'Erreur lors de la modification' : 'Erreur lors de l\'ajout'));

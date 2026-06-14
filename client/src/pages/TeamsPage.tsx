@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Users, ChevronRight, Plus } from 'lucide-react';
 import { listMyTeams, createTeam, listMyInvites, respondToInvite } from '../api/team.api.js';
 import { HelpButton } from '../components/ui/HelpButton.js';
 import { RoleBadge } from '../components/ui/RoleBadge.js';
-import { HollowLozenge } from '../components/ui/InkBadge.js';
 import { SkeletonRows } from '../components/ui/Skeleton.js';
 import { ErrorAlert } from '../components/ui/ErrorAlert.js';
+import { useToast } from '../components/ui/Toast.js';
 import { ProfileSubNav } from '../components/layout/ProfileSubNav.js';
 import type { TeamInvite } from '@lorcana/shared';
 
 export function TeamsPage() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
 
   const { data: teams = [], isLoading: loadingTeams } = useQuery({
@@ -52,7 +54,7 @@ export function TeamsPage() {
           <div className="space-y-2">
             <h2 className="rubric-label">Invitations en attente</h2>
             {invites.map(inv => (
-              <InviteCard key={inv.id} invite={inv} onRespond={reload} />
+              <InviteCard key={inv.id} invite={inv} onRespond={reload} onToast={toast} />
             ))}
           </div>
         )}
@@ -60,7 +62,7 @@ export function TeamsPage() {
         {/* Create form */}
         {showForm && (
           <CreateTeamForm
-            onCreated={() => { setShowForm(false); reload(); }}
+            onCreated={(msg) => { setShowForm(false); reload(); toast(msg, 'success'); }}
             onCancel={() => setShowForm(false)}
           />
         )}
@@ -70,10 +72,14 @@ export function TeamsPage() {
           <SkeletonRows count={3} />
         ) : teams.length === 0 && !showForm ? (
           <div className="section-wash flex flex-col items-center text-center py-12 gap-3">
-            <HollowLozenge size={26} />
+            <span className="grid place-items-center w-14 h-14 rounded-2xl bg-gold-400/10 text-gold-400 shadow-edge-lit">
+              <Users className="w-7 h-7" strokeWidth={1.6} />
+            </span>
             <p className="font-display text-lg text-ink-50 tracking-[0.02em]">Aucune équipe</p>
             <p className="text-sm text-ink-500">Créez une équipe ou attendez une invitation.</p>
-            <button onClick={() => setShowForm(true)} className="ink-btn-primary text-sm px-4 py-2 mt-1">Créer une équipe</button>
+            <button onClick={() => setShowForm(true)} className="ink-btn-primary text-sm px-4 py-2 mt-1 inline-flex items-center gap-1.5">
+              <Plus className="w-4 h-4" strokeWidth={2.2} /> Créer une équipe
+            </button>
           </div>
         ) : teams.length > 0 ? (
           <div className="ink-card divide-y divide-rule overflow-hidden">
@@ -97,9 +103,7 @@ export function TeamsPage() {
                     <span className="ink-num">{team.memberCount}</span> membre{(team.memberCount || 0) > 1 ? 's' : ''}
                   </p>
                 </div>
-                <svg className="w-4 h-4 text-ink-600 group-hover:text-ink-400 transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                <ChevronRight className="w-4 h-4 text-ink-600 group-hover:text-ink-400 transition-colors shrink-0" strokeWidth={2} />
               </Link>
             ))}
           </div>
@@ -109,14 +113,17 @@ export function TeamsPage() {
   );
 }
 
-function InviteCard({ invite, onRespond }: { invite: TeamInvite; onRespond: () => void }) {
+function InviteCard({ invite, onRespond, onToast }: { invite: TeamInvite; onRespond: () => void; onToast: (msg: string, type: 'success' | 'error') => void }) {
   const [responding, setResponding] = useState(false);
 
   const handleRespond = async (accept: boolean) => {
     setResponding(true);
     try {
       await respondToInvite(invite.id, accept);
+      onToast(accept ? 'Invitation acceptée' : 'Invitation refusée', 'success');
       onRespond();
+    } catch {
+      onToast('Erreur lors de la réponse', 'error');
     } finally {
       setResponding(false);
     }
@@ -148,7 +155,7 @@ function InviteCard({ invite, onRespond }: { invite: TeamInvite; onRespond: () =
   );
 }
 
-function CreateTeamForm({ onCreated, onCancel }: { onCreated: () => void; onCancel: () => void }) {
+function CreateTeamForm({ onCreated, onCancel }: { onCreated: (msg: string) => void; onCancel: () => void }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
@@ -161,7 +168,7 @@ function CreateTeamForm({ onCreated, onCancel }: { onCreated: () => void; onCanc
     setSaving(true);
     try {
       await createTeam({ name: name.trim(), description: description.trim() || undefined });
-      onCreated();
+      onCreated('Équipe créée');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Erreur');
     } finally {

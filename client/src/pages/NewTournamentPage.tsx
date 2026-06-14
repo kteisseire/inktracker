@@ -6,6 +6,7 @@ import { listDecks, extractDeckColors } from '../api/deck.api.js';
 import { fetchEventInfo, extractEventId } from '../api/ravensburger.api.js';
 import { InkColorPicker } from '../components/ui/InkColorPicker.js';
 import { DeckBadges } from '../components/ui/InkBadge.js';
+import { useToast } from '../components/ui/Toast.js';
 import { getRecommendedSwissRounds, getRecommendedTopCut } from '@lorcana/shared';
 import type { InkColor, Deck } from '@lorcana/shared';
 
@@ -34,6 +35,7 @@ export function NewTournamentPage() {
   const isEdit = !!editId;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const fromShared = searchParams.get('from') === 'shared';
   const [loading, setLoading] = useState(false);
@@ -284,10 +286,12 @@ export function NewTournamentPage() {
       if (isEdit) {
         await updateTournament(editId, payload);
         queryClient.invalidateQueries({ queryKey: ['tournaments', 1, 50] });
+        toast('Tournoi modifié', 'success');
         navigate(`/tournaments/${editId}`);
       } else {
         const tournament = await createTournament(payload);
         queryClient.invalidateQueries({ queryKey: ['tournaments', 1, 50] });
+        toast('Tournoi créé', 'success');
         navigate(`/tournaments/${tournament.id}`);
       }
     } catch (err: any) {
@@ -361,9 +365,9 @@ export function NewTournamentPage() {
                 className="ink-input text-sm pr-10"
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                {eventFetching && <span className="text-gold-400 animate-spin text-sm">&#9696;</span>}
-                {eventFetchStatus === 'success' && <span className="text-green-400 text-lg">&#10003;</span>}
-                {eventFetchStatus === 'error' && <span className="text-red-400 text-lg">&#10007;</span>}
+                {eventFetching && <svg className="w-4 h-4 text-gold-400 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z" /></svg>}
+                {eventFetchStatus === 'success' && <svg className="w-4 h-4 text-lorcana-emerald" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                {eventFetchStatus === 'error' && <svg className="w-4 h-4 text-lorcana-ruby" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>}
                 {extractEventId(eventLink) && !eventFetching && (
                   <button type="button" onClick={refreshEventData} className="p-1 text-ink-500 hover:text-gold-400 transition-colors" title="Rafraîchir">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
@@ -427,9 +431,9 @@ export function NewTournamentPage() {
                     placeholder="dreamborn.ink, lorcanito.com…"
                     className="ink-input pr-10 text-sm"
                   />
-                  {deckLinkLoading && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gold-400 animate-spin text-sm">&#9696;</span>}
-                  {deckLinkStatus === 'success' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-400 text-lg">&#10003;</span>}
-                  {deckLinkStatus === 'error' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-red-400 text-lg">&#10007;</span>}
+                  {deckLinkLoading && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gold-400"><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z" /></svg></span>}
+                  {deckLinkStatus === 'success' && !deckLinkLoading && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-lorcana-emerald"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg></span>}
+                  {deckLinkStatus === 'error' && !deckLinkLoading && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-lorcana-ruby"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></span>}
                 </div>
                 {deckLinkStatus === 'error' && deckLinkError && <p className="text-xs text-red-400 mt-1">{deckLinkError}</p>}
                 <p className="text-xs text-ink-600 mt-1">Détecte les couleurs automatiquement</p>

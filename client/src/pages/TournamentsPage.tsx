@@ -267,7 +267,7 @@ export function TournamentsPage() {
           >
             <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} strokeWidth={2} />
           </button>
-          <span className="mb-1"><HelpButton sections={['Tournois']} /></span>
+          <span className="hidden sm:inline-flex mb-1"><HelpButton sections={['Tournois']} /></span>
         </div>
         <Link to="/tournaments/new" className="ink-btn-primary text-sm px-4 py-2 shrink-0 mb-1 inline-flex items-center gap-1.5"><Plus className="w-4 h-4" strokeWidth={2.2} /> Nouveau</Link>
       </Reveal>

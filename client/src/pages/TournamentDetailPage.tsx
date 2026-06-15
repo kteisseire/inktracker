@@ -286,7 +286,10 @@ export function TournamentDetailPage() {
                 {tournament.location && <span className="text-ink-600"> · {tournament.location}</span>}
               </p>
             </div>
-            <HelpButton sections={['Tournois', 'Arbre du tournoi et scouting']} />
+            {/* Aide masquée sur mobile : elle déparait à côté du grand titre */}
+            <span className="hidden sm:inline-flex shrink-0">
+              <HelpButton sections={['Tournois', 'Arbre du tournoi et scouting']} />
+            </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {hasEventLink && (

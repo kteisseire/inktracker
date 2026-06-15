@@ -1129,24 +1129,7 @@ function BracketTab({ viewMode, eventLink, username, overrideUsername, onOverrid
         />
       )}
 
-      {/* Filtre équipe (le choix Classement/Matchs est désormais dans les onglets) */}
-      {teams.length > 0 && (
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => setTeamFilter(!teamFilter)}
-            className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-              teamFilter ? 'bg-gold-500/15 text-gold-400 border border-gold-500/30' : 'text-ink-500 hover:text-ink-300'
-            }`}
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            Mon équipe
-          </button>
-        </div>
-      )}
-
-      {/* Round filter + refresh */}
+      {/* Round filter + (filtre équipe) + refresh */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex gap-1.5 overflow-x-auto pb-1">
           {[...data.rounds].reverse().map(r => (
@@ -1164,15 +1147,33 @@ function BracketTab({ viewMode, eventLink, username, overrideUsername, onOverrid
             </button>
           ))}
         </div>
-        <button
-          onClick={() => loadRounds(true)}
-          disabled={refreshing}
-          className="inline-flex items-center gap-1 text-xs text-ink-500 hover:text-gold-400 transition-colors disabled:opacity-50 shrink-0"
-        >
-          <svg className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {teams.length > 0 && (
+            <button
+              onClick={() => setTeamFilter(!teamFilter)}
+              title="Filtrer sur mon équipe"
+              aria-pressed={teamFilter}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                teamFilter ? 'bg-gold-500/15 text-gold-400 border border-gold-500/30' : 'text-ink-500 hover:text-ink-300 bg-ink-800/50'
+              }`}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span className="hidden sm:inline">Mon équipe</span>
+            </button>
+          )}
+          <button
+            onClick={() => loadRounds(true)}
+            disabled={refreshing}
+            title="Rafraîchir"
+            className="inline-flex items-center gap-1 p-1.5 text-ink-500 hover:text-gold-400 transition-colors disabled:opacity-50"
+          >
+            <svg className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {viewMode === 'standings' ? (

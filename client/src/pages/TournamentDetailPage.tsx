@@ -56,7 +56,7 @@ function getTopCutThresholds(players: number, rounds: number, topCutSize: number
   return { safe, bubble };
 }
 
-type Tab = 'rounds' | 'bracket';
+type Tab = 'rounds' | 'standings' | 'matches';
 
 export function TournamentDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -66,6 +66,9 @@ export function TournamentDetailPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>('rounds');
+  // Override du pseudo Play Hub (si différent du pseudo du compte) — partagé entre
+  // la bannière de synchro (au-dessus des onglets) et l'arbre.
+  const [overrideUsername, setOverrideUsername] = useState<string | null>(null);
   const [roundsScoutMap, setRoundsScoutMap] = useState<Map<string, ScoutReport>>(new Map());
   const [roundsPotentialDecks, setRoundsPotentialDecks] = useState<PotentialDeck[]>([]);
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -392,6 +395,18 @@ export function TournamentDetailPage() {
         />
       )}
 
+      {/* Bannière de synchro Play Hub — au-dessus des onglets, donc visible sur
+          n'importe quel onglet et sans chevaucher les onglets. */}
+      {hasEventLink && (
+        <RoundSyncBanner
+          eventId={extractEventId(tournament.eventLink!)!}
+          effectiveUsername={overrideUsername || user?.username || ''}
+          existingRounds={rounds}
+          tournamentId={id!}
+          onSynced={reload}
+        />
+      )}
+
       {/* Tabs — segmented control arrondi (cohérent avec le reste de l'app) */}
       <div className="inline-flex p-0.5 rounded-lg border border-rule bg-ink-900/40">
         <button
@@ -403,12 +418,20 @@ export function TournamentDetailPage() {
           Mes rondes
         </button>
         <button
-          onClick={() => setTab('bracket')}
+          onClick={() => setTab('standings')}
           className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
-            tab === 'bracket' ? 'bg-gold-400/15 text-gold-300' : 'text-ink-400 hover:text-ink-200'
+            tab === 'standings' ? 'bg-gold-400/15 text-gold-300' : 'text-ink-400 hover:text-ink-200'
           }`}
         >
-          Arbre du tournoi
+          Classement
+        </button>
+        <button
+          onClick={() => setTab('matches')}
+          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+            tab === 'matches' ? 'bg-gold-400/15 text-gold-300' : 'text-ink-400 hover:text-ink-200'
+          }`}
+        >
+          Matchs
         </button>
       </div>
 
@@ -440,11 +463,14 @@ export function TournamentDetailPage() {
         </div>
       )}
 
-      {tab === 'bracket' && (
+      {(tab === 'standings' || tab === 'matches') && (
         hasEventLink ? (
           <BracketTab
+            viewMode={tab}
             eventLink={tournament.eventLink!}
             username={user?.username || ''}
+            overrideUsername={overrideUsername}
+            onOverrideUsername={setOverrideUsername}
             tournamentId={id!}
             existingRounds={rounds}
             onRoundsChanged={reload}
@@ -687,6 +713,126 @@ function findMyMatch(matches: EventMatch[], username: string): {
   return null;
 }
 
+/* Bannière de synchro Play Hub — rendue au-dessus des onglets du tournoi, donc
+   visible quel que soit l'onglet (et sans chevaucher les onglets). */
+function RoundSyncBanner({ eventId, effectiveUsername, existingRounds, tournamentId, onSynced }: {
+  eventId: string;
+  effectiveUsername: string;
+  existingRounds: Round[];
+  tournamentId: string;
+  onSynced: () => void;
+}) {
+  const { toast } = useToast();
+  const [syncing, setSyncing] = useState(false);
+
+  const { data = null } = useQuery({
+    queryKey: ['event-rounds', eventId],
+    queryFn: () => fetchEventRounds(eventId),
+    enabled: !!eventId,
+  });
+
+  const topCutOffset = data ? Math.max(0, ...data.rounds.filter(r => r.roundType === 'SWISS').map(r => r.roundNumber)) : 0;
+
+  const syncDiff = (data && effectiveUsername ? data.rounds
+    .filter(r => r.status === 'COMPLETE')
+    .map(r => {
+      const isTopCut = r.roundType !== 'SWISS';
+      const myMatch = findMyMatch(r.matches, effectiveUsername);
+      if (!myMatch) return null;
+      const roundNumber = isTopCut ? r.roundNumber - topCutOffset : r.roundNumber;
+      if (roundNumber <= 0) return null;
+      const existing = existingRounds.find(er => er.roundNumber === roundNumber && er.isTopCut === isTopCut);
+      const needsCreate = !existing;
+      const existingGamesWon = existing?.games?.filter(g => g.result === 'WIN').length ?? 0;
+      const existingGamesLost = existing?.games?.filter(g => g.result === 'LOSS').length ?? 0;
+      const scoresDiffer = existing && (existingGamesWon !== myMatch.gamesWon || existingGamesLost !== myMatch.gamesLost);
+      const needsUpdate = existing && (
+        existing.result !== myMatch.result ||
+        (existing.opponentName || '') !== myMatch.opponentName ||
+        scoresDiffer
+      );
+      if (!needsCreate && !needsUpdate) return null;
+      return {
+        roundNumber, isTopCut,
+        opponentName: myMatch.opponentName,
+        result: myMatch.result,
+        gamesWon: myMatch.gamesWon,
+        gamesLost: myMatch.gamesLost,
+        isBye: myMatch.isBye,
+        existingRoundId: existing?.id,
+        action: needsCreate ? 'create' as const : 'update' as const,
+      };
+    })
+    .filter(Boolean) : []) as Array<{
+      roundNumber: number; isTopCut: boolean; opponentName: string; result: MatchResult;
+      gamesWon: number; gamesLost: number; isBye: boolean;
+      existingRoundId?: string; action: 'create' | 'update';
+    }>;
+
+  const handleSyncRounds = async () => {
+    if (syncDiff.length === 0) return;
+    setSyncing(true);
+    try {
+      for (const diff of syncDiff) {
+        const payload = {
+          roundNumber: diff.roundNumber,
+          isTopCut: diff.isTopCut,
+          opponentName: diff.opponentName,
+          result: diff.result,
+          games: diff.isBye ? undefined : (() => {
+            const games: { gameNumber: number; result: MatchResult; myScore: number; opponentScore: number }[] = [];
+            let gameNum = 1;
+            for (let i = 0; i < diff.gamesWon; i++) games.push({ gameNumber: gameNum++, result: 'WIN', myScore: 20, opponentScore: 0 });
+            for (let i = 0; i < diff.gamesLost; i++) games.push({ gameNumber: gameNum++, result: 'LOSS', myScore: 0, opponentScore: 20 });
+            return games.length > 0 ? games : [{ gameNumber: 1, result: diff.result, myScore: diff.result === 'WIN' ? 20 : 0, opponentScore: diff.result === 'LOSS' ? 20 : 0 }];
+          })(),
+        };
+        if (diff.action === 'create') await createRound(tournamentId, payload);
+        else if (diff.existingRoundId) await updateRound(tournamentId, diff.existingRoundId, payload);
+      }
+      toast(`${syncDiff.length} ronde${syncDiff.length > 1 ? 's' : ''} synchronisée${syncDiff.length > 1 ? 's' : ''}`, 'success');
+      onSynced();
+    } catch {
+      toast('Erreur lors de la synchronisation', 'error');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  if (syncDiff.length === 0) return null;
+
+  return (
+    <div className="ink-card p-3 sm:p-4 border-gold-500/20 space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-ink-200">
+            {syncDiff.length} ronde{syncDiff.length > 1 ? 's' : ''} à synchroniser depuis le Play Hub
+          </p>
+          <p className="text-xs text-ink-500 mt-0.5">Vers « Mes rondes »</p>
+        </div>
+        <button onClick={handleSyncRounds} disabled={syncing} className="ink-btn-primary text-sm px-4 py-2 shrink-0">
+          {syncing ? 'Synchronisation...' : 'Synchroniser'}
+        </button>
+      </div>
+      <div className="space-y-1">
+        {syncDiff.map(d => (
+          <div key={`${d.isTopCut ? 'tc' : 'sw'}-${d.roundNumber}`} className="flex items-center justify-between text-xs px-2.5 py-1.5 rounded-lg bg-ink-900/50">
+            <span className="text-ink-400">
+              {d.isTopCut ? 'TC' : 'R'}{d.roundNumber} vs <span className="text-ink-200">{d.opponentName}</span>
+            </span>
+            <div className="flex items-center gap-2">
+              <span className={d.result === 'WIN' ? 'text-win' : d.result === 'LOSS' ? 'text-loss' : 'text-ink-400'}>
+                {d.result === 'WIN' ? 'V' : d.result === 'LOSS' ? 'D' : 'N'} {d.gamesWon}-{d.gamesLost}
+              </span>
+              <span className="text-ink-600">{d.action === 'create' ? '+ nouveau' : '↺ mise à jour'}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function LinkPlayHubPrompt({ tournamentId, onLinked }: { tournamentId: string; onLinked: () => void }) {
   const [link, setLink] = useState('');
   const [saving, setSaving] = useState(false);
@@ -757,9 +903,12 @@ function LinkPlayHubPrompt({ tournamentId, onLinked }: { tournamentId: string; o
   );
 }
 
-function BracketTab({ eventLink, username, tournamentId, existingRounds, onRoundsChanged, currentPlacement, playerCount }: {
+function BracketTab({ viewMode, eventLink, username, overrideUsername, onOverrideUsername, tournamentId, existingRounds, onRoundsChanged, currentPlacement, playerCount }: {
+  viewMode: 'standings' | 'matches';
   eventLink: string;
   username: string;
+  overrideUsername: string | null;
+  onOverrideUsername: (name: string | null) => void;
   tournamentId: string;
   existingRounds: Round[];
   onRoundsChanged: () => void;
@@ -769,12 +918,9 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
   const eventId = extractEventId(eventLink)!;
   const bracketQueryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
-  const [syncing, setSyncing] = useState(false);
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
-  const [viewMode, setViewMode] = useState<'standings' | 'matches'>('standings');
   const [scoutReports, setScoutReports] = useState<ScoutReport[]>([]);
   const [potentialDecks, setPotentialDecks] = useState<PotentialDeck[]>([]);
-  const [overrideUsername, setOverrideUsername] = useState<string | null>(null);
   const [teamFilter, setTeamFilter] = useState(false);
 
   const { data: data = null, isLoading: loadingPlayHub } = useQuery({
@@ -930,88 +1076,6 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
     });
   };
 
-  // Compute sync diff
-  // Compute top cut round number offset (top cut rounds continue numbering from swiss)
-  const topCutOffset = data ? Math.max(0, ...data.rounds.filter(r => r.roundType === 'SWISS').map(r => r.roundNumber)) : 0;
-
-  const syncDiff = data && effectiveUsername ? data.rounds
-    .filter(r => r.status === 'COMPLETE')
-    .map(r => {
-      const isTopCut = r.roundType !== 'SWISS';
-      const myMatch = findMyMatch(r.matches, effectiveUsername);
-      if (!myMatch) return null;
-      // Top cut rounds: renumber starting from 1
-      const roundNumber = isTopCut ? r.roundNumber - topCutOffset : r.roundNumber;
-      if (roundNumber <= 0) return null;
-      const existing = existingRounds.find(er => er.roundNumber === roundNumber && er.isTopCut === isTopCut);
-      const needsCreate = !existing;
-      // Also check if games score differs
-      const existingGamesWon = existing?.games?.filter(g => g.result === 'WIN').length ?? 0;
-      const existingGamesLost = existing?.games?.filter(g => g.result === 'LOSS').length ?? 0;
-      const scoresDiffer = existing && (existingGamesWon !== myMatch.gamesWon || existingGamesLost !== myMatch.gamesLost);
-      const needsUpdate = existing && (
-        existing.result !== myMatch.result ||
-        (existing.opponentName || '') !== myMatch.opponentName ||
-        scoresDiffer
-      );
-      if (!needsCreate && !needsUpdate) return null;
-      return {
-        roundNumber,
-        isTopCut,
-        opponentName: myMatch.opponentName,
-        result: myMatch.result,
-        gamesWon: myMatch.gamesWon,
-        gamesLost: myMatch.gamesLost,
-        isBye: myMatch.isBye,
-        existingRoundId: existing?.id,
-        action: needsCreate ? 'create' as const : 'update' as const,
-      };
-    })
-    .filter(Boolean) as Array<{
-      roundNumber: number; isTopCut: boolean; opponentName: string; result: MatchResult;
-      gamesWon: number; gamesLost: number; isBye: boolean;
-      existingRoundId?: string; action: 'create' | 'update';
-    }>
-  : [];
-
-  const handleSyncRounds = async () => {
-    if (syncDiff.length === 0) return;
-    setSyncing(true);
-    try {
-      for (const diff of syncDiff) {
-        const payload = {
-          roundNumber: diff.roundNumber,
-          isTopCut: diff.isTopCut,
-          opponentName: diff.opponentName,
-          result: diff.result,
-          games: diff.isBye ? undefined : (() => {
-            const games: { gameNumber: number; result: MatchResult; myScore: number; opponentScore: number }[] = [];
-            let gameNum = 1;
-            // Add won games first, then lost games
-            for (let i = 0; i < diff.gamesWon; i++) {
-              games.push({ gameNumber: gameNum++, result: 'WIN', myScore: 20, opponentScore: 0 });
-            }
-            for (let i = 0; i < diff.gamesLost; i++) {
-              games.push({ gameNumber: gameNum++, result: 'LOSS', myScore: 0, opponentScore: 20 });
-            }
-            return games.length > 0 ? games : [{ gameNumber: 1, result: diff.result, myScore: diff.result === 'WIN' ? 20 : 0, opponentScore: diff.result === 'LOSS' ? 20 : 0 }];
-          })(),
-        };
-
-        if (diff.action === 'create') {
-          await createRound(tournamentId, payload);
-        } else if (diff.existingRoundId) {
-          await updateRound(tournamentId, diff.existingRoundId, payload);
-        }
-      }
-      onRoundsChanged();
-    } catch {
-      // silently fail
-    } finally {
-      setSyncing(false);
-    }
-  };
-
   if (loadingPlayHub || loadingDb) {
     return (
       <div className="space-y-3 py-6">
@@ -1055,92 +1119,32 @@ function BracketTab({ eventLink, username, tournamentId, existingRounds, onRound
 
   return (
     <div className="space-y-4">
-      {/* Sync banner */}
-      {userFound && syncDiff.length > 0 && (
-        <div className="ink-card p-3 sm:p-4 border-gold-500/20 space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-ink-200">
-                {syncDiff.length} ronde{syncDiff.length > 1 ? 's' : ''} à synchroniser
-              </p>
-              <p className="text-xs text-ink-500 mt-0.5">
-                Depuis le Play Hub ({effectiveUsername})
-              </p>
-            </div>
-            <button
-              onClick={handleSyncRounds}
-              disabled={syncing}
-              className="ink-btn-primary text-sm px-4 py-2 shrink-0"
-            >
-              {syncing ? 'Synchronisation...' : 'Synchroniser'}
-            </button>
-          </div>
-          <div className="space-y-1">
-            {syncDiff.map(d => (
-              <div key={`${d.isTopCut ? 'tc' : 'sw'}-${d.roundNumber}`} className="flex items-center justify-between text-xs px-2.5 py-1.5 rounded-lg bg-ink-900/50">
-                <span className="text-ink-400">
-                  {d.isTopCut ? 'TC' : 'R'}{d.roundNumber} vs <span className="text-ink-200">{d.opponentName}</span>
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className={d.result === 'WIN' ? 'text-win' : d.result === 'LOSS' ? 'text-loss' : 'text-ink-400'}>
-                    {d.result === 'WIN' ? 'V' : d.result === 'LOSS' ? 'D' : 'N'} {d.gamesWon}-{d.gamesLost}
-                  </span>
-                  <span className="text-ink-600">
-                    {d.action === 'create' ? '+ nouveau' : '↺ mise à jour'}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {userFound === false && effectiveUsername && (
         <UsernameMismatchBanner
           username={username}
           overrideUsername={overrideUsername}
           allPlayerNames={allPlayerNames}
-          onSelect={setOverrideUsername}
-          onReset={() => setOverrideUsername(null)}
+          onSelect={onOverrideUsername}
+          onReset={() => onOverrideUsername(null)}
         />
       )}
 
-      {/* View mode toggle */}
-      <div className="flex items-center gap-1.5">
-        <button
-          onClick={() => setViewMode('standings')}
-          className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
-            viewMode === 'standings' ? 'bg-ink-700/50 text-ink-100' : 'text-ink-500 hover:text-ink-300'
-          }`}
-        >
-          Classement
-        </button>
-        <button
-          onClick={() => setViewMode('matches')}
-          className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
-            viewMode === 'matches' ? 'bg-ink-700/50 text-ink-100' : 'text-ink-500 hover:text-ink-300'
-          }`}
-        >
-          Matchs
-        </button>
-
-        {teams.length > 0 && (
-          <>
-            <div className="w-px h-5 bg-ink-800 mx-0.5" />
-            <button
-              onClick={() => setTeamFilter(!teamFilter)}
-              className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                teamFilter ? 'bg-gold-500/15 text-gold-400 border border-gold-500/30' : 'text-ink-500 hover:text-ink-300'
-              }`}
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              Mon équipe
-            </button>
-          </>
-        )}
-      </div>
+      {/* Filtre équipe (le choix Classement/Matchs est désormais dans les onglets) */}
+      {teams.length > 0 && (
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setTeamFilter(!teamFilter)}
+            className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+              teamFilter ? 'bg-gold-500/15 text-gold-400 border border-gold-500/30' : 'text-ink-500 hover:text-ink-300'
+            }`}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Mon équipe
+          </button>
+        </div>
+      )}
 
       {/* Round filter + refresh */}
       <div className="flex items-center justify-between gap-3">

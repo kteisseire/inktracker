@@ -33,7 +33,7 @@ function Accordion({ item, defaultOpen }: { item: FaqItem; defaultOpen?: boolean
 
 /* ── Modal ── */
 
-function HelpModal({ sections, onClose }: { sections: string[]; onClose: () => void }) {
+export function HelpModal({ sections, onClose }: { sections: string[]; onClose: () => void }) {
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';

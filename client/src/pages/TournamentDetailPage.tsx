@@ -13,7 +13,7 @@ import { getEventScoutReports, upsertScoutReport, createPotentialDecks as create
 import { listMyTeams } from '../api/team.api.js';
 import { INK_COLORS, getRecommendedSwissRounds, getRecommendedTopCut } from '@lorcana/shared';
 import type { Tournament, Round, Game, MatchResult, ScoutReport, InkColor, Team, PotentialDeck } from '@lorcana/shared';
-import { HelpButton } from '../components/ui/HelpButton.js';
+import { HelpModal } from '../components/ui/HelpButton.js';
 import { DropdownMenu } from '../components/ui/DropdownMenu.js';
 import { useToast } from '../components/ui/Toast.js';
 import { useConfirm } from '../components/ui/ConfirmDialog.js';
@@ -75,6 +75,7 @@ export function TournamentDetailPage() {
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareLoading, setShareLoading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   const { data: tournament = null, isLoading: loading } = useQuery({
     queryKey: ['tournament', id],
@@ -286,10 +287,6 @@ export function TournamentDetailPage() {
                 {tournament.location && <span className="text-ink-600"> · {tournament.location}</span>}
               </p>
             </div>
-            {/* Aide masquée sur mobile : elle déparait à côté du grand titre */}
-            <span className="hidden sm:inline-flex shrink-0">
-              <HelpButton sections={['Tournois', 'Arbre du tournoi et scouting']} />
-            </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {hasEventLink && (
@@ -321,6 +318,7 @@ export function TournamentDetailPage() {
                 { label: 'Partager', onClick: handleShare },
                 { label: 'Exporter image', onClick: () => exportTournamentImage(tournament, user?.username || 'Joueur') },
                 { label: 'Modifier', onClick: () => navigate(`/tournaments/${id}/edit`) },
+                { label: 'Aide', onClick: () => setShowHelp(true) },
                 { label: 'Supprimer', onClick: handleDeleteTournament, danger: true },
               ]}
             />
@@ -485,7 +483,8 @@ export function TournamentDetailPage() {
         )
       )}
 
-      {/* Sync confirmation modal */}
+      {showHelp && <HelpModal sections={['Tournois', 'Arbre du tournoi et scouting']} onClose={() => setShowHelp(false)} />}
+
       {/* Share modal with QR code */}
       {shareModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center" onClick={() => setShareModalOpen(false)}>
@@ -693,7 +692,9 @@ function findMyMatch(matches: EventMatch[], username: string): {
     if (meIdx === -1) continue;
 
     if (m.isBye) {
-      return { opponentName: 'BYE', result: 'WIN', gamesWon: 2, gamesLost: 0, isBye: true };
+      // Un bye = victoire SANS games (la ronde est créée sans games). On renvoie
+      // donc 0-0, sinon le diff voit 2≠0 et marque la ronde "à synchroniser" en boucle.
+      return { opponentName: 'BYE', result: 'WIN', gamesWon: 0, gamesLost: 0, isBye: true };
     }
 
     const opponent = m.players[meIdx === 0 ? 1 : 0];

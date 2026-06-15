@@ -189,6 +189,43 @@ export async function getEventRounds(req: Request, res: Response) {
       }
     }
 
+    // Ronde 0 synthétique : liste des joueurs inscrits (utile avant le début du
+    // tournoi pour voir/scouter les participants). On la met en tête des rondes.
+    try {
+      const registrations = await fetchAllPages(`/events/${eventId}/registrations/`);
+      if (registrations.length > 0) {
+        const regStandings = registrations
+          .map((r: any) => ({
+            name: r.best_identifier || r.user?.best_identifier || 'Inconnu',
+            pts: r.total_match_points ?? 0,
+            w: r.matches_won ?? 0,
+            l: r.matches_lost ?? 0,
+            d: r.matches_drawn ?? 0,
+          }))
+          .sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name))
+          .map((r, i) => ({
+            rank: i + 1,
+            playerName: r.name,
+            record: `${r.w}-${r.l}${r.d ? '-' + r.d : ''}`,
+            matchRecord: null,
+            matchPoints: r.pts,
+            totalPoints: r.pts,
+            omw: null, gw: null, ogw: null,
+          }));
+        roundsData.unshift({
+          roundId: `reg-${eventId}`,
+          roundNumber: 0,
+          roundType: 'SWISS',
+          status: 'COMPLETE',
+          phaseName: 'Inscrits',
+          standings: regStandings,
+          matches: [],
+        });
+      }
+    } catch (regErr) {
+      console.warn('Registrations fetch failed:', (regErr as any).message);
+    }
+
     const payload = { eventId, rounds: roundsData };
 
     // Save to cache only if we got actual data (graceful — skip if table doesn't exist)

@@ -1146,7 +1146,7 @@ function BracketTab({ viewMode, eventLink, username, overrideUsername, onOverrid
                   : 'text-ink-400 hover:text-ink-200 bg-ink-800/50 hover:bg-ink-700/50'
               }`}
             >
-              R{r.roundNumber}
+              {r.roundNumber === 0 ? 'Inscrits' : `R${r.roundNumber}`}
               {r.status !== 'COMPLETE' && <span className="ml-1 text-[10px] text-ink-500">●</span>}
             </button>
           ))}

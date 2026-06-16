@@ -112,14 +112,18 @@ export async function getEventRounds(req: Request, res: Response) {
   }
 
   try {
-    // Serve from cache unless user explicitly refreshes
+    // Serve from cache unless user explicitly refreshes. TTL court (20 s) pour que
+    // le polling live des tournois en cours recupere des donnees fraiches sans
+    // forcer (et sans marteler Ravensburger : le cache est partage entre clients).
+    const CACHE_TTL_MS = 20_000;
     if (!forceRefresh) {
       try {
         const cached = await prisma.eventCache.findUnique({ where: { eventId } });
         if (cached) {
           const cachedData = cached.data as any;
-          // Don't serve empty cache — re-fetch if rounds were not yet available when cached
-          if (Array.isArray(cachedData?.rounds) && cachedData.rounds.length > 0) {
+          const fresh = Date.now() - new Date(cached.updatedAt).getTime() < CACHE_TTL_MS;
+          // Ne pas servir un cache vide ni perime
+          if (fresh && Array.isArray(cachedData?.rounds) && cachedData.rounds.length > 0) {
             return res.json(cached.data);
           }
         }

@@ -20,6 +20,7 @@ import { useConfirm } from '../components/ui/ConfirmDialog.js';
 import { ExternalLink } from 'lucide-react';
 import { RecordLine, RESULT_STYLES } from '../components/ui/ResultChip.js';
 import { exportTournamentImage } from '../lib/exportTournamentImage.js';
+import { fireNotification } from '../lib/notify.js';
 import { getQrCodeUrl } from '../lib/qrcode.js';
 
 const FORMAT_LABELS: Record<string, string> = { BO1: 'Bo1', BO3: 'Bo3', BO5: 'Bo5' };
@@ -273,6 +274,15 @@ export function TournamentDetailPage() {
 
   const hasEventLink = !!(tournament.eventLink && extractEventId(tournament.eventLink));
 
+  // Tournoi "en cours" : event du jour (poll auto + notifs). Les events passés ont
+  // leurs résultats déjà publiés ; les futurs ne sont pas encore lancés.
+  const isLive = (() => {
+    if (!hasEventLink) return false;
+    const d = new Date(tournament.date); d.setHours(0, 0, 0, 0);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    return d.getTime() === today.getTime();
+  })();
+
   return (
     <div className="space-y-4">
       {/* Card principale du tournoi */}
@@ -404,6 +414,8 @@ export function TournamentDetailPage() {
           effectiveUsername={overrideUsername || user?.username || ''}
           existingRounds={rounds}
           tournamentId={id!}
+          tournamentName={tournament.name}
+          isLive={isLive}
           onSynced={reload}
         />
       )}
@@ -717,22 +729,55 @@ function findMyMatch(matches: EventMatch[], username: string): {
   return null;
 }
 
-/* Bannière de synchro Play Hub — rendue au-dessus des onglets du tournoi, donc
-   visible quel que soit l'onglet (et sans chevaucher les onglets). */
-function RoundSyncBanner({ eventId, effectiveUsername, existingRounds, tournamentId, onSynced }: {
+interface SyncItem {
+  roundNumber: number; isTopCut: boolean; opponentName: string; result: MatchResult;
+  gamesWon: number; gamesLost: number; isBye: boolean;
+  existingRoundId?: string; action: 'create' | 'update';
+}
+
+function buildRoundPayload(d: SyncItem) {
+  return {
+    roundNumber: d.roundNumber,
+    isTopCut: d.isTopCut,
+    opponentName: d.opponentName,
+    result: d.result,
+    games: d.isBye ? undefined : (() => {
+      const games: { gameNumber: number; result: MatchResult; myScore: number; opponentScore: number }[] = [];
+      let n = 1;
+      for (let i = 0; i < d.gamesWon; i++) games.push({ gameNumber: n++, result: 'WIN', myScore: 20, opponentScore: 0 });
+      for (let i = 0; i < d.gamesLost; i++) games.push({ gameNumber: n++, result: 'LOSS', myScore: 0, opponentScore: 20 });
+      return games.length > 0 ? games : [{ gameNumber: 1, result: d.result, myScore: d.result === 'WIN' ? 20 : 0, opponentScore: d.result === 'LOSS' ? 20 : 0 }];
+    })(),
+  };
+}
+
+/* Bannière de synchro Play Hub + surveillance live — rendue au-dessus des onglets,
+   visible sur tous les onglets. Tant que le tournoi est "en cours" (isLive), elle
+   poll le Play Hub toutes les 30 s, cree automatiquement les nouvelles rondes
+   detectees (sans jamais ecraser des scores deja saisis) et notifie le joueur. */
+function RoundSyncBanner({ eventId, effectiveUsername, existingRounds, tournamentId, tournamentName, isLive, onSynced }: {
   eventId: string;
   effectiveUsername: string;
   existingRounds: Round[];
   tournamentId: string;
+  tournamentName: string;
+  isLive: boolean;
   onSynced: () => void;
 }) {
   const { toast } = useToast();
   const [syncing, setSyncing] = useState(false);
+  const autoRef = useRef(false);
+  const prevPublishedRef = useRef<number | null>(null);
+  const prevCompletedRef = useRef<number | null>(null);
 
   const { data = null } = useQuery({
     queryKey: ['event-rounds', eventId],
     queryFn: () => fetchEventRounds(eventId),
     enabled: !!eventId,
+    // En live : poll 30 s. Le serveur a un TTL de cache court, donc le poll
+    // recupere des donnees fraiches sans forcer (queryFn partagee avec l'arbre).
+    refetchInterval: isLive ? 30000 : false,
+    refetchIntervalInBackground: false,
   });
 
   const topCutOffset = data ? Math.max(0, ...data.rounds.filter(r => r.roundType === 'SWISS').map(r => r.roundNumber)) : 0;
@@ -765,71 +810,94 @@ function RoundSyncBanner({ eventId, effectiveUsername, existingRounds, tournamen
         isBye: myMatch.isBye,
         existingRoundId: existing?.id,
         action: needsCreate ? 'create' as const : 'update' as const,
-      };
+      } as SyncItem;
     })
-    .filter(Boolean) : []) as Array<{
-      roundNumber: number; isTopCut: boolean; opponentName: string; result: MatchResult;
-      gamesWon: number; gamesLost: number; isBye: boolean;
-      existingRoundId?: string; action: 'create' | 'update';
-    }>;
+    .filter(Boolean) : []) as SyncItem[];
 
-  const handleSyncRounds = async () => {
-    if (syncDiff.length === 0) return;
+  const creates = syncDiff.filter(d => d.action === 'create');
+  const updates = syncDiff.filter(d => d.action === 'update');
+  const createKey = creates.map(c => `${c.isTopCut ? 't' : 's'}${c.roundNumber}`).join(',');
+
+  // Notifications : lancement (1re ronde), nouvelle ronde publiee, resultats publies.
+  useEffect(() => {
+    if (!data) return;
+    const real = data.rounds.filter(r => r.roundNumber > 0);
+    const maxPublished = real.length ? Math.max(...real.map(r => r.roundNumber)) : 0;
+    const completed = real.filter(r => r.status === 'COMPLETE').map(r => r.roundNumber);
+    const maxCompleted = completed.length ? Math.max(...completed) : 0;
+
+    const prevPub = prevPublishedRef.current;
+    const prevComp = prevCompletedRef.current;
+    // Premier chargement : on memorise sans notifier.
+    if (prevPub !== null && maxPublished > prevPub) {
+      if (prevPub === 0) {
+        fireNotification('Tournoi lancé 🎉', `${tournamentName} — ronde 1 disponible`, `t-${tournamentId}`);
+        toast('Tournoi lancé — ronde 1 disponible', 'info');
+      } else {
+        fireNotification('Nouvelle ronde', `${tournamentName} — ronde ${maxPublished} publiée`, `t-${tournamentId}`);
+        toast(`Ronde ${maxPublished} publiée`, 'info');
+      }
+    }
+    if (prevComp !== null && maxCompleted > prevComp && maxCompleted >= (prevPublishedRef.current ?? 0)) {
+      fireNotification('Résultats publiés', `${tournamentName} — résultats de la ronde ${maxCompleted}`, `t-${tournamentId}-r${maxCompleted}`);
+    }
+    prevPublishedRef.current = maxPublished;
+    prevCompletedRef.current = maxCompleted;
+  }, [data, tournamentId, tournamentName, toast]);
+
+  // Auto-creation des nouvelles rondes (jamais d'ecrasement : seulement les
+  // 'create' ; les 'update' restent manuels pour preserver les scores saisis).
+  useEffect(() => {
+    if (creates.length === 0 || autoRef.current) return;
+    autoRef.current = true;
+    (async () => {
+      try {
+        for (const d of creates) await createRound(tournamentId, buildRoundPayload(d));
+        toast(`${creates.length} ronde${creates.length > 1 ? 's' : ''} synchronisée${creates.length > 1 ? 's' : ''}`, 'success');
+        onSynced();
+      } catch { /* on reessaiera au prochain poll */ }
+      finally { autoRef.current = false; }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createKey]);
+
+  const handleUpdate = async () => {
+    if (updates.length === 0) return;
     setSyncing(true);
     try {
-      for (const diff of syncDiff) {
-        const payload = {
-          roundNumber: diff.roundNumber,
-          isTopCut: diff.isTopCut,
-          opponentName: diff.opponentName,
-          result: diff.result,
-          games: diff.isBye ? undefined : (() => {
-            const games: { gameNumber: number; result: MatchResult; myScore: number; opponentScore: number }[] = [];
-            let gameNum = 1;
-            for (let i = 0; i < diff.gamesWon; i++) games.push({ gameNumber: gameNum++, result: 'WIN', myScore: 20, opponentScore: 0 });
-            for (let i = 0; i < diff.gamesLost; i++) games.push({ gameNumber: gameNum++, result: 'LOSS', myScore: 0, opponentScore: 20 });
-            return games.length > 0 ? games : [{ gameNumber: 1, result: diff.result, myScore: diff.result === 'WIN' ? 20 : 0, opponentScore: diff.result === 'LOSS' ? 20 : 0 }];
-          })(),
-        };
-        if (diff.action === 'create') await createRound(tournamentId, payload);
-        else if (diff.existingRoundId) await updateRound(tournamentId, diff.existingRoundId, payload);
-      }
-      toast(`${syncDiff.length} ronde${syncDiff.length > 1 ? 's' : ''} synchronisée${syncDiff.length > 1 ? 's' : ''}`, 'success');
+      for (const d of updates) if (d.existingRoundId) await updateRound(tournamentId, d.existingRoundId, buildRoundPayload(d));
+      toast('Scores mis à jour depuis le Play Hub', 'success');
       onSynced();
-    } catch {
-      toast('Erreur lors de la synchronisation', 'error');
-    } finally {
-      setSyncing(false);
-    }
+    } catch { toast('Erreur lors de la mise à jour', 'error'); }
+    finally { setSyncing(false); }
   };
 
-  if (syncDiff.length === 0) return null;
+  // On ne montre la banniere que pour les MISES A JOUR (scores differents) : les
+  // creations se font automatiquement. L'utilisateur decide d'ecraser ou non.
+  if (updates.length === 0) return null;
 
   return (
     <div className="ink-card p-3 sm:p-4 border-gold-500/20 space-y-3">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-ink-200">
-            {syncDiff.length} ronde{syncDiff.length > 1 ? 's' : ''} à synchroniser depuis le Play Hub
+            {updates.length} ronde{updates.length > 1 ? 's' : ''} avec des scores différents sur le Play Hub
           </p>
-          <p className="text-xs text-ink-500 mt-0.5">Vers « Mes rondes »</p>
+          <p className="text-xs text-ink-500 mt-0.5">Mettre à jour écrasera les scores saisis pour ces rondes.</p>
         </div>
-        <button onClick={handleSyncRounds} disabled={syncing} className="ink-btn-primary text-sm px-4 py-2 shrink-0">
-          {syncing ? 'Synchronisation...' : 'Synchroniser'}
+        <button onClick={handleUpdate} disabled={syncing} className="ink-btn-primary text-sm px-4 py-2 shrink-0">
+          {syncing ? 'Mise à jour...' : 'Mettre à jour'}
         </button>
       </div>
       <div className="space-y-1">
-        {syncDiff.map(d => (
+        {updates.map(d => (
           <div key={`${d.isTopCut ? 'tc' : 'sw'}-${d.roundNumber}`} className="flex items-center justify-between text-xs px-2.5 py-1.5 rounded-lg bg-ink-900/50">
             <span className="text-ink-400">
               {d.isTopCut ? 'TC' : 'R'}{d.roundNumber} vs <span className="text-ink-200">{d.opponentName}</span>
             </span>
-            <div className="flex items-center gap-2">
-              <span className={d.result === 'WIN' ? 'text-win' : d.result === 'LOSS' ? 'text-loss' : 'text-ink-400'}>
-                {d.result === 'WIN' ? 'V' : d.result === 'LOSS' ? 'D' : 'N'} {d.gamesWon}-{d.gamesLost}
-              </span>
-              <span className="text-ink-600">{d.action === 'create' ? '+ nouveau' : '↺ mise à jour'}</span>
-            </div>
+            <span className={d.result === 'WIN' ? 'text-win' : d.result === 'LOSS' ? 'text-loss' : 'text-ink-400'}>
+              {d.result === 'WIN' ? 'V' : d.result === 'LOSS' ? 'D' : 'N'} {d.gamesWon}-{d.gamesLost}
+            </span>
           </div>
         ))}
       </div>

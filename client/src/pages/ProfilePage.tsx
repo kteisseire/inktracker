@@ -5,7 +5,8 @@ import { HelpButton } from '../components/ui/HelpButton.js';
 import { ProfileSubNav } from '../components/layout/ProfileSubNav.js';
 import { ThemePicker } from '../components/ui/ThemePicker.js';
 import { useTheme } from '../context/ThemeContext.js';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Bell } from 'lucide-react';
+import { notifyEnabled, setNotifyEnabled, enableNotifications, notifyPermission } from '../lib/notify.js';
 
 export function ProfilePage() {
   const { user, updateUser, logout } = useAuth();
@@ -53,6 +54,9 @@ export function ProfilePage() {
           </div>
         </div>
 
+        {/* Groupe : Notifications */}
+        <NotificationsSection />
+
         {/* Groupe : Thème de l'app */}
         <ThemeSection />
 
@@ -71,6 +75,61 @@ export function ProfilePage() {
           Se déconnecter
         </button>
 
+      </div>
+    </div>
+  );
+}
+
+function NotificationsSection() {
+  const [enabled, setEnabled] = useState(notifyEnabled());
+  const [perm, setPerm] = useState(notifyPermission());
+  const [busy, setBusy] = useState(false);
+
+  const toggle = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      if (!enabled) {
+        const ok = await enableNotifications();
+        setEnabled(ok);
+        setPerm(notifyPermission());
+      } else {
+        setNotifyEnabled(false);
+        setEnabled(false);
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const blocked = perm === 'denied';
+  const unsupported = perm === 'unsupported';
+
+  return (
+    <div className="ink-card p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-start gap-3 min-w-0">
+          <span className="grid place-items-center w-9 h-9 rounded-lg bg-gold-400/10 text-gold-400 shrink-0">
+            <Bell className="w-[18px] h-[18px]" strokeWidth={1.8} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-ink-200">Notifications de tournoi</p>
+            <p className="text-xs text-ink-500 mt-0.5">
+              {unsupported ? "Non supporté par ce navigateur."
+                : blocked ? "Bloquées dans les réglages du navigateur — autorisez-les pour activer."
+                : "Lancement de tournoi, nouvelle ronde et résultats publiés."}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={toggle}
+          disabled={busy || unsupported || blocked}
+          aria-pressed={enabled}
+          className={`relative shrink-0 w-11 h-6 rounded-full transition-colors disabled:opacity-40 ${enabled ? 'bg-gold-400' : 'bg-ink-700'}`}
+        >
+          <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-ink-950 transition-transform ${enabled ? 'translate-x-5' : ''}`} />
+        </button>
       </div>
     </div>
   );

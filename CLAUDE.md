@@ -230,6 +230,13 @@ TeamRole: OWNER, ADMIN, MEMBER
 - Permissions-Policy: camera=(self) for mobile photo capture
 - SSRF: `/decks/colors` extraction uses a strict hostname allowlist (exact match)
 
+### Notifications (Web Push) — live tournaments
+- Env (dans NSSM `GlimmerLogAPI`) : `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (mailto). Sans elles, le push est désactivé et le cron ne démarre pas. La clé publique est aussi embarquée en dur dans `client/src/lib/notify.ts` (publique par nature).
+- `lib/push.ts` (web-push), routes `/push/{public-key,subscribe,unsubscribe}`, modèle `PushSubscription`, `User.notifyTournaments` (toggle, via `PUT /profile`).
+- Cron `lib/tournamentWatcher.ts` (setInterval 30 s dans `index.ts`) : surveille les tournois du jour (fenêtre ±18 h) liés au Play Hub et pousse au propriétaire à chaque nouvelle ronde / résultats (idempotent via `Tournament.notifyLastPublished/Completed`). Réutilise `getEventRoundsData()` (cache TTL 20 s).
+- SW : handler push ajouté via Workbox `importScripts: ['/push-handler.js']` (ne pas supprimer `client/public/push-handler.js` — un 404 casserait l'install du SW).
+- Côté client : auto-poll 30 s + auto-création des rondes (jamais d'écrasement des scores saisis) + notif/toast in-app, dans `RoundSyncBanner` (TournamentDetailPage). Toggle dans le Profil (`NotificationsSection`).
+
 ### Photo Capture (Rounds)
 - Photos stored as base64 in `photoUrl` field (PostgreSQL text)
 - Client compresses to 1200px max, JPEG quality 70% before sending

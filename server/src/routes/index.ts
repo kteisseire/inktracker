@@ -11,6 +11,7 @@ import adminRoutes from './admin.routes.js';
 import suggestionRoutes from './suggestion.routes.js';
 import matchupNoteRoutes from './matchup-note.routes.js';
 import metagameRoutes from './metagame.routes.js';
+import pushRoutes from './push.routes.js';
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use('/teams', teamRoutes);
 router.use('/scouting', scoutingRoutes);
 router.use('/matchup-notes', matchupNoteRoutes);
 router.use('/metagame', metagameRoutes);
+router.use('/push', pushRoutes);
 
 export default router;

@@ -103,15 +103,10 @@ async function fetchAllPages(path: string): Promise<any[]> {
   return results;
 }
 
-export async function getEventRounds(req: Request, res: Response) {
-  const { eventId } = req.params;
-  const forceRefresh = req.query.refresh === '1';
-
-  if (!/^\d+$/.test(eventId)) {
-    return res.status(400).json({ error: 'ID événement invalide' });
-  }
-
-  try {
+// Coeur reutilisable (handler HTTP + cron de notifications). Sert le cache (TTL
+// court) ou re-fetch depuis Ravensburger. Lance une erreur (avec .status) si KO.
+export async function getEventRoundsData(eventId: string, forceRefresh = false): Promise<{ eventId: string; rounds: any[] }> {
+  {
     // Serve from cache unless user explicitly refreshes. TTL court (20 s) pour que
     // le polling live des tournois en cours recupere des donnees fraiches sans
     // forcer (et sans marteler Ravensburger : le cache est partage entre clients).
@@ -124,7 +119,7 @@ export async function getEventRounds(req: Request, res: Response) {
           const fresh = Date.now() - new Date(cached.updatedAt).getTime() < CACHE_TTL_MS;
           // Ne pas servir un cache vide ni perime
           if (fresh && Array.isArray(cachedData?.rounds) && cachedData.rounds.length > 0) {
-            return res.json(cached.data);
+            return cachedData as { eventId: string; rounds: any[] };
           }
         }
       } catch (cacheErr) {
@@ -135,7 +130,7 @@ export async function getEventRounds(req: Request, res: Response) {
     // Fetch event to get round IDs
     const eventRes = await rphFetch(`/events/${eventId}/`);
     if (!eventRes.ok) {
-      return res.status(eventRes.status).json({ error: 'Événement non trouvé' });
+      const e: any = new Error('Événement non trouvé'); e.status = eventRes.status; throw e;
     }
     const event = await eventRes.json() as any;
 
@@ -243,8 +238,21 @@ export async function getEventRounds(req: Request, res: Response) {
       console.warn('Cache write failed (table may not exist):', (cacheErr as any).message);
     }
 
+    return payload;
+  }
+}
+
+export async function getEventRounds(req: Request, res: Response) {
+  const { eventId } = req.params;
+  const forceRefresh = req.query.refresh === '1';
+  if (!/^\d+$/.test(eventId)) {
+    return res.status(400).json({ error: 'ID événement invalide' });
+  }
+  try {
+    const payload = await getEventRoundsData(eventId, forceRefresh);
     return res.json(payload);
   } catch (err: any) {
+    if (err?.status) return res.status(err.status).json({ error: err.message || 'Événement non trouvé' });
     console.error('Ravensburger rounds error:', err);
     return res.status(502).json({ error: 'Erreur de communication avec Ravensburger' });
   }

@@ -4,6 +4,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import routes from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { pushEnabled } from './lib/push.js';
+import { pollLiveTournaments } from './lib/tournamentWatcher.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001');
@@ -33,4 +35,13 @@ app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  // Surveillance des tournois en cours → notifications push (toutes les 30 s).
+  if (pushEnabled) {
+    setInterval(() => {
+      pollLiveTournaments().catch((e) => console.warn('tournamentWatcher error:', e?.message));
+    }, 30_000);
+    console.log('Tournament push watcher started (30s)');
+  } else {
+    console.log('Push disabled (no VAPID keys) — tournament watcher off');
+  }
 });

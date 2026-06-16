@@ -213,10 +213,11 @@ export async function getMe(req: AuthRequest, res: Response) {
 }
 
 export async function updateProfile(req: AuthRequest, res: Response) {
-  const { username, email } = req.body;
+  const { username, email, notifyTournaments } = req.body;
   const data: any = {};
   if (username) data.username = username;
   if (email) data.email = email;
+  if (typeof notifyTournaments === 'boolean') data.notifyTournaments = notifyTournaments;
 
   if (Object.keys(data).length === 0) {
     res.status(400).json({ error: 'Aucune modification' });

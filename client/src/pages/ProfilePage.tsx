@@ -6,7 +6,7 @@ import { ProfileSubNav } from '../components/layout/ProfileSubNav.js';
 import { ThemePicker } from '../components/ui/ThemePicker.js';
 import { useTheme } from '../context/ThemeContext.js';
 import { Sun, Moon, Bell } from 'lucide-react';
-import { notifyEnabled, setNotifyEnabled, enableNotifications, notifyPermission } from '../lib/notify.js';
+import { notifyEnabled, setNotifyEnabled, enableNotifications, notifyPermission, subscribeToPush, unsubscribeFromPush } from '../lib/notify.js';
 
 export function ProfilePage() {
   const { user, updateUser, logout } = useAuth();
@@ -93,9 +93,16 @@ function NotificationsSection() {
         const ok = await enableNotifications();
         setEnabled(ok);
         setPerm(notifyPermission());
+        if (ok) {
+          // Abonnement Web Push (app fermée) + préférence serveur pour le cron.
+          await subscribeToPush();
+          await updateProfile({ notifyTournaments: true } as any).catch(() => {});
+        }
       } else {
         setNotifyEnabled(false);
         setEnabled(false);
+        await unsubscribeFromPush();
+        await updateProfile({ notifyTournaments: false } as any).catch(() => {});
       }
     } finally {
       setBusy(false);
@@ -117,7 +124,7 @@ function NotificationsSection() {
             <p className="text-xs text-ink-500 mt-0.5">
               {unsupported ? "Non supporté par ce navigateur."
                 : blocked ? "Bloquées dans les réglages du navigateur — autorisez-les pour activer."
-                : "Lancement de tournoi, nouvelle ronde et résultats publiés."}
+                : "Lancement de tournoi, nouvelle ronde et résultats — même app fermée."}
             </p>
           </div>
         </div>

@@ -27,8 +27,22 @@ model User {
   suggestions            Suggestion[]
   tournaments            Tournament[]
   matchupNotes           MatchupNote[]
+  pushSubscriptions      PushSubscription[]
+  notifyTournaments      Boolean         @default(true)
 
   @@map("users")
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("push_subscriptions")
 }
 
 model Team {
@@ -113,6 +127,9 @@ model Tournament {
   deckId        String?
   eventLink     String?
   myDeckLink    String?
+  // Etat des notifications push (cron) : derniere ronde publiee / complete notifiee.
+  notifyLastPublished Int   @default(0)
+  notifyLastCompleted Int   @default(0)
   rounds        Round[]
   deck          Deck?      @relation(fields: [deckId], references: [id])
   user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)

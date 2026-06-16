@@ -33,6 +33,7 @@ export const resetPasswordSchema = z.object({
 export const updateProfileSchema = z.object({
   username: z.string().min(3, 'Minimum 3 caractères').max(30).optional(),
   email: z.string().email('Email invalide').optional(),
+  notifyTournaments: z.boolean().optional(),
 });
 
 export const changePasswordSchema = z.object({
